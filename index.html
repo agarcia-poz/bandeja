@@ -40,6 +40,12 @@
   }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+  /* Conexión con Supabase. Si se deja vacía, la app funciona en modo demostración con datos de ejemplo.
+     La clave publicable puede estar en el navegador: la seguridad la ponen las políticas de la base de datos. */
+  window.BANDEJA = { supabaseUrl: 'https://kbqlnomchinlshaxccpo.supabase.co', supabaseKey: 'sb_publishable_NqXl9xDNJwFPYqW4ZZdZyQ_DzdYjIY8' };
+</script>
 <style>
   /* Layout: app shell — court-blue sidebar on desktop, bottom tab bar on phones; content on a pale "glass wall" ground.
      Signature element: the live court diagram where each player marker beats at the sensor's real BPM. */
@@ -171,7 +177,7 @@ const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', '
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 /* ---------- Tarifas (de la hoja TARIFAS) ---------- */
-const TARIFAS = [
+let TARIFAS = [
   { id: 'T1', nombre: 'Grupo 4 · 1,5 h', alumnos: 4, horas: 1.5, mes: 40, trimestre: 95 },
   { id: 'T2', nombre: 'Pareja · 1 h', alumnos: 2, horas: 1, mes: 60, trimestre: 140 },
   { id: 'T3', nombre: 'Grupo 4 · 1 h', alumnos: 4, horas: 1, mes: 30, trimestre: 65 }
@@ -183,7 +189,7 @@ const CONCEPTOS = [
   { id: 'material', nombre: 'Material (sin clases)', clases: 0 }
 ];
 const precioDe = (tarifa, concepto) => {
-  const t = TARIFAS.find(x => x.id === tarifa);
+  const t = TARIFAS.find(x => x.id === tarifa) || TARIFAS[0];
   if (concepto === 'mes') return t.mes;
   if (concepto === 'tri') return t.trimestre;
   if (concepto === 'suelta') return Math.round(t.mes / 4 + 3);
@@ -203,7 +209,7 @@ const PLAN = [
 ];
 
 /* ---------- Grupos y alumnado de ejemplo (ficticio) ---------- */
-const SEASON_START = '2026-09-14';
+let SEASON_START = '2026-09-14';
 const GRUPOS = [
   { id: 'G1', nombre: 'Iniciación adultos', dia: 1, hora: '19:00', fin: '20:30', tarifa: 'T1', nivel: 'Iniciación' },
   { id: 'G2', nombre: 'Perfeccionamiento', dia: 3, hora: '20:00', fin: '21:00', tarifa: 'T3', nivel: 'Intermedio' },
@@ -232,8 +238,8 @@ function sessionDates(g, fromISO, toISO) {
 function seed() {
   const r = rng(20261016);
   const st = {
-    settings: { escuela: 'Escuela de Pádel Andrés García', umbral: 1, remitente: 'escuela@tudominio.es' },
-    grupos: GRUPOS, alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], tests: [], outbox: [], warned: {}
+    settings: { escuela: 'Escuela de Pádel AG', umbral: 1, remitente: 'escuelapadelag@gmail.com', temporada: '26/27', inicio: SEASON_START, auto: true },
+    grupos: GRUPOS, alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], tests: [], outbox: [], warned: {}, informes: {}, sesionIds: {}
   };
   ALUMNOS_BASE.forEach(([nombre, g, sexo, edad, peso, plan, inicial], i) => {
     const first = nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -242,7 +248,7 @@ function seed() {
       email: `${first}.${['n', 'm', 'd', 't', 'c', 'j', 'a', 'f', 's', 'v'][i]}@ejemplo.es`,
       tlf: '6' + String(10000000 + Math.floor(r() * 89999999)).slice(0, 8),
       codigo: `PD-${String(1000 + Math.floor(r() * 8999))}`,
-      alta: SEASON_START, plan
+      alta: SEASON_START, plan, fnac: `${2026 - edad}-05-15`, salud: true, imagen: true, activado: i < 4
     });
   });
   // pagos
@@ -324,12 +330,17 @@ function metrics(sess, a) {
 }
 
 /* ---------- Estado ---------- */
-let state = S.get(KEY) || seed();
-const save = () => S.set(KEY, state);
-let ui = { role: 'admin', view: 'panel', alumnoId: null, studentLogged: null, filtroGrupo: 'todos', claseKey: null, periodo: 'Octubre' };
+const LIVE = !!(window.BANDEJA && BANDEJA.supabaseUrl && BANDEJA.supabaseKey && window.supabase) && location.hash !== '#demo';
+const sb = LIVE ? supabase.createClient(BANDEJA.supabaseUrl, BANDEJA.supabaseKey) : null;
+const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1, remitente: '', temporada: '26/27', inicio: SEASON_START, auto: true }, grupos: [], alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], tests: [], outbox: [], warned: {}, informes: {}, sesionIds: {} });
+let state = LIVE ? emptyState() : (S.get(KEY) || seed());
+state.informes = state.informes || {};
+const save = () => { if (!LIVE) S.set(KEY, state); };
+let ui = { role: 'admin', view: 'panel', alumnoId: null, studentLogged: null, filtroGrupo: 'todos', claseKey: null, periodo: 'Octubre', auth: LIVE ? 'cargando' : 'ok', isAdmin: !LIVE };
 const alumno = id => state.alumnos.find(a => a.id === id);
-const grupo = id => state.grupos.find(g => g.id === id);
-const tarifaDe = a => TARIFAS.find(t => t.id === grupo(a.grupo).tarifa);
+const SIN_GRUPO = { id: null, nombre: 'Sin grupo', dia: 1, hora: '--:--', fin: '--:--', tarifa: 'T1', nivel: '' };
+const grupo = id => state.grupos.find(g => g.id === id) || { ...SIN_GRUPO, tarifa: TARIFAS[0].id };
+const tarifaDe = a => TARIFAS.find(t => t.id === grupo(a.grupo).tarifa) || TARIFAS[0];
 const asistidas = a => Object.entries(state.asistencia).filter(([k, v]) => v.includes(a.id)).length;
 const compradas = a => state.pagos.filter(p => p.alumno === a.id).reduce((s, p) => s + p.clases, 0) + (a.inicial || 0);
 const saldo = a => compradas(a) - asistidas(a);
@@ -359,29 +370,34 @@ function ballRow(a, max = 12) {
 }
 
 /* ---------- Emails ---------- */
-function nextClassOf(a) { const g = grupo(a.grupo); const d = proximas(g, 1)[0]; return d ? `${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${g.hora}` : 'por confirmar'; }
+function nextClassOf(a) { const g = grupo(a.grupo); const d = g.id ? proximas(g, 1)[0] : null; return d ? `${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${g.hora}` : 'por confirmar'; }
 function queueEmail(a, tipo, extra = {}) {
   const nombre = a.nombre.split(' ')[0];
   const t = tarifaDe(a);
   let subject, body;
   if (tipo === 'confirmacion') {
     subject = `Pago recibido · ${extra.concepto}`;
-    body = `Hola ${nombre}:\n\nHemos registrado tu pago de ${fmtEur(extra.importe)} (${extra.concepto}) del ${fmtDate(extra.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}, por ${extra.metodo.toLowerCase()}.\n\nTe quedan ${saldo(a)} clases disponibles.\nTu próxima clase es el ${nextClassOf(a)}.\n\nPuedes consultar tu historial, tus datos de frecuencia cardíaca y los contenidos de las próximas sesiones con tu código de acceso: ${a.codigo}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
+    body = `Hola ${nombre}:\n\nHemos registrado tu pago de ${fmtEur(extra.importe)} (${extra.concepto}) del ${fmtDate(extra.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}, por ${extra.metodo.toLowerCase()}.\n\nTe quedan ${saldo(a)} clases disponibles.\nTu próxima clase es el ${nextClassOf(a)}.\n\nPuedes consultar tu historial, tus datos de frecuencia cardíaca y los contenidos de las próximas sesiones en ${APP_URL}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
+  } else if (tipo === 'bienvenida') {
+    subject = `Bienvenido a ${state.settings.escuela}`;
+    body = `Hola ${nombre}:\n\n¡Bienvenido a la escuela! Ya tienes plaza en el grupo ${grupo(a.grupo).nombre}, los ${DAYS[grupo(a.grupo).dia].toLowerCase()}s de ${grupo(a.grupo).hora} a ${grupo(a.grupo).fin}.\n\nEn nuestra app puedes ver tu bono, los contenidos de las próximas clases y tu informe de frecuencia cardíaca:\n${APP_URL}\n\nPara entrar la primera vez, pulsa «Activar mi acceso» y usa:\n· Tu código: ${a.codigo}\n· Este mismo email: ${a.email}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
   } else {
     const s = saldo(a);
     subject = s < 0 ? 'Tienes clases pendientes de pago' : s === 0 ? 'Has completado tu bono' : 'Te queda 1 clase de tu bono';
     const estadoTxt = s < 0 ? `Has recibido ${-s} ${-s === 1 ? 'clase' : 'clases'} más de las que tienes pagadas.` : s === 0 ? 'Has consumido todas las clases de tu bono.' : `Te ${s === 1 ? 'queda' : 'quedan'} ${s} ${s === 1 ? 'clase' : 'clases'} de tu bono.`;
     body = `Hola ${nombre}:\n\n${estadoTxt}\n\nPara tu próxima clase (${nextClassOf(a)}) necesitas renovar:\n· Bono mensual, 4 clases: ${fmtEur(t.mes)}\n· Bono trimestral, 10 clases: ${fmtEur(t.trimestre)}\n\nPuedes pagar por Bizum, transferencia o en efectivo en la pista.\n\nGracias,\n${state.settings.escuela}`;
   }
-  state.outbox.unshift({ id: 'E' + Date.now() + Math.random().toString(36).slice(2, 5), alumno: a.id, to: a.email, toName: a.nombre, tipo, subject, body, fecha: new Date().toISOString(), estado: 'En cola' });
+  const m = { id: 'E' + Date.now() + Math.random().toString(36).slice(2, 5), alumno: a.id, to: a.email, toName: a.nombre, tipo, subject, body, fecha: new Date().toISOString(), estado: 'En cola' };
+  state.outbox.unshift(m);
+  return m;
 }
 function checkAvisos(ids) {
-  let n = 0;
+  const out = [];
   ids.forEach(id => {
-    const a = alumno(id); const s = saldo(a); const key = `${id}|${asistidas(a)}`;
-    if (s <= state.settings.umbral && !state.warned[key]) { queueEmail(a, 'aviso'); state.warned[key] = true; n++; }
+    const a = alumno(id); const s = saldo(a); const n = asistidas(a); const key = `${id}|${n}`;
+    if (s <= state.settings.umbral && !state.warned[key]) { const m = queueEmail(a, 'aviso'); state.warned[key] = true; out.push({ a: id, n, m }); }
   });
-  return n;
+  return out;
 }
 
 /* ---------- Iconos ---------- */
@@ -410,7 +426,8 @@ function shell(content) {
   const nav = ui.role === 'admin' ? ADMIN_NAV : ALUMNO_NAV;
   const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view;
   const pendientes = state.outbox.filter(e => e.estado === 'En cola').length;
-  const who = ui.role === 'admin' ? 'Andrés · administrador' : esc(alumno(ui.studentLogged).nombre);
+  const who = ui.role === 'admin' ? (LIVE ? esc(ui.email || 'Administrador') : 'Andrés · administrador') : esc(alumno(ui.studentLogged).nombre);
+  const canSwitch = !LIVE || ui.isAdmin; const canLogout = LIVE || ui.role === 'alumno';
   return `
   <div class="lg:flex min-h-full">
     <aside class="hidden lg:flex flex-col w-64 shrink-0 bg-turf text-turfink sticky top-0 h-screen px-4 py-5 gap-6" style="top:env(safe-area-inset-top,0px)">
@@ -419,18 +436,18 @@ function shell(content) {
         ${nav.map(([k, l]) => `<a href="#" class="navlink" data-go="${k}" ${cur === k ? 'aria-current="page"' : ''}><span class="dot"></span>${l}${k === 'emails' && pendientes ? `<span class="ml-auto chip bg-ball text-ballink">${pendientes}</span>` : ''}</a>`).join('')}
       </nav>
       <div class="mt-auto flex flex-col gap-3">
-        ${roleSwitch(true)}
-        <div class="text-[12.5px] opacity-75 px-2">${who}</div>
-        ${ui.role === 'alumno' ? `<button class="navlink" data-logout>${I.out}Salir</button>` : ''}
+        ${canSwitch ? roleSwitch(true) : ''}
+        <div class="text-[12.5px] opacity-75 px-2 truncate">${who}</div>
+        ${canLogout ? `<button class="navlink" data-logout>${I.out}Salir</button>` : ''}
       </div>
     </aside>
     <div class="flex-1 min-w-0 pb-24 lg:pb-10">
       <header class="lg:hidden sticky z-40 bg-bg/95 backdrop-blur border-b border-line" style="top:env(safe-area-inset-top,0px)">
-        <div class="gutter py-2.5 flex items-center gap-3">${LOGO}<div class="font-display text-xl font-bold">Bandeja</div><div class="ml-auto flex items-center gap-1">${roleSwitch(false)}${ui.role === 'alumno' ? `<button class="btn btn-ghost !p-2" data-logout aria-label="Salir">${I.out}</button>` : ''}</div></div>
+        <div class="gutter py-2.5 flex items-center gap-3">${LOGO}<div class="font-display text-xl font-bold">Bandeja</div><div class="ml-auto flex items-center gap-1">${canSwitch ? roleSwitch(false) : ''}${canLogout ? `<button class="btn btn-ghost !p-2" data-logout aria-label="Salir">${I.out}</button>` : ''}</div></div>
       </header>
-      <div class="gutter pt-3">
-        <div class="max-w-6xl mx-auto text-[13px] text-muted bg-surface2/70 rounded-xl px-3 py-2">Prototipo con datos de ejemplo. Los emails se quedan en la bandeja de salida y los cambios se guardan solo en este navegador.</div>
-      </div>
+      ${LIVE ? (ui.isAdmin && ui.role === 'alumno' ? `<div class="gutter pt-3"><div class="max-w-6xl mx-auto text-[13px] bg-ball/25 rounded-xl px-3 py-2">Estás viendo el portal como lo ve ${esc(alumno(ui.studentLogged)?.nombre || '')}.</div></div>` : '') : `<div class="gutter pt-3">
+        <div class="max-w-6xl mx-auto text-[13px] text-muted bg-surface2/70 rounded-xl px-3 py-2">Modo demostración con datos de ejemplo. Los emails se quedan en la bandeja de salida y los cambios se guardan solo en este navegador.</div>
+      </div>`}
       <main class="gutter py-5"><div class="max-w-6xl mx-auto flex flex-col gap-6">${content}</div></main>
     </div>
     <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface border-t border-line" style="padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)" aria-label="Secciones">
@@ -457,11 +474,11 @@ function stat(label, value, note = '', tone = '') {
    VISTAS · ESCUELA
    ========================================================== */
 function vPanel() {
-  const activos = state.alumnos.length;
+  const activos = reales().length;
   const mes = TODAY_ISO.slice(0, 7);
   const ingresosMes = state.pagos.filter(p => p.fecha.startsWith(mes)).reduce((s, p) => s + p.importe, 0);
-  const atencion = state.alumnos.filter(a => estado(a) !== 'ok').sort((x, y) => saldo(x) - saldo(y));
-  const deuda = state.alumnos.filter(a => saldo(a) < 0).reduce((s, a) => s + (-saldo(a)) * (tarifaDe(a).mes / 4), 0);
+  const atencion = reales().filter(a => estado(a) !== 'ok').sort((x, y) => saldo(x) - saldo(y));
+  const deuda = reales().filter(a => saldo(a) < 0).reduce((s, a) => s + (-saldo(a)) * (tarifaDe(a).mes / 4), 0);
   const agenda = state.grupos.flatMap(g => proximas(g, 2).map(d => ({ g, d }))).sort((x, y) => x.d.localeCompare(y.d)).slice(0, 4);
   const recientes = [...state.pagos].sort((x, y) => y.fecha.localeCompare(x.fecha)).slice(0, 5);
   return pageHead('Panel', `${fmtDate(TODAY_ISO, { weekday: 'long', day: 'numeric', month: 'long' })}. Temporada 26/27.`,
@@ -510,10 +527,13 @@ function afterPanel() {
 function weekKey(d) { const x = parseISO(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return iso(x); }
 
 function vAlumnos() {
-  const list = state.alumnos.filter(a => ui.filtroGrupo === 'todos' || a.grupo === ui.filtroGrupo);
-  return pageHead('Alumnos', 'Saldo de clases, contacto y código de acceso de cada alumno.', `<button class="btn btn-primary" data-open="alta">Dar de alta</button>`) + `
-  <div class="flex flex-wrap gap-2">${[['todos', 'Todos'], ...state.grupos.map(g => [g.id, g.nombre])].map(([k, l]) => `<button class="chip ${ui.filtroGrupo === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-filtro="${k}">${esc(l)}</button>`).join('')}</div>
-  <div class="panel scroll-x"><table class="data min-w-[760px]">
+  const list = reales().filter(a => ui.filtroGrupo === 'todos' || a.grupo === ui.filtroGrupo);
+  const gSel = ui.filtroGrupo !== 'todos' ? grupo(ui.filtroGrupo) : null;
+  return pageHead('Alumnos', 'Saldo de clases, contacto y código de acceso de cada alumno.', `<button class="btn btn-primary" data-open="alta">Dar de alta</button><button class="btn btn-ghost" data-open="grupo">Nuevo grupo</button>`) + `
+  <div class="flex flex-wrap items-center gap-2">${[['todos', 'Todos'], ...state.grupos.map(g => [g.id, g.nombre])].map(([k, l]) => `<button class="chip ${ui.filtroGrupo === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-filtro="${k}">${esc(l)}</button>`).join('')}
+  ${gSel && gSel.id ? `<span class="text-[13px] text-muted ml-1">${DAYS[gSel.dia]} ${gSel.hora}–${gSel.fin} · ${tarifaDe({ grupo: gSel.id }).nombre}</span><button class="text-[13px] font-semibold text-court" data-open="grupo" data-for="${gSel.id}">Editar grupo</button>` : ''}</div>
+  ${!state.grupos.length ? `<div class="panel p-6"><h2 class="text-2xl font-bold">Empieza creando tus grupos</h2><p class="text-muted mt-1 max-w-xl">Cada grupo tiene su día, su horario y su tarifa. Después podrás dar de alta a los alumnos y asignarlos.</p><button class="btn btn-primary mt-3" data-open="grupo">Crear el primer grupo</button></div>` : !list.length ? `<div class="panel p-6"><h2 class="text-2xl font-bold">Todavía no hay alumnos${gSel ? ' en este grupo' : ''}</h2><p class="text-muted mt-1">Al darlos de alta reciben un email con su código para entrar en la app.</p><button class="btn btn-primary mt-3" data-open="alta">Dar de alta</button></div>` : ''}
+  <div class="panel scroll-x" ${list.length ? '' : 'hidden'}><table class="data min-w-[760px]">
     <thead><tr><th>Alumno</th><th>Grupo</th><th>Bono</th><th>Estado</th><th>Última FC media</th><th>Código</th></tr></thead>
     <tbody>${list.map(a => { const ss = sesionesDe(a.id); const last = ss[ss.length - 1]; return `
       <tr class="click" data-alumno="${a.id}"><td><div class="font-semibold">${esc(a.nombre)}</div><div class="text-[13px] text-muted">${esc(a.email)}</div></td>
@@ -521,7 +541,7 @@ function vAlumnos() {
       <td>${ballRow(a, 10)}<div class="text-[12.5px] text-muted mt-1 tnum">${asistidas(a)} recibidas · ${compradas(a)} pagadas</div></td>
       <td>${estadoChip(a)}</td>
       <td class="tnum">${last ? `${last.fcMed} ppm <span class="text-muted">(${pct(last.fcMed / fcMaxTeo(a))})</span>` : '—'}</td>
-      <td><span class="font-mono text-[13px] bg-surface2 rounded-md px-2 py-1">${a.codigo}</span></td></tr>`; }).join('')}</tbody></table></div>`;
+      <td><span class="font-mono text-[13px] bg-surface2 rounded-md px-2 py-1">${a.codigo}</span>${a.activado ? '<div class="text-[12px] text-ok mt-1">Acceso activado</div>' : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
 
 function vAlumnoDetalle(id) {
@@ -531,7 +551,7 @@ function vAlumnoDetalle(id) {
   const avg = k => ss.length ? ss.reduce((s, x) => s + metrics(x, a)[k], 0) / ss.length : 0;
   return `<div><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="alumnos">${I.back}Alumnos</button></div>` +
     pageHead(esc(a.nombre), `${esc(g.nombre)} · ${DAYS[g.dia]} ${g.hora}–${g.fin} · ${tarifaDe(a).nombre} · ${a.edad} años`,
-      `<button class="btn btn-primary" data-open="pago" data-for="${a.id}">Registrar pago</button><button class="btn btn-ghost" data-aviso="${a.id}">Enviar aviso</button><button class="btn btn-ghost" data-preview="${a.id}">Ver como alumno</button>`) + `
+      `<button class="btn btn-primary" data-open="pago" data-for="${a.id}">Registrar pago</button><button class="btn btn-ghost" data-aviso="${a.id}">Enviar aviso</button><button class="btn btn-ghost" data-open="alta" data-for="${a.id}">Editar ficha</button><button class="btn btn-ghost" data-preview="${a.id}">Ver como alumno</button>`) + `
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Bono</h2>${estadoChip(a)}</div>${ballRow(a, 20)}
       <div class="grid grid-cols-3 gap-2 text-center mt-1">${[['Pagadas', compradas(a)], ['Recibidas', asistidas(a)], ['Saldo', saldo(a)]].map(([l, v]) => `<div class="rounded-xl bg-surface2 py-2"><div class="num text-3xl font-bold ${l === 'Saldo' && v < 0 ? 'text-bad' : ''}">${v}</div><div class="text-[12.5px] text-muted">${l}</div></div>`).join('')}</div>
@@ -539,7 +559,8 @@ function vAlumnoDetalle(id) {
     <div class="panel p-5 flex flex-col gap-2 min-w-0"><h2 class="text-2xl font-bold">Contacto y acceso</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[14px]"><dt class="text-muted">Email</dt><dd class="truncate">${esc(a.email)}</dd><dt class="text-muted">Teléfono</dt><dd class="tnum">${esc(a.tlf)}</dd><dt class="text-muted">FC máx. teórica</dt><dd class="tnum">${fcMaxTeo(a)} ppm</dd><dt class="text-muted">Peso</dt><dd class="tnum">${a.peso} kg</dd></dl>
       <div class="mt-2 flex items-center gap-2"><span class="font-mono text-lg bg-surface2 rounded-lg px-3 py-1.5" id="code-${a.id}">${a.codigo}</span><button class="btn btn-ghost !p-2" data-copy="${a.codigo}" aria-label="Copiar código">${I.copy}</button></div>
-      <p class="text-[13px] text-muted">El alumno entra al portal con este código.</p>
+      <p class="text-[13px] ${a.activado ? 'text-ok' : 'text-muted'}">${a.activado ? 'Ya ha activado su acceso al portal.' : 'Con este código y su email activa su acceso al portal.'}</p>
+      ${a.salud ? '' : '<p class="text-[13px] text-warn">Falta su consentimiento para registrar la frecuencia cardíaca.</p>'}
     </div>
     <div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Medias de la temporada</h2>
       <div class="grid grid-cols-2 gap-3">${[['FC media', pct(avg('med'))], ['FC máxima', pct(avg('mx'))], ['Índice recuperación', pct(avg('rec'))], ['eTRIMP', Math.round(avg('trimp'))]].map(([l, v]) => `<div><div class="text-[12.5px] text-muted">${l}</div><div class="num text-3xl font-bold">${v}</div></div>`).join('')}</div>
@@ -550,7 +571,18 @@ function vAlumnoDetalle(id) {
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2></div><table class="data min-w-[520px]"><thead><tr><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th></tr></thead><tbody>
       ${[...ss].reverse().map(s => `<tr><td>${fmtDate(s.fecha)}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td></tr>`).join('') || '<tr><td colspan="5" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('')}</tbody></table></div>
+      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
+  </section>
+  ${iaPanel(a)}`;
+}
+function iaPanel(a) {
+  const inf = state.informes[a.id]; const n = sesionesDe(a.id).length;
+  return `<section class="panel p-5 flex flex-col gap-3 min-w-0">
+    <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Interpretación para el alumno</h2>${inf ? `<span class="chip ${inf.publicado ? 'chip-ok' : 'chip-warn'}">${inf.publicado ? 'Publicada en su portal' : 'Borrador sin publicar'}</span>` : '<span class="chip chip-neutral">Sin generar</span>'}</div>
+    <p class="text-[13.5px] text-muted max-w-2xl">La IA redacta un texto a partir de sus sesiones con pulsómetro, la media de su grupo y sus tests, sin enviar su nombre. Revísalo y corrígelo antes de publicarlo.${LIVE ? '' : ' En el modo demostración se genera un borrador automático.'}</p>
+    ${inf ? `<label class="lbl" for="iaTxt">Texto</label><textarea id="iaTxt" rows="9" class="field leading-relaxed">${esc(inf.texto)}</textarea>` : ''}
+    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Generar de nuevo' : 'Generar con IA'}</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
+    ${n < 2 ? '<p class="text-[13px] text-muted">Hacen falta al menos 2 sesiones con pulsómetro.</p>' : ''}
   </section>`;
 }
 function zoneBar(z) { const tot = z.reduce((s, x) => s + x, 0) || 1; return `<div class="zbar" title="${z.map((m, i) => `Z${i + 1}: ${m} min`).join(' · ')}">${z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>`; }
@@ -584,9 +616,11 @@ function vPagos() {
 }
 
 function vClases() {
+  if (!state.grupos.length) return pageHead('Clases', 'Aquí pasarás lista y prepararás los contenidos de cada sesión.') + `<div class="panel p-6"><h2 class="text-2xl font-bold">Primero crea un grupo</h2><p class="text-muted mt-1">Las clases se generan solas a partir del día y la hora de cada grupo.</p><button class="btn btn-primary mt-3" data-open="grupo">Crear grupo</button></div>`;
+  if (ui.claseKey && !grupo(ui.claseKey.split('|')[0]).id) ui.claseKey = null;
   if (!ui.claseKey) { const g = state.grupos[0]; ui.claseKey = `${g.id}|${ultimasClases(g, 1)[0] || proximas(g, 1)[0]}`; }
   const [gid, d] = ui.claseKey.split('|'); const g = grupo(gid); const c = contenido(gid, d);
-  const miembros = state.alumnos.filter(a => a.grupo === gid);
+  const miembros = reales().filter(a => a.grupo === gid);
   const presentes = state.asistencia[ui.claseKey];
   const opts = state.grupos.map(gg => [...ultimasClases(gg, 2), ...proximas(gg, 3)].map(dd => ({ gg, dd }))).flat();
   return pageHead('Clases', 'Pasa lista al terminar la clase: se descuenta una clase del bono y, si alguien llega al umbral, se prepara el aviso de pago.') + `
@@ -614,7 +648,7 @@ function mkSlot(i) { return { i, device: null, name: null, alumno: null, hr: nul
 const BT_OK = typeof navigator !== 'undefined' && !!navigator.bluetooth;
 
 function vVivo() {
-  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${state.alumnos.filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
   return pageHead('Sesión en vivo', 'Conecta los dos pulsómetros por Bluetooth, asigna cada uno a un alumno y guarda la sesión al terminar. Las zonas se calculan sobre la FC máxima teórica de cada alumno.',
     `<button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
   ${BT_OK ? '' : `<div class="panel p-4 border-warn/40 text-[14px]"><strong>Bluetooth no disponible en esta vista.</strong> La conexión directa funciona al abrir la app desde su dirección propia en Chrome o Edge (Android, Windows, Mac o ChromeOS). En iPhone hace falta un navegador como Bluefy. Aquí puedes probar el flujo con el simulador.</div>`}
@@ -748,15 +782,16 @@ function toggleLive() {
     rerenderIf('vivo'); return;
   }
   live.running = false; clearInterval(live.timer);
-  let n = 0;
+  const nuevos = [];
   live.slots.forEach(s => {
     if (!s.alumno || !s.rec || s.rec.length < 10) return;
     const a = alumno(s.alumno);
-    state.sesionesFC.push({ id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.round(s.rec.length / 60), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor' });
-    n++;
+    const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec } };
+    state.sesionesFC.push(r); nuevos.push(r);
   });
-  save(); rerenderIf('vivo');
-  toast(n ? `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}` : 'Sesión demasiado corta: se necesitan al menos 10 segundos de datos');
+  if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
+  const n = nuevos.length;
+  tras(async () => { for (const r of nuevos) await P.fc(r); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}`);
 }
 
 /* ---------- Condición física ---------- */
@@ -778,7 +813,7 @@ function radarScores(id) {
 }
 function vFisica() {
   const per = ui.periodo; const periodos = ['Octubre', 'Diciembre', 'Abril', 'Junio'];
-  const rows = state.alumnos.map(a => ({ a, t: state.tests.find(t => t.alumno === a.id && t.periodo === per) }));
+  const rows = reales().map(a => ({ a, t: state.tests.find(t => t.alumno === a.id && t.periodo === per) }));
   const groupAvg = (gid, k) => { const v = rows.filter(r => r.a.grupo === gid && r.t && r.t[k] != null).map(r => r.t[k]); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
   return pageHead('Condición física', 'Tests de cada trimestre (agilidad, precisión, peso y RPE), como en tu hoja GENERAL.', `<button class="btn btn-primary" data-open="test">Registrar test</button>`) + `
   <div class="flex flex-wrap gap-2">${periodos.map(p => `<button class="chip ${p === per ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-periodo="${p}">${p}</button>`).join('')}</div>
@@ -801,7 +836,7 @@ function afterFisica() {
 /* ---------- Emails ---------- */
 function vEmails() {
   const s = state.settings;
-  return pageHead('Emails', 'Confirmaciones de pago y avisos generados automáticamente. En la versión final salen solos desde tu dirección.',
+  return pageHead('Emails', LIVE ? `Bienvenidas, confirmaciones de pago y avisos. Salen desde ${esc(s.remitente)}${s.auto ? ' en cuanto se generan' : ''}.` : 'Bienvenidas, confirmaciones de pago y avisos. En el modo demostración se quedan aquí, sin enviarse.',
     state.outbox.some(e => e.estado === 'En cola') ? `<button class="btn btn-primary" data-sendall>Enviar los ${state.outbox.filter(e => e.estado === 'En cola').length} en cola</button>` : '') + `
   <section class="grid lg:grid-cols-3 gap-4">
     <form class="panel p-5 flex flex-col gap-3" id="fAjustes"><h2 class="text-2xl font-bold">Reglas de aviso</h2>
@@ -810,11 +845,11 @@ function vEmails() {
       <div><label class="lbl" for="sUmb">Avisar cuando queden</label><select id="sUmb" class="field">${[0, 1, 2].map(n => `<option value="${n}" ${s.umbral === n ? 'selected' : ''}>${n === 0 ? '0 clases (bono agotado)' : n + (n === 1 ? ' clase' : ' clases')}</option>`).join('')}</select></div>
       <p class="text-[13px] text-muted">El aviso se prepara al pasar lista. La confirmación, al registrar un pago.</p>
       <button class="btn btn-ghost self-start" type="submit">Guardar reglas</button>
-      <hr class="border-line"><button type="button" class="btn btn-ghost self-start text-bad" data-reset>Restablecer datos de ejemplo</button>
+      ${LIVE ? '' : '<hr class="border-line"><button type="button" class="btn btn-ghost self-start text-bad" data-reset>Restablecer datos de ejemplo</button>'}
     </form>
     <div class="lg:col-span-2 flex flex-col gap-3 min-w-0">
       ${state.outbox.length ? state.outbox.map(e => `<article class="email-paper p-4 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 mb-2"><span class="chip ${e.tipo === 'confirmacion' ? 'chip-ok' : 'chip-warn'}">${e.tipo === 'confirmacion' ? 'Confirmación de pago' : 'Aviso de pago'}</span><span class="chip ${e.estado === 'En cola' ? 'chip-neutral' : 'chip-ok'}">${e.estado}</span><span class="text-[12.5px] text-muted ml-auto">${new Date(e.fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div class="flex flex-wrap items-center gap-2 mb-2"><span class="chip ${e.tipo === 'aviso' ? 'chip-warn' : 'chip-ok'}">${{ confirmacion: 'Confirmación de pago', aviso: 'Aviso de pago', bienvenida: 'Bienvenida' }[e.tipo]}</span><span class="chip ${e.estado === 'En cola' ? 'chip-neutral' : e.estado === 'Error' ? 'chip-bad' : 'chip-ok'}" ${e.error ? `title="${esc(e.error)}"` : ''}>${e.estado}</span><span class="text-[12.5px] text-muted ml-auto">${new Date(e.fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
         <div class="text-[13px] text-muted">Para: ${esc(e.toName)} &lt;${esc(e.to)}&gt;</div>
         <h3 class="text-xl font-bold mt-1">${esc(e.subject)}</h3>
         <details class="mt-1"><summary class="text-[13.5px] font-semibold text-court cursor-pointer">Ver mensaje</summary><pre class="whitespace-pre-wrap font-sans text-[14px] leading-relaxed mt-2">${esc(e.body)}</pre></details>
@@ -841,7 +876,7 @@ function vLogin() {
     </div></div>`;
 }
 function vInicio() {
-  const a = alumno(ui.studentLogged); const g = grupo(a.grupo); const prox = proximas(g, 3); const ss = sesionesDe(a.id); const last = ss[ss.length - 1];
+  const a = alumno(ui.studentLogged); const g = grupo(a.grupo); const prox = g.id ? proximas(g, 3) : []; const ss = sesionesDe(a.id); const last = ss[ss.length - 1];
   return `<div><p class="text-muted">Hola,</p>${pageHead(esc(a.nombre.split(' ')[0]), `${esc(g.nombre)} · ${DAYS[g.dia]}s de ${g.hora} a ${g.fin}`)}</div>
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Tu bono</h2>${estadoChip(a)}</div>${ballRow(a, 20)}
@@ -849,7 +884,7 @@ function vInicio() {
       ${estado(a) !== 'ok' ? `<div class="rounded-xl bg-warn/10 text-[14px] p-3">Para la próxima clase necesitas renovar. Bono mensual: <strong>${fmtEur(tarifaDe(a).mes)}</strong> · trimestral: <strong>${fmtEur(tarifaDe(a).trimestre)}</strong>.</div>` : ''}
     </div>
     <div class="panel p-5 lg:col-span-2 min-w-0"><h2 class="text-2xl font-bold mb-3">Próximas clases</h2>
-      <ol class="grid sm:grid-cols-3 gap-3">${prox.map((d, k) => { const c = contenido(g.id, d); return `<li class="rounded-2xl ${k === 0 ? 'bg-turf text-turfink' : 'bg-surface2'} p-4 flex flex-col gap-2"><div class="text-[13px] ${k === 0 ? 'opacity-80' : 'text-muted'}">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'short' })} · ${g.hora}</div><div class="font-display text-xl font-bold leading-tight">${esc(c.titulo)}</div><ul class="text-[13.5px] flex flex-col gap-1 ${k === 0 ? 'opacity-90' : 'text-muted'}">${c.items.map(i => `<li class="flex gap-2"><span aria-hidden="true">·</span>${esc(i)}</li>`).join('')}</ul></li>`; }).join('')}</ol>
+      ${prox.length ? '' : '<p class="text-muted">Aún no tienes grupo asignado.</p>'}<ol class="grid sm:grid-cols-3 gap-3">${prox.map((d, k) => { const c = contenido(g.id, d); return `<li class="rounded-2xl ${k === 0 ? 'bg-turf text-turfink' : 'bg-surface2'} p-4 flex flex-col gap-2"><div class="text-[13px] ${k === 0 ? 'opacity-80' : 'text-muted'}">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'short' })} · ${g.hora}</div><div class="font-display text-xl font-bold leading-tight">${esc(c.titulo)}</div><ul class="text-[13.5px] flex flex-col gap-1 ${k === 0 ? 'opacity-90' : 'text-muted'}">${c.items.map(i => `<li class="flex gap-2"><span aria-hidden="true">·</span>${esc(i)}</li>`).join('')}</ul></li>`; }).join('')}</ol>
     </div>
   </section>
   ${last ? `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">Tu última sesión · ${fmtDate(last.fecha, { day: 'numeric', month: 'long' })}</h2><button class="btn btn-ghost !py-1.5 text-[13px]" data-go="informe">Ver informe completo</button></div>
@@ -884,8 +919,9 @@ function vInforme() {
     <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-2">Minutos en cada zona</h2><div class="h-60"><canvas id="chZ"></canvas></div></div>
     <div class="panel p-5 lg:col-span-2 min-w-0 flex flex-col gap-3">
       <div class="flex items-center gap-2"><h2 class="text-2xl font-bold">Lo que dicen tus datos</h2></div>
-      <span class="chip chip-neutral self-start">Borrador automático · en la versión final lo redacta la IA</span>
-      ${interpretacion(a).map(p => `<p class="text-[14.5px] leading-relaxed">${p}</p>`).join('')}
+      ${(() => { const inf = state.informes[a.id]; return inf && inf.publicado
+        ? `<span class="chip chip-ok self-start">Revisado por tu entrenador</span>${inf.texto.split(/\n{2,}/).map(p => `<p class="text-[14.5px] leading-relaxed">${esc(p)}</p>`).join('')}`
+        : `<span class="chip chip-neutral self-start">Resumen automático</span>${interpretacion(a).map(p => `<p class="text-[14.5px] leading-relaxed">${p}</p>`).join('')}`; })()}
     </div>
   </section>`;
 }
@@ -896,7 +932,7 @@ function afterInforme() {
 }
 function vFisicaAlumno() {
   const a = alumno(ui.studentLogged);
-  const tests = state.tests.filter(t => t.alumno === a.id).sort((x, y) => x.fecha.localeCompare(y.fecha));
+  const tests = state.tests.filter(t => t.alumno === a.id).sort((x, y) => (x.fecha || '').localeCompare(y.fecha || ''));
   const r = radarScores(a.id);
   return pageHead('Condición física', 'Tus tests comparados con la media de tu grupo. Cuanto más hacia fuera, mejor.') + `
   <section class="grid lg:grid-cols-2 gap-4">
@@ -909,8 +945,8 @@ function vFisicaAlumno() {
         <div><dt class="font-semibold">Intensidad por minuto</dt><dd class="text-muted">Carga de entrenamiento media por minuto de clase.</dd></div>
       </dl></div>
   </section>
-  <div class="panel scroll-x"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Tu evolución</h2>${tests.some(t => t.historico) ? '<p class="text-[13px] text-muted">Incluye tus tests de la temporada 24/25.</p>' : ''}</div><table class="data min-w-[600px]"><thead><tr><th>Periodo</th>${TEST_FIELDS.slice(1, 5).map(f => `<th>${f[1]}</th>`).join('')}</tr></thead><tbody>
-    ${tests.map(t => `<tr><td class="font-semibold">${t.periodo}${t.historico ? '' : ' 26'}</td>${['ag1', 'ag2', 'ag3', 'precision'].map(k => `<td class="tnum">${dec(t[k], k === 'precision' ? 0 : 2)}</td>`).join('')}</tr>`).join('')}
+  <div class="panel scroll-x"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Tu evolución</h2>${tests.some(t => t.historico) ? '<p class="text-[13px] text-muted">Incluye tus tests de temporadas anteriores.</p>' : ''}</div><table class="data min-w-[600px]"><thead><tr><th>Periodo</th>${TEST_FIELDS.slice(1, 5).map(f => `<th>${f[1]}</th>`).join('')}</tr></thead><tbody>
+    ${tests.length ? '' : '<tr><td colspan="5" class="text-muted">Todavía no hay tests registrados.</td></tr>'}${tests.map(t => `<tr><td class="font-semibold">${t.periodo}${t.historico ? '' : ' ' + state.settings.temporada}</td>${['ag1', 'ag2', 'ag3', 'precision'].map(k => `<td class="tnum">${t[k] == null ? '—' : dec(t[k], k === 'precision' ? 0 : 2)}</td>`).join('')}</tr>`).join('')}
   </tbody></table></div>`;
 }
 function afterFisicaAlumno() {
@@ -929,13 +965,16 @@ function vPagosAlumno() {
 /* ---------- Modales ---------- */
 function openModal(html) { const m = document.getElementById('modal'); m.innerHTML = `<div class="bg-surface w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto" role="dialog" aria-modal="true" style="padding-bottom:max(20px, env(safe-area-inset-bottom,0px))">${html}</div>`; m.hidden = false; setTimeout(() => m.querySelector('input,select,textarea')?.focus(), 30); }
 function closeModal() { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; }
+const modalHead = t => `<div class="flex items-center justify-between"><h2 class="text-3xl font-bold">${t}</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>`;
+const reales = () => state.alumnos.filter(a => !a.anon);
 function modalPago(forId) {
-  const a0 = forId ? alumno(forId) : state.alumnos[0];
-  openModal(`<form id="fPago" class="flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-3xl font-bold">Registrar pago</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>
-    <div><label class="lbl" for="pA">Alumno</label><select id="pA" class="field">${state.alumnos.map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
+  if (!reales().length) return toast('Da de alta a un alumno antes de registrar pagos');
+  const a0 = forId ? alumno(forId) : reales()[0];
+  openModal(`<form id="fPago" class="flex flex-col gap-3">${modalHead('Registrar pago')}
+    <div><label class="lbl" for="pA">Alumno</label><select id="pA" class="field">${reales().map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pC">Concepto</label><select id="pC" class="field">${CONCEPTOS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
     <div><label class="lbl" for="pI">Importe (€)</label><input id="pI" type="number" step="0.5" min="0" class="field tnum" value="${precioDe(grupo(a0.grupo).tarifa, 'mes')}"></div></div>
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pM">Método</label><select id="pM" class="field"><option>Bizum</option><option>Efectivo</option><option>Transferencia</option></select></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pM">Método</label><select id="pM" class="field"><option>Bizum</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
     <div><label class="lbl" for="pF">Fecha</label><input id="pF" type="date" class="field" value="${TODAY_ISO}"></div></div>
     <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="pE" checked class="w-4 h-4"> Enviar email de confirmación al alumno</label>
     <p class="text-[13px] text-muted" id="pHint"></p>
@@ -944,20 +983,35 @@ function modalPago(forId) {
   $('#pA').onchange = upd; $('#pC').onchange = upd; upd();
 }
 function modalTest(forId) {
-  const a0 = forId ? alumno(forId) : state.alumnos[0]; const per = ui.periodo;
+  if (!reales().length) return toast('Da de alta a un alumno primero');
+  const a0 = forId ? alumno(forId) : reales()[0]; const per = ui.periodo;
   const t = state.tests.find(x => x.alumno === a0.id && x.periodo === per) || {};
-  openModal(`<form id="fTest" class="flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-3xl font-bold">Test de ${per.toLowerCase()}</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>
-    <div><label class="lbl" for="tA">Alumno</label><select id="tA" class="field">${state.alumnos.map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
+  openModal(`<form id="fTest" class="flex flex-col gap-3">${modalHead(`Test de ${per.toLowerCase()}`)}
+    <div><label class="lbl" for="tA">Alumno</label><select id="tA" class="field">${reales().map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
     <div class="grid grid-cols-2 gap-3">${TEST_FIELDS.map(([k, l]) => `<div><label class="lbl" for="t_${k}">${l}</label><input id="t_${k}" type="number" step="0.01" class="field tnum" value="${t[k] ?? ''}"></div>`).join('')}</div>
     <button class="btn btn-primary" type="submit">Guardar test</button></form>`);
 }
-function modalAlta() {
-  openModal(`<form id="fAlta" class="flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-3xl font-bold">Dar de alta</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>
-    <div><label class="lbl" for="nN">Nombre y apellidos</label><input id="nN" class="field" required></div>
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="nE">Email</label><input id="nE" type="email" class="field" required></div><div><label class="lbl" for="nT">Teléfono</label><input id="nT" class="field"></div></div>
-    <div class="grid grid-cols-3 gap-3"><div><label class="lbl" for="nG">Grupo</label><select id="nG" class="field">${state.grupos.map(g => `<option value="${g.id}">${esc(g.nombre)}</option>`).join('')}</select></div><div><label class="lbl" for="nEd">Edad</label><input id="nEd" type="number" class="field" value="30"></div><div><label class="lbl" for="nP">Peso (kg)</label><input id="nP" type="number" class="field" value="70"></div></div>
-    <div><label class="lbl" for="nS">Sexo (para el cálculo de calorías)</label><select id="nS" class="field"><option value="F">Mujer</option><option value="M">Hombre</option></select></div>
-    <button class="btn btn-primary" type="submit">Dar de alta y generar código</button></form>`);
+function modalAlta(id) {
+  if (!state.grupos.length) { toast('Crea primero un grupo'); return modalGrupo(); }
+  const a = id ? alumno(id) : { nombre: '', email: '', tlf: '', grupo: state.grupos[0].id, fnac: '', peso: '', sexo: 'F', tutor: '', salud: false, imagen: false, inicial: 0 };
+  openModal(`<form id="fAlta" class="flex flex-col gap-3" data-id="${id || ''}">${modalHead(id ? 'Editar ficha' : 'Dar de alta')}
+    <div><label class="lbl" for="nN">Nombre y apellidos</label><input id="nN" class="field" required value="${esc(a.nombre)}"></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="nE">Email</label><input id="nE" type="email" class="field" required value="${esc(a.email)}"></div><div><label class="lbl" for="nT">Teléfono</label><input id="nT" class="field" value="${esc(a.tlf)}"></div></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="nG">Grupo</label><select id="nG" class="field">${state.grupos.map(g => `<option value="${g.id}" ${g.id === a.grupo ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select></div><div><label class="lbl" for="nF">Fecha de nacimiento</label><input id="nF" type="date" class="field" required value="${a.fnac || ''}"></div></div>
+    <div class="grid grid-cols-3 gap-3"><div><label class="lbl" for="nS">Sexo</label><select id="nS" class="field"><option value="F" ${a.sexo === 'F' ? 'selected' : ''}>Mujer</option><option value="M" ${a.sexo === 'M' ? 'selected' : ''}>Hombre</option></select></div><div><label class="lbl" for="nP">Peso (kg)</label><input id="nP" type="number" step="0.1" class="field" value="${a.peso || ''}"></div><div><label class="lbl" for="nI">Clases previas</label><input id="nI" type="number" class="field" value="${a.inicial || 0}"></div></div>
+    <div><label class="lbl" for="nTu">Madre, padre o tutor (menores)</label><input id="nTu" class="field" value="${esc(a.tutor || '')}"></div>
+    <label class="flex items-start gap-2 text-[14px]"><input type="checkbox" id="nSal" class="w-4 h-4 mt-0.5" ${a.salud ? 'checked' : ''}> Consiente el registro de su frecuencia cardíaca y su análisis (dato de salud)</label>
+    <label class="flex items-start gap-2 text-[14px]"><input type="checkbox" id="nIm" class="w-4 h-4 mt-0.5" ${a.imagen ? 'checked' : ''}> Autoriza el uso de su imagen</label>
+    <p class="text-[13px] text-muted">El peso, la edad y el sexo se usan para calcular las calorías y las zonas de esfuerzo.</p>
+    <button class="btn btn-primary" type="submit">${id ? 'Guardar cambios' : 'Dar de alta y enviar código'}</button></form>`);
+}
+function modalGrupo(id) {
+  const g = id ? grupo(id) : { nombre: '', dia: 1, hora: '19:00', fin: '20:00', tarifa: TARIFAS[0].id, nivel: '' };
+  openModal(`<form id="fGrupo" class="flex flex-col gap-3" data-id="${id || ''}">${modalHead(id ? 'Editar grupo' : 'Nuevo grupo')}
+    <div><label class="lbl" for="gN">Nombre</label><input id="gN" class="field" required value="${esc(g.nombre)}" placeholder="Iniciación adultos"></div>
+    <div class="grid grid-cols-3 gap-3"><div><label class="lbl" for="gD">Día</label><select id="gD" class="field">${[1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}" ${g.dia === d ? 'selected' : ''}>${DAYS[d]}</option>`).join('')}</select></div><div><label class="lbl" for="gH">Empieza</label><input id="gH" type="time" class="field" value="${g.hora}"></div><div><label class="lbl" for="gF">Termina</label><input id="gF" type="time" class="field" value="${g.fin}"></div></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="gT">Tarifa</label><select id="gT" class="field">${TARIFAS.map(t => `<option value="${t.id}" ${g.tarifa === t.id ? 'selected' : ''}>${t.nombre} · ${fmtEur(t.mes)}/mes</option>`).join('')}</select></div><div><label class="lbl" for="gNv">Nivel</label><input id="gNv" class="field" value="${esc(g.nivel || '')}" placeholder="Iniciación"></div></div>
+    <button class="btn btn-primary" type="submit">${id ? 'Guardar grupo' : 'Crear grupo'}</button></form>`);
 }
 
 /* ---------- Charts ---------- */
@@ -976,14 +1030,148 @@ function baseOpts({ y = {}, stacked = false } = {}) {
 }
 function mkChart(id, cfg) { const el = document.getElementById(id); if (!el || !window.Chart) return; if (charts[id]) charts[id].destroy(); charts[id] = new Chart(el, cfg); }
 
+/* ==========================================================
+   CONEXIÓN CON SUPABASE (modo real)
+   ========================================================== */
+const APP_URL = location.origin + location.pathname;
+const edadDe = f => f ? Math.max(5, Math.floor((Date.now() - parseISO(f).getTime()) / 31557600000)) : 30;
+const ESTADO_EMAIL = { en_cola: 'En cola', enviado: 'Enviado', error: 'Error' };
+async function need(q) { const { data, error } = await q; if (error) throw error; return data; }
+async function fn(name, body) {
+  const { data, error } = await sb.functions.invoke(name, { body });
+  if (error) { let msg = error.message; try { const j = await error.context.json(); msg = j.error || msg; } catch (e) {} throw new Error(msg); }
+  return data;
+}
+function fallo(err) { console.error(err); toast('No se pudo guardar: ' + (err.message || err)); loadAll(true); }
+
+async function loadAll(silencioso) {
+  if (!silencioso) { ui.auth = 'cargando'; render(); }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { ui.auth = 'login'; return render(); }
+    ui.email = session.user.email;
+    ui.isAdmin = (await need(sb.rpc('es_admin'))) === true;
+    const q = t => sb.from(t).select('*');
+    const vacio = Promise.resolve({ data: [], error: null });
+    const [aj, tar, gr, al, pa, se, as, fc, te, em, av, ia] = (await Promise.all([
+      q('ajustes').maybeSingle(), q('tarifas').order('id'), q('grupos').eq('activo', true).order('dia_semana'), q('alumnos').order('nombre'), q('pagos'),
+      q('sesiones'), q('asistencia'), q('registros_fc').order('fecha'), q('tests_fisicos'),
+      ui.isAdmin ? q('emails').order('creado', { ascending: false }).limit(300) : vacio, ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false })
+    ])).map(r => { if (r.error) throw r.error; return r.data; });
+    const s = emptyState();
+    if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico }; SEASON_START = aj.inicio_temporada; }
+    if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre }));
+    s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
+    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
+    s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
+    const porId = {};
+    se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; });
+    as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || []).push(x.alumno_id); });
+    s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor }));
+    s.tests = te.map(t => { const hist = t.temporada !== s.settings.temporada; return { id: t.id, alumno: t.alumno_id, periodo: hist ? `${t.periodo.slice(0, 3)} ${t.temporada}` : t.periodo, fecha: t.fecha || '', historico: hist, peso: t.peso == null ? null : +t.peso, ag1: t.agilidad_1 == null ? null : +t.agilidad_1, ag2: t.agilidad_2 == null ? null : +t.agilidad_2, ag3: t.agilidad_3 == null ? null : +t.agilidad_3, precision: t.precision, rpe: t.rpe }; });
+    s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
+    av.forEach(x => { s.warned[`${x.alumno_id}|${x.clases_recibidas}`] = true; });
+    ia.forEach(x => { if (!s.informes[x.alumno_id]) s.informes[x.alumno_id] = { id: x.id, texto: x.texto, publicado: x.publicado, generado: x.generado }; });
+    state = s;
+    if (!ui.isAdmin) {
+      const me = state.alumnos[0];
+      if (!me) { ui.auth = 'sin-ficha'; return render(); }
+      const comp = await need(sb.rpc('comparativa'));
+      (comp?.alumnos || []).forEach(x => state.alumnos.push({ id: x.k, anon: true, nombre: 'Compañero', grupo: x.grupo, edad: x.edad, sexo: x.sexo, peso: 70, inicial: 0, email: '' }));
+      (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0 }));
+      (comp?.tests || []).forEach(x => state.tests.push({ id: x.k + x.periodo, alumno: x.k, periodo: x.periodo, fecha: '', ag1: x.ag1 == null ? null : +x.ag1, ag2: x.ag2 == null ? null : +x.ag2, ag3: x.ag3 == null ? null : +x.ag3, precision: x.precision }));
+      ui.role = 'alumno'; ui.studentLogged = me.id; if (!['inicio', 'informe', 'fisica', 'pagos'].includes(ui.view)) ui.view = 'inicio';
+    } else if (!silencioso) { ui.role = 'admin'; ui.view = 'panel'; }
+    ui.auth = 'ok';
+  } catch (err) {
+    console.error(err); ui.auth = 'error'; ui.authError = err.message || String(err);
+  }
+  render();
+}
+
+const P = {
+  async pago(p) { const d = await need(sb.from('pagos').insert({ alumno_id: p.alumno, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: p.importe }).select('id').single()); p.id = d.id; },
+  async email(m) { const d = await need(sb.from('emails').insert({ alumno_id: m.alumno, destinatario: m.to, nombre_destinatario: m.toName, tipo: m.tipo, asunto: m.subject, cuerpo: m.body }).select('id, creado').single()); m.id = d.id; m.fecha = d.creado; },
+  async sesion(key, extra = {}) {
+    const [grupo_id, fecha] = key.split('|');
+    const d = await need(sb.from('sesiones').upsert({ grupo_id, fecha, ...extra }, { onConflict: 'grupo_id,fecha' }).select('id').single());
+    state.sesionIds[key] = d.id; return d.id;
+  },
+  async asistencia(key, ids) {
+    const id = await P.sesion(key);
+    await need(sb.from('asistencia').delete().eq('sesion_id', id));
+    if (ids.length) await need(sb.from('asistencia').insert(ids.map(a => ({ sesion_id: id, alumno_id: a }))));
+  },
+  async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
+  async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null }).select('id').single()); r.id = d.id; },
+  async test(t) {
+    const d = await need(sb.from('tests_fisicos').upsert({ alumno_id: t.alumno, temporada: state.settings.temporada, periodo: t.periodo, fecha: t.fecha || TODAY_ISO, peso: t.peso, agilidad_1: t.ag1, agilidad_2: t.ag2, agilidad_3: t.ag3, precision: t.precision == null ? null : Math.round(t.precision), rpe: t.rpe == null ? null : Math.round(t.rpe) }, { onConflict: 'alumno_id,temporada,periodo' }).select('id').single()); t.id = d.id;
+  },
+  async alumno(a, nuevo) {
+    const row = { nombre: a.nombre, email: a.email, telefono: a.tlf || null, grupo_id: a.grupo, fecha_nacimiento: a.fnac || null, sexo: a.sexo, peso_kg: a.peso || null, clases_iniciales: a.inicial || 0, tutor_nombre: a.tutor || null, consentimiento_salud: !!a.salud, consentimiento_imagen: !!a.imagen };
+    const d = nuevo ? await need(sb.from('alumnos').insert(row).select('id, codigo_acceso').single()) : await need(sb.from('alumnos').update(row).eq('id', a.id).select('id, codigo_acceso').single());
+    a.id = d.id; a.codigo = d.codigo_acceso;
+  },
+  async grupo(g, nuevo) {
+    const row = { nombre: g.nombre, dia_semana: g.dia, hora_inicio: g.hora, hora_fin: g.fin, tarifa_id: g.tarifa, nivel: g.nivel || null };
+    const d = nuevo ? await need(sb.from('grupos').insert(row).select('id').single()) : await need(sb.from('grupos').update(row).eq('id', g.id).select('id').single());
+    g.id = d.id;
+  },
+  async ajustes(s) { await need(sb.from('ajustes').update({ escuela: s.escuela, remitente: s.remitente, umbral_aviso: s.umbral }).eq('id', 1)); },
+  async enviar(manual) {
+    const pend = state.outbox.filter(m => m.estado === 'En cola').length;
+    if (!pend) return;
+    try {
+      const r = await fn('enviar-emails', {});
+      const em = await need(sb.from('emails').select('id, estado, error').in('id', state.outbox.slice(0, 300).map(m => m.id)));
+      em.forEach(x => { const m = state.outbox.find(y => y.id === x.id); if (m) { m.estado = ESTADO_EMAIL[x.estado]; m.error = x.error; } });
+      toast(r.errores ? `${r.enviados} enviados, ${r.errores} con error` : `${r.enviados} ${r.enviados === 1 ? 'email enviado' : 'emails enviados'}`);
+    } catch (err) { toast(manual ? 'No se pudieron enviar: ' + err.message : 'Emails en cola: ' + err.message); }
+    render();
+  }
+};
+async function tras(accion, okMsg) {
+  if (!LIVE) { save(); if (okMsg) toast(okMsg); render(); return; }
+  try { await accion(); if (okMsg) toast(okMsg); render(); if (state.settings.auto) await P.enviar(false); }
+  catch (err) { fallo(err); }
+}
+
+function vAuth() {
+  const tab = ui.authTab || 'entrar';
+  const marco = inner => `<div class="min-h-full flex flex-col">
+    <div class="bg-turf text-turfink"><div class="gutter py-4 max-w-5xl mx-auto flex items-center gap-3">${LOGO}<div class="font-display text-2xl font-bold">Bandeja</div></div>
+      <div class="gutter pb-12 pt-6 max-w-5xl mx-auto"><h1 class="text-5xl sm:text-6xl font-bold leading-[.95] max-w-xl">Tu pádel, clase a clase</h1><p class="mt-3 max-w-lg opacity-85">Consulta tu bono, lo que vamos a trabajar en las próximas clases y cómo responde tu corazón en pista.</p></div></div>
+    <div class="gutter -mt-8 max-w-5xl mx-auto w-full pb-10"><div class="panel p-5 sm:p-6 max-w-md flex flex-col gap-4 shadow-[0_10px_30px_-12px_rgb(var(--ink)/.25)]">${inner}</div></div></div>`;
+  if (ui.auth === 'cargando') return marco('<p class="text-muted">Cargando tus datos…</p>');
+  if (ui.auth === 'error') return marco(`<h2 class="text-2xl font-bold">No se pudieron cargar los datos</h2><p class="text-[14px] text-muted">${esc(ui.authError)}</p><div class="flex gap-2"><button class="btn btn-primary" data-reload>Reintentar</button><button class="btn btn-ghost" data-logout>Salir</button></div>`);
+  if (ui.auth === 'sin-ficha') return marco(`<h2 class="text-2xl font-bold">Tu cuenta no está vinculada a ningún alumno</h2><p class="text-[14px] text-muted">Has entrado como ${esc(ui.email)}, pero esa cuenta no corresponde a ningún alumno activo. Pide a tu entrenador que revise tu ficha.</p><button class="btn btn-ghost self-start" data-logout>Salir</button>`);
+  if (ui.auth === 'nueva-clave') return marco(`<form id="fNueva" class="flex flex-col gap-3"><h2 class="text-2xl font-bold">Elige una contraseña nueva</h2><div><label class="lbl" for="aP2">Contraseña nueva</label><input id="aP2" type="password" minlength="8" required class="field" autocomplete="new-password"></div><button class="btn btn-primary" type="submit">Guardar contraseña</button></form>`);
+  const tabs = `<div class="inline-flex bg-surface2 rounded-full p-1 text-[13px] font-semibold self-start" role="tablist">${[['entrar', 'Entrar'], ['activar', 'Activar mi acceso']].map(([k, l]) => `<button type="button" class="px-3 py-1 rounded-full ${tab === k ? 'bg-court text-courtink' : 'text-muted'}" data-auth-tab="${k}">${l}</button>`).join('')}</div>`;
+  const err = ui.authMsg ? `<p class="text-[13.5px] ${ui.authOk ? 'text-ok' : 'text-bad'}">${esc(ui.authMsg)}</p>` : '';
+  if (tab === 'activar') return marco(`${tabs}<form id="fActivar" class="flex flex-col gap-3">
+    <p class="text-[14px] text-muted">Usa el código que te llegó por email y el mismo email que diste al inscribirte.</p>
+    <div><label class="lbl" for="aC">Código de acceso</label><input id="aC" class="field font-mono tracking-wider uppercase" placeholder="PD-XXXXX" required></div>
+    <div><label class="lbl" for="aE">Email</label><input id="aE" type="email" class="field" required autocomplete="email"></div>
+    <div><label class="lbl" for="aP">Elige una contraseña</label><input id="aP" type="password" minlength="8" class="field" required autocomplete="new-password"><p class="text-[12.5px] text-muted mt-1">Mínimo 8 caracteres.</p></div>
+    ${err}<button class="btn btn-primary" type="submit">Activar y entrar</button></form>`);
+  if (tab === 'olvido') return marco(`${tabs}<form id="fOlvido" class="flex flex-col gap-3"><p class="text-[14px] text-muted">Te enviaremos un enlace para elegir una contraseña nueva.</p><div><label class="lbl" for="oE">Email</label><input id="oE" type="email" class="field" required autocomplete="email"></div>${err}<button class="btn btn-primary" type="submit">Enviar enlace</button><button type="button" class="text-[13.5px] text-court font-semibold self-start" data-auth-tab="entrar">Volver</button></form>`);
+  return marco(`${tabs}<form id="fEntrar" class="flex flex-col gap-3">
+    <div><label class="lbl" for="eE">Email</label><input id="eE" type="email" class="field" required autocomplete="email"></div>
+    <div><label class="lbl" for="eP">Contraseña</label><input id="eP" type="password" class="field" required autocomplete="current-password"></div>
+    ${err}<button class="btn btn-primary" type="submit">Entrar</button>
+    <button type="button" class="text-[13.5px] text-court font-semibold self-start" data-auth-tab="olvido">He olvidado mi contraseña</button>
+    <p class="text-[13px] text-muted">¿Primera vez? Pulsa «Activar mi acceso» con el código que te enviamos.</p></form>`);
+}
+
 /* ---------- Render ---------- */
 function render() {
   Object.values(charts).forEach(c => c.destroy()); for (const k in charts) delete charts[k];
   const app = document.getElementById('app');
-  if (ui.role === 'alumno' && !ui.studentLogged) { app.innerHTML = vLogin(); return; }
+  if (LIVE && ui.auth !== 'ok') { app.innerHTML = vAuth(); return; }
+  if (!LIVE && ui.role === 'alumno' && !ui.studentLogged) { app.innerHTML = vLogin(); return; }
   let html, after;
   if (ui.role === 'admin') {
-    if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
+    if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
     else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, fisica: () => { html = vFisica(); after = afterFisica; }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, fisica: () => { html = vFisicaAlumno(); after = afterFisicaAlumno; }, pagos: () => { html = vPagosAlumno(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
@@ -993,21 +1181,25 @@ function render() {
 }
 function rerenderIf(v) { if (ui.view === v) render(); }
 function go(v) { ui.view = v; render(); window.scrollTo({ top: 0 }); }
-let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
-document.addEventListener('click', e => {
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout]');
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
   if (d.go) return go(d.go);
-  if (d.role) { ui.role = d.role; ui.view = d.role === 'admin' ? 'panel' : 'inicio'; return render(); }
+  if (d.role) {
+    if (d.role === 'alumno' && LIVE && !ui.studentLogged) { if (!reales().length) return toast('Aún no hay alumnos'); ui.studentLogged = reales()[0].id; }
+    ui.role = d.role; ui.view = d.role === 'admin' ? 'panel' : 'inicio'; return render();
+  }
   if (d.alumno) return go('alumno:' + d.alumno);
   if (d.open === 'pago') return modalPago(d.for);
   if (d.open === 'test') return modalTest(d.for);
-  if (d.open === 'alta') return modalAlta();
+  if (d.open === 'alta') return modalAlta(d.for);
+  if (d.open === 'grupo') return modalGrupo(d.for);
   if (d.close !== undefined) return closeModal();
-  if (d.aviso) { queueEmail(alumno(d.aviso), 'aviso'); save(); toast('Aviso de pago en la bandeja de salida'); return render(); }
+  if (d.aviso) { const m = queueEmail(alumno(d.aviso), 'aviso'); return tras(() => P.email(m), LIVE ? null : 'Aviso de pago en la bandeja de salida'); }
   if (d.filtro) { ui.filtroGrupo = d.filtro; return render(); }
   if (d.clase) { ui.claseKey = d.clase; return render(); }
   if (d.periodo) { ui.periodo = d.periodo; return render(); }
@@ -1017,48 +1209,125 @@ document.addEventListener('click', e => {
   if (d.btOff) return stopSlot(+d.btOff);
   if (d.sim) return startSim(+d.sim);
   if (d.live) return toggleLive();
-  if (d.sendall !== undefined) { state.outbox.forEach(m => { if (m.estado === 'En cola') m.estado = 'Enviado (demo)'; }); save(); toast('Marcados como enviados. En la versión final salen de verdad.'); return render(); }
+  if (d.sendall !== undefined) {
+    if (LIVE) { t.disabled = true; return P.enviar(true); }
+    state.outbox.forEach(m => { if (m.estado === 'En cola') m.estado = 'Enviado (demo)'; }); save(); toast('Marcados como enviados. Con Supabase conectado salen de verdad.'); return render();
+  }
   if (d.reset !== undefined) { S.del(KEY); state = seed(); ui.claseKey = null; toast('Datos de ejemplo restablecidos'); return render(); }
   if (d.fill) { $('#lCode').value = d.fill; return; }
-  if (d.logout !== undefined) { ui.studentLogged = null; return render(); }
+  if (d.logout !== undefined) {
+    if (LIVE) { await sb.auth.signOut(); state = emptyState(); ui = { ...ui, auth: 'login', role: 'admin', studentLogged: null, view: 'panel', authMsg: null }; return render(); }
+    ui.studentLogged = null; return render();
+  }
+  if (d.authTab) { ui.authTab = d.authTab; ui.authMsg = null; return render(); }
+  if (d.reload !== undefined) return loadAll();
+  if (d.iaGen) {
+    const a = alumno(d.iaGen);
+    if (!LIVE) { state.informes[a.id] = { id: 'demo', texto: interpretacion(a).join('\n\n'), publicado: false }; save(); return render(); }
+    t.disabled = true; t.textContent = 'Generando…';
+    try { const r = await fn('interpretar-fc', { alumno_id: a.id }); state.informes[a.id] = r; toast('Borrador generado. Revísalo antes de publicarlo.'); }
+    catch (err) { toast(err.message); }
+    return render();
+  }
+  if (d.iaPub) {
+    const inf = state.informes[d.iaPub]; const texto = $('#iaTxt').value.trim();
+    if (!inf || !texto) return toast('Genera primero un borrador');
+    inf.texto = texto; inf.publicado = true;
+    return tras(() => need(sb.from('informes_ia').update({ texto, publicado: true }).eq('id', inf.id)), 'Interpretación publicada en el portal del alumno');
+  }
 });
 document.addEventListener('change', e => {
   if (e.target.dataset.slotAlumno !== undefined) { live.slots[+e.target.dataset.slotAlumno].alumno = e.target.value || null; updateSlot(+e.target.dataset.slotAlumno); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal').hidden) closeModal(); });
-document.addEventListener('submit', e => {
+document.addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target;
+  const btn = f.querySelector('button[type=submit]'); if (btn) btn.disabled = true;
+  try { await onSubmit(f); } finally { if (btn && document.body.contains(btn)) btn.disabled = false; }
+});
+async function onSubmit(f) {
   if (f.id === 'fLogin') { const code = $('#lCode').value.trim().toUpperCase(); const a = state.alumnos.find(x => x.codigo === code); if (!a) { $('#lErr').hidden = false; return; } ui.studentLogged = a.id; ui.view = 'inicio'; return render(); }
+  if (f.id === 'fEntrar') {
+    const { error } = await sb.auth.signInWithPassword({ email: $('#eE').value.trim(), password: $('#eP').value });
+    if (error) { ui.authMsg = 'Email o contraseña incorrectos. Si es tu primera vez, usa «Activar mi acceso».'; ui.authOk = false; return render(); }
+    ui.authMsg = null; return loadAll();
+  }
+  if (f.id === 'fActivar') {
+    const email = $('#aE').value.trim(), password = $('#aP').value;
+    try { await fn('activar-acceso', { codigo: $('#aC').value, email, password }); }
+    catch (err) { ui.authMsg = err.message; ui.authOk = false; return render(); }
+    await sb.auth.signInWithPassword({ email, password }); ui.authMsg = null; return loadAll();
+  }
+  if (f.id === 'fOlvido') {
+    const { error } = await sb.auth.resetPasswordForEmail($('#oE').value.trim(), { redirectTo: APP_URL });
+    ui.authMsg = error ? 'No se pudo enviar el enlace: ' + error.message : 'Si el email está registrado, te llegará un enlace en unos minutos.'; ui.authOk = !error; return render();
+  }
+  if (f.id === 'fNueva') {
+    const { error } = await sb.auth.updateUser({ password: $('#aP2').value });
+    if (error) return toast(error.message);
+    toast('Contraseña actualizada'); history.replaceState(null, '', APP_URL); return loadAll();
+  }
   if (f.id === 'fPago') {
     const a = alumno($('#pA').value); const c = CONCEPTOS.find(x => x.id === $('#pC').value);
     const p = { id: 'P' + Date.now(), alumno: a.id, fecha: $('#pF').value || TODAY_ISO, metodo: $('#pM').value, concepto: c.id, clases: c.clases, importe: +$('#pI').value || 0 };
+    const sent = $('#pE').checked;
     state.pagos.push(p);
-    if ($('#pE').checked) queueEmail(a, 'confirmacion', { concepto: c.nombre, importe: p.importe, fecha: p.fecha, metodo: p.metodo });
-    const sent = $('#pE').checked; save(); closeModal(); toast(sent ? `Pago registrado. Email de confirmación para ${a.nombre.split(' ')[0]} en cola.` : 'Pago registrado'); return render();
+    const m = sent ? queueEmail(a, 'confirmacion', { concepto: c.nombre, importe: p.importe, fecha: p.fecha, metodo: p.metodo }) : null;
+    closeModal();
+    return tras(async () => { await P.pago(p); if (m) await P.email(m); }, sent ? `Pago registrado. Email de confirmación para ${a.nombre.split(' ')[0]}.` : 'Pago registrado');
   }
   if (f.id === 'fAsis') {
     const ids = [...f.querySelectorAll('input[name=p]:checked')].map(i => i.value);
-    state.asistencia[ui.claseKey] = ids; const n = checkAvisos(ids); save();
-    toast(n ? `Asistencia guardada. ${n} ${n === 1 ? 'aviso de pago preparado' : 'avisos de pago preparados'}.` : 'Asistencia guardada'); return render();
+    const key = ui.claseKey;
+    state.asistencia[key] = ids; const nuevos = checkAvisos(ids);
+    return tras(async () => { await P.asistencia(key, ids); for (const { a, n, m } of nuevos) { await P.aviso(a, n); await P.email(m); } },
+      nuevos.length ? `Asistencia guardada. ${nuevos.length} ${nuevos.length === 1 ? 'aviso de pago' : 'avisos de pago'}.` : 'Asistencia guardada');
   }
-  if (f.id === 'fCont') { state.contenidos[ui.claseKey] = { titulo: $('#cTit').value.trim() || 'Sin título', items: $('#cItems').value.split('\n').map(s => s.trim()).filter(Boolean) }; save(); toast('Contenidos guardados'); return; }
+  if (f.id === 'fCont') {
+    const c = { titulo: $('#cTit').value.trim() || 'Sin título', items: $('#cItems').value.split('\n').map(s => s.trim()).filter(Boolean) };
+    state.contenidos[ui.claseKey] = c; const key = ui.claseKey;
+    return tras(() => P.sesion(key, { titulo: c.titulo, contenidos: c.items }), 'Contenidos guardados');
+  }
   if (f.id === 'fTest') {
     const id = $('#tA').value; let t = state.tests.find(x => x.alumno === id && x.periodo === ui.periodo);
     if (!t) { t = { id: 'T' + Date.now(), alumno: id, periodo: ui.periodo, fecha: TODAY_ISO }; state.tests.push(t); }
     TEST_FIELDS.forEach(([k]) => { const v = $('#t_' + k).value; t[k] = v === '' ? null : +v; });
-    save(); closeModal(); toast('Test guardado'); return render();
+    closeModal(); return tras(() => P.test(t), 'Test guardado');
   }
   if (f.id === 'fAlta') {
-    const n = state.alumnos.length + 1;
-    const a = { id: 'A' + Date.now(), nombre: $('#nN').value.trim(), email: $('#nE').value.trim(), tlf: $('#nT').value.trim(), grupo: $('#nG').value, edad: +$('#nEd').value || 30, peso: +$('#nP').value || 70, sexo: $('#nS').value, inicial: 0, codigo: `PD-${String(1000 + Math.floor(Math.random() * 8999))}`, alta: TODAY_ISO };
-    state.alumnos.push(a); save(); closeModal(); toast(`Alta hecha. Código de acceso: ${a.codigo}`); return go('alumno:' + a.id);
+    const editId = f.dataset.id;
+    const datos = { nombre: $('#nN').value.trim(), email: $('#nE').value.trim(), tlf: $('#nT').value.trim(), grupo: $('#nG').value, fnac: $('#nF').value, sexo: $('#nS').value, peso: +$('#nP').value || 70, inicial: +$('#nI').value || 0, tutor: $('#nTu').value.trim(), salud: $('#nSal').checked, imagen: $('#nIm').checked };
+    datos.edad = edadDe(datos.fnac);
+    closeModal();
+    if (editId) { const a = alumno(editId); Object.assign(a, datos); return tras(() => P.alumno(a, false), 'Ficha actualizada'); }
+    const a = { id: 'A' + Date.now(), codigo: `PD-${Math.random().toString(36).slice(2, 7).toUpperCase()}`, ...datos };
+    state.alumnos.push(a);
+    if (!LIVE) { queueEmail(a, 'bienvenida'); save(); toast(`Alta hecha. Código de acceso: ${a.codigo}`); return go('alumno:' + a.id); }
+    try { await P.alumno(a, true); const m = queueEmail(a, 'bienvenida'); await P.email(m); toast(`Alta hecha. Código de acceso: ${a.codigo}`); go('alumno:' + a.id); if (state.settings.auto) await P.enviar(false); }
+    catch (err) { fallo(err); }
+    return;
   }
-  if (f.id === 'fAjustes') { state.settings.escuela = $('#sEsc').value.trim() || state.settings.escuela; state.settings.remitente = $('#sRem').value.trim(); state.settings.umbral = +$('#sUmb').value; save(); toast('Reglas guardadas'); return render(); }
-});
+  if (f.id === 'fGrupo') {
+    const editId = f.dataset.id;
+    const datos = { nombre: $('#gN').value.trim(), dia: +$('#gD').value, hora: $('#gH').value, fin: $('#gF').value, tarifa: $('#gT').value, nivel: $('#gNv').value.trim() };
+    closeModal();
+    if (editId) { const g = grupo(editId); Object.assign(g, datos); return tras(() => P.grupo(g, false), 'Grupo guardado'); }
+    const g = { id: 'G' + Date.now(), ...datos }; state.grupos.push(g); ui.filtroGrupo = 'todos';
+    return tras(() => P.grupo(g, true), 'Grupo creado');
+  }
+  if (f.id === 'fAjustes') {
+    state.settings.escuela = $('#sEsc').value.trim() || state.settings.escuela; state.settings.remitente = $('#sRem').value.trim(); state.settings.umbral = +$('#sUmb').value;
+    return tras(() => P.ajustes(state.settings), 'Reglas guardadas');
+  }
+}
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('resize', () => { if (ui.view === 'vivo') drawLive(); });
-render();
+if (LIVE) {
+  sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { ui.auth = 'nueva-clave'; render(); } });
+  if (/type=recovery/.test(location.hash)) { ui.auth = 'nueva-clave'; render(); } else loadAll();
+} else render();
 </script>
+
 
 </html>

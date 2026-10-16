@@ -1,6 +1,6 @@
 # Evita que Supabase pause el proyecto gratuito en vacaciones:
-# hace una consulta mínima cada 3 días.
-# Requiere dos "secrets" en el repositorio: SUPABASE_URL y SUPABASE_ANON_KEY.
+# hace una consulta mínima a la base de datos cada 3 días.
+# La URL y la clave publicable ya son públicas (están en index.html); la seguridad la ponen las políticas de la base de datos.
 name: Mantener Supabase activo
 on:
   schedule:
@@ -12,6 +12,5 @@ jobs:
     steps:
       - name: Consulta mínima a la base de datos
         run: |
-          curl -fsS "${{ secrets.SUPABASE_URL }}/rest/v1/tarifas?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
+          curl -fsS "https://kbqlnomchinlshaxccpo.supabase.co/rest/v1/tarifas?select=id&limit=1" \
+            -H "apikey: sb_publishable_NqXl9xDNJwFPYqW4ZZdZyQ_DzdYjIY8"
