@@ -1,6 +1,6 @@
 # Bandeja
 
-App de la escuela de pádel: pagos y bonos con emails automáticos, registro de frecuencia cardíaca con pulsómetros Bluetooth, tests de condición física, interpretación con IA y un portal para cada alumno.
+App de la escuela de pádel: pagos y bonos con emails automáticos, registro de frecuencia cardíaca con pulsómetros Bluetooth, tests de condición física, informes para cada alumno y un portal propio. Todo con servicios gratuitos.
 
 - **App:** https://agarcia-poz.github.io/bandeja/
 - **Modo demostración** (datos de ejemplo, no toca la base de datos): https://agarcia-poz.github.io/bandeja/#demo
@@ -13,16 +13,12 @@ App de la escuela de pádel: pagos y bonos con emails automáticos, registro de 
 | `supabase/migrations/` | Supabase (proyecto `bandeja`, París) | Tablas, seguridad por filas y comparativa anónima |
 | `supabase/functions/activar-acceso` | Supabase Edge Functions | El alumno activa su cuenta con código + email |
 | `supabase/functions/enviar-emails` | Supabase Edge Functions | Envía la cola de emails a través de Gmail |
-| `supabase/functions/interpretar-fc` | Supabase Edge Functions | Redacta con IA la interpretación de los datos (borrador que revisa el entrenador) |
 | `apps-script/Code.gs` | Google Apps Script en escuelapadelag@gmail.com | Envía los emails desde la Gmail de la escuela |
 | `.github/workflows/mantener-activo.yml` | GitHub Actions | Consulta mínima cada 3 días para que Supabase no pause el proyecto |
 
-## Secretos de las funciones (Supabase → Edge Functions → Secrets)
+## Configuración privada
 
-- `APPS_SCRIPT_URL`: URL `/exec` de la implementación del script de Gmail.
-- `APPS_SCRIPT_SECRETO`: la misma clave guardada en las propiedades del script.
-- `ANTHROPIC_API_KEY`: clave de la API de Claude para las interpretaciones.
-- `ANTHROPIC_MODEL` (opcional): modelo a usar; por defecto `claude-sonnet-5-5`.
+La URL del script de Gmail y su secreto están en la tabla `config_privada` de Supabase (solo la leen las funciones del servidor). Si cambias el secreto en Apps Script, cámbialo también ahí.
 
 ## Pulsómetros
 
@@ -38,4 +34,4 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 
 ## Protección de datos
 
-La frecuencia cardíaca es un dato de salud (art. 9 RGPD): la ficha recoge el consentimiento (y el tutor en menores). Cada alumno solo puede leer sus propios datos; las comparativas con el grupo se calculan sobre datos anónimos. A la IA no se le envía el nombre del alumno.
+La frecuencia cardíaca es un dato de salud (art. 9 RGPD): la ficha recoge el consentimiento (y el tutor en menores). Cada alumno solo puede leer sus propios datos; las comparativas con el grupo se calculan sobre datos anónimos. Los informes se redactan dentro de la app; los datos no salen a servicios externos.

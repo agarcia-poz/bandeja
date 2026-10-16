@@ -1,5 +1,5 @@
 // Envía los emails en cola a través del script de Google Apps Script de la cuenta de Gmail de la escuela.
-import { cors, json, servicio, esAdmin } from '../_shared/comun.ts';
+import { cors, json, servicio, esAdmin, config } from '../_shared/comun.ts';
 
 const escapar = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
@@ -21,9 +21,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (!(await esAdmin(req))) return json({ error: 'Solo el administrador puede enviar emails' }, 401);
 
-  const url = Deno.env.get('APPS_SCRIPT_URL');
-  const secreto = Deno.env.get('APPS_SCRIPT_SECRETO');
-  if (!url || !secreto) return json({ error: 'Falta configurar APPS_SCRIPT_URL o APPS_SCRIPT_SECRETO' }, 500);
+  const url = await config('APPS_SCRIPT_URL');
+  const secreto = await config('APPS_SCRIPT_SECRETO');
+  if (!url || !secreto) return json({ error: 'Falta configurar la URL o el secreto del script de Gmail' }, 500);
 
   const sb = servicio();
   const { data: aj } = await sb.from('ajustes').select('escuela, remitente').eq('id', 1).single();

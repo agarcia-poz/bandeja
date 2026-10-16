@@ -579,9 +579,9 @@ function iaPanel(a) {
   const inf = state.informes[a.id]; const n = sesionesDe(a.id).length;
   return `<section class="panel p-5 flex flex-col gap-3 min-w-0">
     <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Interpretación para el alumno</h2>${inf ? `<span class="chip ${inf.publicado ? 'chip-ok' : 'chip-warn'}">${inf.publicado ? 'Publicada en su portal' : 'Borrador sin publicar'}</span>` : '<span class="chip chip-neutral">Sin generar</span>'}</div>
-    <p class="text-[13.5px] text-muted max-w-2xl">La IA redacta un texto a partir de sus sesiones con pulsómetro, la media de su grupo y sus tests, sin enviar su nombre. Revísalo y corrígelo antes de publicarlo.${LIVE ? '' : ' En el modo demostración se genera un borrador automático.'}</p>
+    <p class="text-[13.5px] text-muted max-w-2xl">La app redacta un borrador comparando sus sesiones con pulsómetro con la media de su grupo. Revísalo, añade tus observaciones de pista y publícalo: el alumno solo ve la versión publicada.</p>
     ${inf ? `<label class="lbl" for="iaTxt">Texto</label><textarea id="iaTxt" rows="9" class="field leading-relaxed">${esc(inf.texto)}</textarea>` : ''}
-    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Generar de nuevo' : 'Generar con IA'}</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
+    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Generar de nuevo' : 'Generar borrador'}</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
     ${n < 2 ? '<p class="text-[13px] text-muted">Hacen falta al menos 2 sesiones con pulsómetro.</p>' : ''}
   </section>`;
 }
@@ -1223,10 +1223,10 @@ document.addEventListener('click', async e => {
   if (d.reload !== undefined) return loadAll();
   if (d.iaGen) {
     const a = alumno(d.iaGen);
-    if (!LIVE) { state.informes[a.id] = { id: 'demo', texto: interpretacion(a).join('\n\n'), publicado: false }; save(); return render(); }
-    t.disabled = true; t.textContent = 'Generando…';
-    try { const r = await fn('interpretar-fc', { alumno_id: a.id }); state.informes[a.id] = r; toast('Borrador generado. Revísalo antes de publicarlo.'); }
-    catch (err) { toast(err.message); }
+    const texto = interpretacion(a).join('\n\n');
+    if (!LIVE) { state.informes[a.id] = { id: 'demo', texto, publicado: false }; save(); return render(); }
+    try { const r = await need(sb.from('informes_ia').insert({ alumno_id: a.id, texto, publicado: false }).select('id, texto, publicado, generado').single()); state.informes[a.id] = r; toast('Borrador generado. Revísalo y complétalo antes de publicarlo.'); }
+    catch (err) { toast('No se pudo guardar: ' + err.message); }
     return render();
   }
   if (d.iaPub) {

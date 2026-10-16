@@ -24,3 +24,11 @@ export async function esAdmin(req: Request): Promise<boolean> {
   const { data } = await sb.from('admins').select('user_id').eq('user_id', u.user.id).maybeSingle();
   return !!data;
 }
+
+/** Lee un ajuste privado: primero de los secretos de la función y, si no está, de la tabla config_privada. */
+export async function config(clave: string): Promise<string | undefined> {
+  const env = Deno.env.get(clave);
+  if (env) return env;
+  const { data } = await servicio().from('config_privada').select('valor').eq('clave', clave).maybeSingle();
+  return data?.valor ?? undefined;
+}
