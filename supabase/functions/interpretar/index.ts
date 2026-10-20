@@ -66,7 +66,7 @@ Pulsómetro: porcentajes sobre su FC máxima teórica; zonas Z1 50-60 %, Z2 60-7
 Partidos: % errores no forzados = sus errores sobre los puntos que perdió su pareja (más bajo es mejor). % winners = sus winners sobre los puntos que ganó su pareja. Índice win = media de % puntos de oro ganados y % roturas conseguidas. Golpes: S saque, D derecha, R revés, PD pared derecha, PR pared revés, CP contrapared, VD volea derecha, VR volea revés, B bandeja, RMP remate plano, RML remate liftado.
 Escribe entre 3 y 5 párrafos breves, sin títulos, listas ni markdown: cómo trabaja su corazón en clase frente a su grupo y la escuela; qué dicen sus partidos (errores, winners, golpes más fuertes y más débiles, momentos clave); evolución si se aprecia; y 2 o 3 recomendaciones concretas para pista. Cita cifras redondeadas. Usa solo los datos del JSON. No hagas diagnósticos médicos; si algo parece anómalo, sugiere comentarlo con el entrenador.`;
 
-  const modelos = [(await config('GEMINI_MODEL')) || 'gemini-flash-latest', 'gemini-2.5-flash'];
+  const modelos = [...new Set([(await config('GEMINI_MODEL')) || 'gemini-flash-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest'])];
   let texto = '', ultimoError = '';
   for (const modelo of modelos) {
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
