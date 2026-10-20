@@ -126,6 +126,7 @@
   .ball.debt { background: transparent; border: 1.5px dashed rgb(var(--bad)); }
   table.data { width: 100%; border-collapse: collapse; font-size: 14px; }
   table.data th { text-align: left; font-weight: 600; color: rgb(var(--muted)); font-size: 12.5px; padding: .55rem .7rem; border-bottom: 1px solid rgb(var(--line)); white-space: nowrap; }
+  table.data th.text-right { text-align: right; } table.data th.text-center { text-align: center; }
   table.data td { padding: .6rem .7rem; border-bottom: 1px solid rgb(var(--line) / .6); vertical-align: middle; }
   table.data tr.click:hover td { background: rgb(var(--surface2) / .6); cursor: pointer; }
   .zbar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: rgb(var(--surface2)); }
@@ -198,6 +199,14 @@
   .gbtn { min-height: 72px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgb(var(--surface2)); color: rgb(var(--ink)); padding: .4rem; }
   .gbtn-w { box-shadow: inset 0 -4px 0 rgb(var(--ok)); } .gbtn-e { box-shadow: inset 0 -4px 0 rgb(var(--bad)); }
   .gbtn:hover { background: rgb(var(--line)); }
+  .seg { display: inline-flex; flex-wrap: wrap; background: rgb(var(--surface2)); border-radius: 12px; padding: 3px; gap: 3px; }
+  .seg label { cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 .8rem; border-radius: 9px; font-weight: 600; font-size: 13.5px; color: rgb(var(--muted)); }
+  .seg input:checked + span { background: rgb(var(--surface)); color: rgb(var(--ink)); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+  .seg input[value="falta"]:checked + span { color: rgb(var(--bad)); }
+  .seg input[value="cubierta"]:checked + span { color: rgb(var(--warn)); }
+  .seg input:focus-visible + span { outline: 2px solid rgb(var(--court)); outline-offset: 1px; }
   .chip-p0 { background: rgb(var(--court) / .14); color: rgb(var(--court)); } .chip-p1 { background: rgb(var(--z4) / .18); color: rgb(var(--warn)); }
 </style>
 
@@ -216,7 +225,7 @@ const S = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
-const KEY = 'bandeja-demo-v2';
+const KEY = 'bandeja-demo-v3';
 const $ = sel => document.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -281,8 +290,11 @@ const ALUMNOS_BASE = [
   ['Sergio Almagro Cobo', 'G2', 'M', 31, 79, 'tri', 2],
   ['Nuria Fuentes Lara', 'G2', 'F', 44, 66, 'mes', 0],
   ['Marcos Serrano Peña', 'G3', 'M', 27, 77, 'mes2', 0],
-  ['Irene Valero Soto', 'G3', 'F', 25, 59, 'mes', 0]
+  ['Irene Valero Soto', 'G3', 'F', 25, 59, 'mes', 0],
+  ['Alberto Ruiz Sola', 'G1', 'M', 36, 80, 'suelta', 0, 'relevo'],
+  ['Marta Gil Cano', 'G2', 'F', 30, 61, 'suelta', 0, 'relevo']
 ];
+const GASTO_CATS = ['Alquiler de pista', 'Material', 'Seguros', 'Formación', 'Publicidad', 'Transporte', 'Otros'];
 
 function sessionDates(g, fromISO, toISO) {
   const out = []; const d = parseISO(fromISO); const end = parseISO(toISO);
@@ -297,14 +309,14 @@ function seed() {
     settings: { escuela: 'Escuela de Pádel AG', umbral: 1, remitente: 'escuelapadelag@gmail.com', temporada: '26/27', inicio: SEASON_START, auto: true },
     grupos: GRUPOS, alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], partidos: [], statsAnon: [], outbox: [], warned: {}, informes: {}, sesionIds: {}
   };
-  ALUMNOS_BASE.forEach(([nombre, g, sexo, edad, peso, plan, inicial], i) => {
+  ALUMNOS_BASE.forEach(([nombre, g, sexo, edad, peso, plan, inicial, modalidad = 'fijo'], i) => {
     const first = nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     st.alumnos.push({
       id: 'A' + (i + 1), nombre, grupo: g, sexo, edad, peso, inicial,
-      email: `${first}.${['n', 'm', 'd', 't', 'c', 'j', 'a', 'f', 's', 'v'][i]}@ejemplo.es`,
+      email: `${first}.${'nmdtcjafsvrg'[i]}@ejemplo.es`,
       tlf: '6' + String(10000000 + Math.floor(r() * 89999999)).slice(0, 8),
       codigo: `PD-${String(1000 + Math.floor(r() * 8999))}`,
-      alta: SEASON_START, plan, fnac: `${2026 - edad}-05-15`, salud: true, imagen: true, activado: i < 4
+      alta: SEASON_START, plan, modalidad, fnac: `${2026 - edad}-05-15`, salud: true, imagen: true, activado: i < 4
     });
   });
   // pagos
@@ -312,7 +324,8 @@ function seed() {
     const g = GRUPOS.find(x => x.id === a.grupo);
     const first = sessionDates(g, '2026-09-07', SEASON_START)[0] || SEASON_START;
     const method = r() < .55 ? 'Bizum' : (r() < .6 ? 'Efectivo' : 'Transferencia');
-    if (a.plan === 'tri') st.pagos.push(mkPago(a, 'tri', '2026-09-12', method, g.tarifa));
+    if (a.plan === 'suelta') { st.pagos.push(mkPago(a, 'suelta', '2026-09-20', method, g.tarifa)); st.pagos.push(mkPago(a, 'suelta', '2026-10-03', method, g.tarifa)); }
+    else if (a.plan === 'tri') st.pagos.push(mkPago(a, 'tri', '2026-09-12', method, g.tarifa));
     else {
       st.pagos.push(mkPago(a, 'mes', '2026-09-12', method, g.tarifa));
       if (a.plan === 'mes2') st.pagos.push(mkPago(a, 'mes', '2026-10-09', method, g.tarifa));
@@ -326,16 +339,28 @@ function seed() {
       const p = PLAN[(k + gi) % PLAN.length];
       st.contenidos[`${g.id}|${d}`] = { titulo: p.t, items: p.i.slice() };
     });
-    const miembros = st.alumnos.filter(a => a.grupo === g.id);
+    const miembros = st.alumnos.filter(a => a.grupo === g.id && a.modalidad !== 'relevo');
+    const relevo = st.alumnos.find(a => a.grupo === g.id && a.modalidad === 'relevo');
     past.forEach((d, k) => {
-      const presentes = miembros.filter(a => !(r() < .12 && k > 0)).map(a => a.id);
-      st.asistencia[`${g.id}|${d}`] = presentes;
+      const lista = {};
+      miembros.forEach(a => { lista[a.id] = (r() < .14 && k > 0) ? { e: 'falta', c: true } : { e: 'presente', c: true }; });
+      if (relevo && (k === 1 || k === 3)) { const hueco = miembros[k % miembros.length]; lista[hueco.id] = { e: 'cubierta', c: false }; lista[relevo.id] = { e: 'presente', c: true }; }
+      st.asistencia[`${g.id}|${d}`] = lista;
+      const presentes = Object.entries(lista).filter(([, v]) => v.e === 'presente').map(([id]) => id);
       presentes.forEach(id => {
         const a = st.alumnos.find(x => x.id === id);
         st.sesionesFC.push(simSession(a, g, d, k, r));
       });
     });
   });
+  st.ajustesClases = [];
+  st.gastos = [];
+  ['2026-09', '2026-10'].forEach((mes, i) => {
+    st.gastos.push({ id: 'GA' + i, fecha: `${mes}-01`, concepto: 'Alquiler de pista del mes', categoria: 'Alquiler de pista', importe: 145.2, metodo: 'Transferencia', notas: '3,5 h semanales a 9,68 €/h' });
+  });
+  st.gastos.push({ id: 'GB', fecha: '2026-09-08', concepto: 'Seguro de responsabilidad civil', categoria: 'Seguros', importe: 120, metodo: 'Tarjeta', notas: '' });
+  st.gastos.push({ id: 'GC', fecha: '2026-09-10', concepto: 'Cajas de pelotas (6)', categoria: 'Material', importe: 54, metodo: 'Tarjeta', notas: '' });
+  st.gastos.push({ id: 'GD', fecha: '2026-10-06', concepto: 'Conos y escalera de agilidad', categoria: 'Material', importe: 32.5, metodo: 'Bizum', notas: '' });
   return st;
 }
 function seedPartidos(st) {
@@ -392,7 +417,7 @@ function metrics(sess, a) {
 /* ---------- Estado ---------- */
 const LIVE = !!(window.BANDEJA && BANDEJA.supabaseUrl && BANDEJA.supabaseKey && window.supabase) && location.hash !== '#demo';
 const sb = LIVE ? supabase.createClient(BANDEJA.supabaseUrl, BANDEJA.supabaseKey) : null;
-const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1, remitente: '', temporada: '26/27', inicio: SEASON_START, auto: true }, grupos: [], alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], partidos: [], statsAnon: [], outbox: [], warned: {}, informes: {}, sesionIds: {} });
+const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1, remitente: '', temporada: '26/27', inicio: SEASON_START, auto: true }, grupos: [], alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], partidos: [], statsAnon: [], outbox: [], warned: {}, informes: {}, sesionIds: {}, ajustesClases: [], gastos: [] });
 let state = LIVE ? emptyState() : (S.get(KEY) || seed());
 state.informes = state.informes || {};
 state.statsAnon = state.statsAnon || [];
@@ -402,9 +427,13 @@ const alumno = id => state.alumnos.find(a => a.id === id);
 const SIN_GRUPO = { id: null, nombre: 'Sin grupo', dia: 1, hora: '--:--', fin: '--:--', tarifa: 'T1', nivel: '' };
 const grupo = id => state.grupos.find(g => g.id === id) || { ...SIN_GRUPO, tarifa: TARIFAS[0].id };
 const tarifaDe = a => TARIFAS.find(t => t.id === grupo(a.grupo).tarifa) || TARIFAS[0];
-const asistidas = a => Object.entries(state.asistencia).filter(([k, v]) => v.includes(a.id)).length;
+const MODALIDAD = { fijo: 'Fijo', relevo: 'Relevo' };
+const esRelevo = a => (a.modalidad || 'fijo') === 'relevo';
+const cobraDe = (e, a) => e === 'presente' || (e === 'falta' && !esRelevo(a));
+const asistidas = a => Object.values(state.asistencia).reduce((n, o) => n + (o && o[a.id]?.c ? 1 : 0), 0);   // clases consumidas del bono
+const ajusteDe = a => (state.ajustesClases || []).filter(x => x.alumno === a.id).reduce((s, x) => s + x.clases, 0);
 const compradas = a => state.pagos.filter(p => p.alumno === a.id).reduce((s, p) => s + p.clases, 0) + (a.inicial || 0);
-const saldo = a => compradas(a) - asistidas(a);
+const saldo = a => compradas(a) + ajusteDe(a) - asistidas(a);
 const estado = a => { const s = saldo(a); return s < 0 ? 'debe' : s <= state.settings.umbral ? 'aviso' : 'ok'; };
 const sesionesDe = id => state.sesionesFC.filter(s => s.alumno === id).sort((x, y) => x.fecha.localeCompare(y.fecha));
 const proximas = (g, n = 3) => sessionDates(g, TODAY_ISO, iso(new Date(TODAY.getTime() + 60 * 86400000))).slice(0, n);
@@ -418,7 +447,7 @@ function estadoChip(a) {
   return `<span class="chip chip-ok">${s} clases disponibles</span>`;
 }
 function ballRow(a, max = 12) {
-  const c = compradas(a), u = asistidas(a);
+  const c = compradas(a) + ajusteDe(a), u = asistidas(a);
   let h = '';
   const total = Math.max(c, u);
   for (let i = 0; i < Math.min(total, max); i++) {
@@ -427,7 +456,7 @@ function ballRow(a, max = 12) {
     else h += '<span class="ball debt" title="Clase recibida sin pagar"></span>';
   }
   if (total > max) h += `<span class="text-xs text-muted self-center">+${total - max}</span>`;
-  return `<div class="ballrow" aria-label="${u} clases recibidas de ${c} pagadas">${h}</div>`;
+  return `<div class="ballrow" aria-label="${u} clases consumidas de ${c} disponibles">${h}</div>`;
 }
 
 /* ---------- Emails ---------- */
@@ -548,7 +577,7 @@ function vPanel() {
     `<button class="btn btn-primary" data-open="pago">Registrar pago</button><button class="btn btn-ghost" data-go="vivo">${I.vivo.replace('<svg', '<svg width="18" height="18"')}Sesión en vivo</button>`) + `
   <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     ${stat('Alumnos activos', activos, `${state.grupos.length} grupos`)}
-    ${stat(`Ingresos de ${TODAY.toLocaleDateString('es-ES', { month: 'long' })}`, fmtEur(ingresosMes), `${state.pagos.filter(p => p.fecha.startsWith(mes)).length} cobros`)}
+    ${stat(`Ingresos de ${TODAY.toLocaleDateString('es-ES', { month: 'long' })}`, fmtEur(ingresosMes), (() => { const G = (state.gastos || []).filter(g => g.fecha.startsWith(mes)).reduce((t, g) => t + g.importe, 0); return `Gastos ${fmtEur(Math.round(G * 100) / 100)} · balance <span class="${ingresosMes - G < 0 ? 'text-bad' : 'text-ok'} font-semibold">${fmtEur(Math.round((ingresosMes - G) * 100) / 100)}</span>`; })())}
     ${stat('Avisos de pago', atencion.length, deuda ? `${fmtEur(Math.round(deuda))} en clases sin pagar` : 'Todo al día', atencion.length ? 'text-warn' : 'text-ok')}
     ${stat('Sesiones con sensor', state.sesionesFC.length, 'registros de frecuencia cardíaca')}
   </section>
@@ -600,8 +629,8 @@ function vAlumnos() {
     <thead><tr><th>Alumno</th><th>Grupo</th><th>Bono</th><th>Estado</th><th>Última FC media</th><th>Código</th></tr></thead>
     <tbody>${list.map(a => { const ss = sesionesDe(a.id); const last = ss[ss.length - 1]; return `
       <tr class="click" data-alumno="${a.id}"><td><div class="font-semibold">${esc(a.nombre)}</div><div class="text-[13px] text-muted">${esc(a.email)}</div></td>
-      <td>${esc(grupo(a.grupo).nombre)}<div class="text-[13px] text-muted">${DAYS[grupo(a.grupo).dia]} ${grupo(a.grupo).hora}</div></td>
-      <td>${ballRow(a, 10)}<div class="text-[12.5px] text-muted mt-1 tnum">${asistidas(a)} recibidas · ${compradas(a)} pagadas</div></td>
+      <td>${esc(grupo(a.grupo).nombre)}${esRelevo(a) ? ' <span class="chip chip-warn">Relevo</span>' : ''}<div class="text-[13px] text-muted">${DAYS[grupo(a.grupo).dia]} ${grupo(a.grupo).hora}</div></td>
+      <td>${ballRow(a, 10)}<div class="text-[12.5px] text-muted mt-1 tnum">${asistidas(a)} consumidas · ${compradas(a)} pagadas${ajusteDe(a) ? ` · ajuste ${ajusteDe(a) > 0 ? '+' : ''}${ajusteDe(a)}` : ''}</div></td>
       <td>${estadoChip(a)}</td>
       <td class="tnum">${last ? `${last.fcMed} ppm <span class="text-muted">(${pct(last.fcMed / fcMaxTeo(a))})</span>` : '—'}</td>
       <td><span class="font-mono text-[13px] bg-surface2 rounded-md px-2 py-1">${a.codigo}</span>${a.activado ? '<div class="text-[12px] text-ok mt-1">Acceso activado</div>' : ''}</td></tr>`; }).join('')}</tbody></table></div>`;
@@ -616,7 +645,10 @@ function vAlumnoDetalle(id) {
       `<button class="btn btn-primary" data-open="pago" data-for="${a.id}">Registrar pago</button><button class="btn btn-ghost" data-aviso="${a.id}">Enviar aviso</button><button class="btn btn-ghost" data-open="alta" data-for="${a.id}">Editar ficha</button><button class="btn btn-ghost" data-preview="${a.id}">Ver como alumno</button>`) + `
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Bono</h2>${estadoChip(a)}</div>${ballRow(a, 20)}
-      <div class="grid grid-cols-3 gap-2 text-center mt-1">${[['Pagadas', compradas(a)], ['Recibidas', asistidas(a)], ['Saldo', saldo(a)]].map(([l, v]) => `<div class="rounded-xl bg-surface2 py-2"><div class="num text-3xl font-bold ${l === 'Saldo' && v < 0 ? 'text-bad' : ''}">${v}</div><div class="text-[12.5px] text-muted">${l}</div></div>`).join('')}</div>
+      <div class="grid grid-cols-4 gap-2 text-center mt-1">${[['Pagadas', compradas(a)], ['Ajustes', (ajusteDe(a) > 0 ? '+' : '') + ajusteDe(a)], ['Consumidas', asistidas(a)], ['Saldo', saldo(a)]].map(([l, v]) => `<div class="rounded-xl bg-surface2 py-2"><div class="num text-3xl font-bold ${l === 'Saldo' && v < 0 ? 'text-bad' : ''}">${v}</div><div class="text-[12px] text-muted">${l}</div></div>`).join('')}</div>
+      <p class="text-[13px] text-muted">${esRelevo(a) ? 'Relevo: solo se le cobra la clase cuando viene.' : 'Fijo del grupo: se le cobra cada clase aunque falte, salvo si le cubre un relevo.'}</p>
+      <button class="btn btn-ghost self-start !py-1.5 text-[13px]" data-open="ajuste" data-for="${a.id}">Ajustar clases pendientes</button>
+      ${historialClases(a)}
     </div>
     <div class="panel p-5 flex flex-col gap-2 min-w-0"><h2 class="text-2xl font-bold">Contacto y acceso</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[14px]"><dt class="text-muted">Email</dt><dd class="truncate">${esc(a.email)}</dd><dt class="text-muted">Teléfono</dt><dd class="tnum">${esc(a.tlf)}</dd><dt class="text-muted">FC máx. teórica</dt><dd class="tnum">${fcMaxTeo(a)} ppm</dd><dt class="text-muted">Peso</dt><dd class="tnum">${a.peso} kg</dd></dl>
@@ -640,6 +672,16 @@ function vAlumnoDetalle(id) {
       ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
   ${iaPanel(a)}`;
+}
+function historialClases(a) {
+  const filas = Object.entries(state.asistencia).filter(([, o]) => o && o[a.id]).map(([k, o]) => ({ k, fecha: k.split('|')[1], g: grupo(k.split('|')[0]), ...o[a.id] }))
+    .concat((state.ajustesClases || []).filter(x => x.alumno === a.id).map(x => ({ ajuste: true, fecha: x.fecha, clases: x.clases, motivo: x.motivo })))
+    .sort((x, y) => y.fecha.localeCompare(x.fecha)).slice(0, 8);
+  if (!filas.length) return '';
+  const txt = { presente: 'Vino', falta: 'Faltó', cubierta: 'Le cubrió un relevo' };
+  return `<details class="text-[13.5px]"><summary class="cursor-pointer font-semibold text-court">Últimos movimientos del bono</summary><ul class="mt-2 flex flex-col gap-1">${filas.map(f => f.ajuste
+    ? `<li class="flex justify-between gap-2"><span>${fmtDate(f.fecha)} · Ajuste${f.motivo ? `: ${esc(f.motivo)}` : ''}</span><span class="tnum font-semibold">${f.clases > 0 ? '+' : ''}${f.clases}</span></li>`
+    : `<li class="flex justify-between gap-2"><span>${fmtDate(f.fecha)} · ${txt[f.e] || f.e}${f.g.id && f.g.id !== a.grupo ? ` (${esc(f.g.nombre)})` : ''}</span><span class="tnum ${f.c ? '' : 'text-muted'}">${f.c ? '−1' : 'no se cobra'}</span></li>`).join('')}</ul></details>`;
 }
 function iaPanel(a) {
   const inf = state.informes[a.id]; const n = Math.max(sesionesDe(a.id).length, filasPartidos().filter(f => f.alumno === a.id).length * 2);
@@ -672,13 +714,75 @@ function fcChart(canvasId, id) {
 }
 
 function vPagos() {
+  const tab = ui.ptab || 'cobros';
+  const tabs = `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist">${[['cobros', 'Cobros'], ['gastos', 'Gastos'], ['balance', 'Balance mensual']].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full ${tab === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${tab === k}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const acciones = tab === 'gastos' ? `<button class="btn btn-primary" data-open="gasto">Registrar gasto</button>` : tab === 'cobros' ? `<button class="btn btn-primary" data-open="pago">Registrar pago</button>` : `<button class="btn btn-primary" data-open="pago">Registrar pago</button><button class="btn btn-ghost" data-open="gasto">Registrar gasto</button>`;
+  const sub = { cobros: 'Cada pago suma clases al bono del alumno y deja en cola un email de confirmación.', gastos: 'Alquiler de pista, material, seguros y el resto de gastos de la escuela.', balance: 'Ingresos, gastos y resultado de cada mes.' }[tab];
+  return pageHead('Pagos', sub, acciones) + tabs + (tab === 'gastos' ? vGastos() : tab === 'balance' ? vBalance() : vCobros());
+}
+function vCobros() {
   const list = [...state.pagos].sort((x, y) => y.fecha.localeCompare(x.fecha));
   const byMonth = {}; state.pagos.forEach(p => { const k = p.fecha.slice(0, 7); byMonth[k] = byMonth[k] || { total: 0, n: 0, m: {} }; byMonth[k].total += p.importe; byMonth[k].n++; byMonth[k].m[p.metodo] = (byMonth[k].m[p.metodo] || 0) + p.importe; });
-  return pageHead('Pagos', 'Cada pago suma clases al bono del alumno y deja en cola un email de confirmación.', `<button class="btn btn-primary" data-open="pago">Registrar pago</button>`) + `
-  <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${Object.entries(byMonth).sort().reverse().map(([k, v]) => `<div class="panel p-4"><div class="text-[13px] font-semibold text-muted">${new Date(k + '-01T00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</div><div class="num text-4xl font-bold">${fmtEur(v.total)}</div><div class="text-[13px] text-muted">${v.n} cobros · ${Object.entries(v.m).map(([mm, x]) => `${mm} ${fmtEur(x)}`).join(' · ')}</div></div>`).join('')}</section>
+  return `<section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${Object.entries(byMonth).sort().reverse().slice(0, 3).map(([k, v]) => `<div class="panel p-4"><div class="text-[13px] font-semibold text-muted">${mesTxt(k)}</div><div class="num text-4xl font-bold">${fmtEur(v.total)}</div><div class="text-[13px] text-muted">${v.n} cobros · ${Object.entries(v.m).map(([mm, x]) => `${mm} ${fmtEur(x)}`).join(' · ')}</div></div>`).join('')}</section>
   <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Alumno</th><th>Concepto</th><th>Clases</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-    ${list.map(p => `<tr class="click" data-alumno="${p.alumno}"><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(alumno(p.alumno).nombre)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('')}
+    ${list.map(p => `<tr class="click" data-alumno="${p.alumno}"><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(alumno(p.alumno)?.nombre || '—')}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
   </tbody></table></div>`;
+}
+const mesTxt = k => { const t = new Date(k + '-01T00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
+function vGastos() {
+  const list = [...(state.gastos || [])].sort((x, y) => y.fecha.localeCompare(x.fecha));
+  const mes = TODAY_ISO.slice(0, 7);
+  const delMes = list.filter(g => g.fecha.startsWith(mes)); const porCat = {}; delMes.forEach(g => { porCat[g.categoria] = (porCat[g.categoria] || 0) + g.importe; });
+  return `<section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    ${stat(`Gastos de ${mesTxt(mes).split(' ')[0].toLowerCase()}`, fmtEur(delMes.reduce((t, g) => t + g.importe, 0)), `${delMes.length} ${delMes.length === 1 ? 'gasto' : 'gastos'}`)}
+    <div class="panel p-4 sm:col-span-1 lg:col-span-2 min-w-0"><div class="text-[13px] font-semibold text-muted mb-2">Por categoría este mes</div>${Object.keys(porCat).length ? `<div class="flex flex-wrap gap-2">${Object.entries(porCat).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="chip chip-neutral !text-[13.5px] !py-1">${esc(c)} <strong class="text-ink tnum">${fmtEur(v)}</strong></span>`).join('')}</div>` : '<p class="text-muted text-[14px]">Sin gastos este mes.</p>'}</div>
+  </section>
+  <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
+    ${list.map(g => `<tr class="click" data-open="gasto" data-for="${g.id}"><td>${fmtDate(g.fecha)}</td><td><div class="font-semibold">${esc(g.concepto)}</div>${g.notas ? `<div class="text-[12.5px] text-muted">${esc(g.notas)}</div>` : ''}</td><td>${esc(g.categoria)}</td><td>${esc(g.metodo || '')}</td><td class="text-right num text-lg font-bold">${fmtEur(g.importe)}</td></tr>`).join('') || `<tr><td colspan="5"><div class="py-4"><div class="font-semibold">Todavía no has registrado gastos</div><div class="text-muted text-[14px]">Empieza por el alquiler de pista del mes: así el balance mostrará lo que de verdad gana la escuela.</div></div></td></tr>`}
+  </tbody></table></div>`;
+}
+function datosBalance() {
+  const meses = new Set([...state.pagos.map(p => p.fecha.slice(0, 7)), ...(state.gastos || []).map(g => g.fecha.slice(0, 7)), TODAY_ISO.slice(0, 7)]);
+  const clasesMes = {}; Object.entries(state.asistencia).forEach(([k, o]) => { if (o && Object.keys(o).length) { const m = k.split('|')[1].slice(0, 7); clasesMes[m] = (clasesMes[m] || 0) + 1; } });
+  return [...meses].sort().map(m => {
+    const ing = state.pagos.filter(p => p.fecha.startsWith(m)); const gas = (state.gastos || []).filter(g => g.fecha.startsWith(m));
+    const I = ing.reduce((t, p) => t + p.importe, 0), G = gas.reduce((t, g) => t + g.importe, 0);
+    const porCat = {}; gas.forEach(g => { porCat[g.categoria] = (porCat[g.categoria] || 0) + g.importe; });
+    const porMet = {}; ing.forEach(p => { porMet[p.metodo] = (porMet[p.metodo] || 0) + p.importe; });
+    const porCon = {}; ing.forEach(p => { const n = CONCEPTOS.find(c => c.id === p.concepto)?.nombre || p.concepto; porCon[n] = (porCon[n] || 0) + p.importe; });
+    return { m, I, G, B: I - G, nI: ing.length, nG: gas.length, clases: clasesMes[m] || 0, porCat, porMet, porCon };
+  });
+}
+function vBalance() {
+  const D = datosBalance(); const sel = ui.bmes && D.some(x => x.m === ui.bmes) ? ui.bmes : TODAY_ISO.slice(0, 7);
+  const x = D.find(d => d.m === sel) || { I: 0, G: 0, B: 0, clases: 0, porCat: {}, porMet: {}, porCon: {} };
+  const temp = D.filter(d => d.m >= SEASON_START.slice(0, 7)); const tI = temp.reduce((t, d) => t + d.I, 0), tG = temp.reduce((t, d) => t + d.G, 0);
+  const barras = (obj, tot) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div><div class="flex justify-between text-[13.5px]"><span>${esc(k)}</span><span class="tnum font-semibold">${fmtEur(v)}</span></div><div class="h-2 rounded-full bg-surface2 mt-1 overflow-hidden"><div class="h-full bg-court rounded-full" style="width:${tot ? v / tot * 100 : 0}%"></div></div></div>`).join('') || '<p class="text-muted text-[14px]">Nada este mes.</p>';
+  return `<div class="flex gap-2 overflow-x-auto pb-1">${D.slice(-12).reverse().map(d => `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${d.m === sel ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-bmes="${d.m}"><div class="font-semibold">${mesTxt(d.m)}</div><div class="text-[12.5px] tnum ${d.B < 0 ? 'text-bad' : 'text-ok'}">${d.B >= 0 ? '+' : ''}${fmtEur(Math.round(d.B * 100) / 100)}</div></button>`).join('')}</div>
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    ${stat('Ingresos', fmtEur(x.I), `${x.nI || 0} cobros`)}
+    ${stat('Gastos', fmtEur(Math.round(x.G * 100) / 100), `${x.nG || 0} gastos`)}
+    ${stat('Balance', (x.B >= 0 ? '+' : '') + fmtEur(Math.round(x.B * 100) / 100), x.I ? `Margen ${pct(x.B / x.I)}` : 'Sin ingresos', x.B < 0 ? 'text-bad' : 'text-ok')}
+    ${stat('Clases impartidas', x.clases, x.clases ? `${fmtEur(Math.round(x.I / x.clases * 100) / 100)} ingresados por clase` : 'con lista pasada')}
+  </section>
+  <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Evolución mensual</h2><span class="text-[13px] text-muted">Temporada: ingresos ${fmtEur(tI)} · gastos ${fmtEur(Math.round(tG * 100) / 100)} · balance <strong class="${tI - tG < 0 ? 'text-bad' : 'text-ok'}">${fmtEur(Math.round((tI - tG) * 100) / 100)}</strong></span></div><div class="h-64"><canvas id="chBal" aria-label="Ingresos, gastos y balance por mes"></canvas></div></section>
+  <section class="grid lg:grid-cols-3 gap-4">
+    <div class="panel p-5 flex flex-col gap-3 min-w-0"><h2 class="text-xl font-bold">Ingresos por concepto</h2>${barras(x.porCon, x.I)}</div>
+    <div class="panel p-5 flex flex-col gap-3 min-w-0"><h2 class="text-xl font-bold">Ingresos por método</h2>${barras(x.porMet, x.I)}</div>
+    <div class="panel p-5 flex flex-col gap-3 min-w-0"><h2 class="text-xl font-bold">Gastos por categoría</h2>${barras(x.porCat, x.G)}</div>
+  </section>
+  <div class="panel scroll-x"><table class="data min-w-[600px]"><thead><tr><th>Mes</th><th class="text-right">Ingresos</th><th class="text-right">Gastos</th><th class="text-right">Balance</th><th class="text-right">Clases</th></tr></thead><tbody>
+    ${D.slice().reverse().map(d => `<tr class="click" data-bmes="${d.m}"><td class="font-semibold">${mesTxt(d.m)}</td><td class="text-right tnum">${fmtEur(d.I)}</td><td class="text-right tnum">${fmtEur(Math.round(d.G * 100) / 100)}</td><td class="text-right num text-lg font-bold ${d.B < 0 ? 'text-bad' : ''}">${fmtEur(Math.round(d.B * 100) / 100)}</td><td class="text-right tnum">${d.clases}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function afterPagos() {
+  if ((ui.ptab || 'cobros') !== 'balance') return;
+  const D = datosBalance().slice(-12);
+  mkChart('chBal', { data: { labels: D.map(d => mesTxt(d.m).split(' ')[0].slice(0, 3)), datasets: [
+    { type: 'bar', label: 'Ingresos', data: D.map(d => d.I), backgroundColor: cv('--court'), borderRadius: 6, maxBarThickness: 30 },
+    { type: 'bar', label: 'Gastos', data: D.map(d => Math.round(d.G * 100) / 100), backgroundColor: cv('--z4'), borderRadius: 6, maxBarThickness: 30 },
+    { type: 'line', label: 'Balance', data: D.map(d => Math.round(d.B * 100) / 100), borderColor: cv('--ink'), backgroundColor: cv('--ink'), tension: .3, pointRadius: 4 }
+  ] }, options: baseOpts({ y: { title: '€', beginAtZero: true } }) });
 }
 
 function vClases() {
@@ -686,17 +790,26 @@ function vClases() {
   if (ui.claseKey && !grupo(ui.claseKey.split('|')[0]).id) ui.claseKey = null;
   if (!ui.claseKey) { const g = state.grupos[0]; ui.claseKey = `${g.id}|${ultimasClases(g, 1)[0] || proximas(g, 1)[0]}`; }
   const [gid, d] = ui.claseKey.split('|'); const g = grupo(gid); const c = contenido(gid, d);
-  const miembros = reales().filter(a => a.grupo === gid);
-  const presentes = state.asistencia[ui.claseKey];
+  const fijos = reales().filter(a => a.grupo === gid && !esRelevo(a));
+  const lista = ui.asisDraft?.[ui.claseKey] || state.asistencia[ui.claseKey];
+  const extra = [...new Set([...reales().filter(a => a.grupo === gid && esRelevo(a)).map(a => a.id), ...Object.keys(lista || {}).filter(id => !fijos.some(f => f.id === id)), ...(ui.extraAsis?.[ui.claseKey] || [])])].map(alumno).filter(Boolean);
+  const presentes = lista;
   const opts = state.grupos.map(gg => [...ultimasClases(gg, 2), ...proximas(gg, 3)].map(dd => ({ gg, dd }))).flat();
-  return pageHead('Clases', 'Pasa lista al terminar la clase: se descuenta una clase del bono y, si alguien llega al umbral, se prepara el aviso de pago.') + `
+  return pageHead('Clases', 'Pasa lista al terminar la clase. Se descuenta la clase del bono de quien corresponda y, si alguien llega al umbral, se prepara el aviso de pago.') + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
   <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${dd < TODAY_ISO ? (done ? 'Lista pasada' : 'Sin lista') : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
   <section class="grid lg:grid-cols-2 gap-4">
     <form class="panel p-5 flex flex-col gap-3" id="fAsis">
       <div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Asistencia</h2><span class="text-[13px] text-muted">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}</span></div>
-      ${miembros.map(a => `<label class="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 cursor-pointer hover:bg-surface2/60"><input type="checkbox" id="as-${a.id}" name="p" value="${a.id}" class="w-5 h-5 accent-[rgb(var(--court))]" ${presentes ? (presentes.includes(a.id) ? 'checked' : '') : 'checked'}><span class="flex-1 font-semibold">${esc(a.nombre)}</span>${estadoChip(a)}</label>`).join('')}
-      <button class="btn btn-primary self-start" type="submit">${presentes ? 'Actualizar asistencia' : 'Guardar asistencia'}</button>
+      <p class="text-[13px] text-muted -mt-1">A los fijos se les cobra la clase aunque falten, salvo que venga un relevo en su lugar. A relevos y alumnos de otros grupos solo se les cobra si vienen.</p>
+      ${fijos.length ? `<div class="flex flex-col gap-2">${fijos.map(a => { const e = lista?.[a.id]?.e || 'presente'; return `<div class="rounded-xl border border-line px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div class="flex-1 min-w-[10rem]"><div class="font-semibold">${esc(a.nombre)}</div><div class="mt-0.5">${estadoChip(a)}</div></div>
+        <div class="seg" role="radiogroup" aria-label="Asistencia de ${esc(a.nombre)}">${[['presente', 'Vino'], ['falta', 'Faltó'], ['cubierta', 'Le cubre un relevo']].map(([v, l]) => `<label><input type="radio" name="st-${a.id}" value="${v}" data-fijo="${a.id}" ${e === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>`; }).join('')}</div>` : '<p class="text-muted text-[14px]">Este grupo no tiene alumnos fijos.</p>'}
+      <div class="flex flex-col gap-2"><h3 class="font-display text-lg font-bold">Relevos y alumnos de otros grupos</h3>
+        ${extra.map(a => `<label class="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 cursor-pointer hover:bg-surface2/60"><input type="checkbox" name="ex" value="${a.id}" class="w-5 h-5 accent-[rgb(var(--court))]" ${lista?.[a.id]?.e === 'presente' || (ui.extraAsis?.[ui.claseKey] || []).includes(a.id) ? 'checked' : ''}><span class="flex-1"><span class="font-semibold">${esc(a.nombre)}</span> <span class="text-[12.5px] text-muted">${esRelevo(a) ? 'Relevo' : 'Fijo'} · ${esc(grupo(a.grupo).nombre)}</span></span>${estadoChip(a)}</label>`).join('') || '<p class="text-[13.5px] text-muted">Nadie más en esta clase.</p>'}
+        <div class="flex gap-2"><select id="asExtra" class="field" aria-label="Añadir alumno a esta clase"><option value="">Añadir alumno que ha venido…</option>${state.grupos.map(gg => `<optgroup label="${esc(gg.nombre)}">${reales().filter(a => a.grupo === gg.id && !fijos.some(f => f.id === a.id) && !extra.some(x => x.id === a.id)).map(a => `<option value="${a.id}">${esc(a.nombre)}${esRelevo(a) ? ' (relevo)' : ''}</option>`).join('')}</optgroup>`).join('')}</select><button type="button" class="btn btn-ghost" data-asextra>Añadir</button></div>
+      </div>
+      <button class="btn btn-primary self-start" type="submit">${presentes ? 'Actualizar lista' : 'Guardar lista'}</button>
     </form>
     <form class="panel p-5 flex flex-col gap-3" id="fCont">
       <h2 class="text-2xl font-bold">Contenidos de la sesión</h2>
@@ -1401,11 +1514,29 @@ function modalAlta(id) {
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="nE">Email</label><input id="nE" type="email" class="field" required value="${esc(a.email)}"></div><div><label class="lbl" for="nT">Teléfono</label><input id="nT" class="field" value="${esc(a.tlf)}"></div></div>
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="nG">Grupo</label><select id="nG" class="field">${state.grupos.map(g => `<option value="${g.id}" ${g.id === a.grupo ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select></div><div><label class="lbl" for="nF">Fecha de nacimiento</label><input id="nF" type="date" class="field" required value="${a.fnac || ''}"></div></div>
     <div class="grid grid-cols-3 gap-3"><div><label class="lbl" for="nS">Sexo</label><select id="nS" class="field"><option value="F" ${a.sexo === 'F' ? 'selected' : ''}>Mujer</option><option value="M" ${a.sexo === 'M' ? 'selected' : ''}>Hombre</option></select></div><div><label class="lbl" for="nP">Peso (kg)</label><input id="nP" type="number" step="0.1" class="field" value="${a.peso || ''}"></div><div><label class="lbl" for="nI">Clases previas</label><input id="nI" type="number" class="field" value="${a.inicial || 0}"></div></div>
+    <div><label class="lbl" for="nMo">Modalidad</label><select id="nMo" class="field"><option value="fijo" ${!esRelevo(a) ? 'selected' : ''}>Fijo del grupo: se le cobra cada clase aunque falte</option><option value="relevo" ${esRelevo(a) ? 'selected' : ''}>Relevo: solo se le cobra cuando viene</option></select></div>
     <div><label class="lbl" for="nTu">Madre, padre o tutor (menores)</label><input id="nTu" class="field" value="${esc(a.tutor || '')}"></div>
     <label class="flex items-start gap-2 text-[14px]"><input type="checkbox" id="nSal" class="w-4 h-4 mt-0.5" ${a.salud ? 'checked' : ''}> Consiente el registro de su frecuencia cardíaca y su análisis (dato de salud)</label>
     <label class="flex items-start gap-2 text-[14px]"><input type="checkbox" id="nIm" class="w-4 h-4 mt-0.5" ${a.imagen ? 'checked' : ''}> Autoriza el uso de su imagen</label>
     <p class="text-[13px] text-muted">El peso, la edad y el sexo se usan para calcular las calorías y las zonas de esfuerzo.</p>
     <button class="btn btn-primary" type="submit">${id ? 'Guardar cambios' : 'Dar de alta y enviar código'}</button></form>`);
+}
+function modalAjuste(id) {
+  const a = alumno(id);
+  openModal(`<form id="fAjuste" class="flex flex-col gap-3" data-id="${id}">${modalHead('Ajustar clases')}
+    <p class="text-[14px] text-muted">${esc(a.nombre)} tiene ahora <strong>${saldo(a)}</strong> clases de saldo. Suma clases si no hay que cobrarle alguna (por ejemplo, la cubrió un relevo) o resta si se le debe cobrar alguna más.</p>
+    <div class="grid grid-cols-[auto_1fr] gap-3 items-end"><div><label class="lbl" for="ajN">Clases</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-ajstep="-1" aria-label="Restar">−</button><input id="ajN" type="number" class="field w-20 text-center tnum" value="1"><button type="button" class="btn btn-ghost !px-3" data-ajstep="1" aria-label="Sumar">+</button></div></div>
+    <div><label class="lbl" for="ajM">Motivo</label><input id="ajM" class="field" placeholder="Le cubrió un relevo el día…"></div></div>
+    <button class="btn btn-primary" type="submit">Guardar ajuste</button></form>`);
+}
+function modalGasto(id) {
+  const g = id ? state.gastos.find(x => x.id === id) : { fecha: TODAY_ISO, concepto: '', categoria: GASTO_CATS[0], importe: '', metodo: 'Transferencia', notas: '' };
+  openModal(`<form id="fGasto" class="flex flex-col gap-3" data-id="${id || ''}">${modalHead(id ? 'Editar gasto' : 'Registrar gasto')}
+    <div><label class="lbl" for="gaC">Concepto</label><input id="gaC" class="field" required value="${esc(g.concepto)}" placeholder="Alquiler de pista de octubre"></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="gaK">Categoría</label><select id="gaK" class="field">${GASTO_CATS.map(c => `<option ${c === g.categoria ? 'selected' : ''}>${c}</option>`).join('')}</select></div><div><label class="lbl" for="gaI">Importe (€)</label><input id="gaI" type="number" step="0.01" min="0" class="field tnum" required value="${g.importe}"></div></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="gaF">Fecha</label><input id="gaF" type="date" class="field" value="${g.fecha}"></div><div><label class="lbl" for="gaM">Método</label><select id="gaM" class="field">${['Transferencia', 'Tarjeta', 'Efectivo', 'Bizum', 'Domiciliación'].map(m => `<option ${m === g.metodo ? 'selected' : ''}>${m}</option>`).join('')}</select></div></div>
+    <div><label class="lbl" for="gaN">Notas</label><input id="gaN" class="field" value="${esc(g.notas || '')}"></div>
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">${id ? 'Guardar gasto' : 'Registrar gasto'}</button>${id ? `<button type="button" class="btn btn-ghost text-bad" data-gdel="${id}">Eliminar</button>` : ''}</div></form>`);
 }
 function modalGrupo(id) {
   const g = id ? grupo(id) : { nombre: '', dia: 1, hora: '19:00', fin: '20:00', tarifa: TARIFAS[0].id, nivel: '' };
@@ -1455,20 +1586,23 @@ async function loadAll(silencioso) {
     ui.isAdmin = (await need(sb.rpc('es_admin'))) === true;
     const q = t => sb.from(t).select('*');
     const vacio = Promise.resolve({ data: [], error: null });
-    const [aj, tar, gr, al, pa, se, as, fc, te, em, av, ia] = (await Promise.all([
+    const [aj, tar, gr, al, pa, se, as, fc, te, em, av, ia, ajc, ga] = (await Promise.all([
       q('ajustes').maybeSingle(), q('tarifas').order('id'), q('grupos').eq('activo', true).order('dia_semana'), q('alumnos').order('nombre'), q('pagos'),
       q('sesiones'), q('asistencia'), q('registros_fc').order('fecha'), q('partidos').order('fecha'),
-      ui.isAdmin ? q('emails').order('creado', { ascending: false }).limit(300) : vacio, ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false })
+      ui.isAdmin ? q('emails').order('creado', { ascending: false }).limit(300) : vacio, ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false }),
+      q('ajustes_clases').order('fecha'), ui.isAdmin ? q('gastos').order('fecha') : vacio
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
     if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico }; SEASON_START = aj.inicio_temporada; }
     if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre }));
     s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
-    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
+    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
     const porId = {};
     se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; });
-    as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || []).push(x.alumno_id); });
+    as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || {})[x.alumno_id] = { e: x.estado || 'presente', c: x.cobra ?? true }; });
+    s.ajustesClases = ajc.map(x => ({ id: x.id, alumno: x.alumno_id, fecha: x.fecha, clases: x.clases, motivo: x.motivo }));
+    s.gastos = ga.map(x => ({ id: x.id, fecha: x.fecha, concepto: x.concepto, categoria: x.categoria, importe: +x.importe, metodo: x.metodo, notas: x.notas }));
     s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor }));
     s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
     s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
@@ -1500,15 +1634,23 @@ const P = {
     const d = await need(sb.from('sesiones').upsert({ grupo_id, fecha, ...extra }, { onConflict: 'grupo_id,fecha' }).select('id').single());
     state.sesionIds[key] = d.id; return d.id;
   },
-  async asistencia(key, ids) {
+  async asistencia(key, lista) {
     const id = await P.sesion(key);
     await need(sb.from('asistencia').delete().eq('sesion_id', id));
-    if (ids.length) await need(sb.from('asistencia').insert(ids.map(a => ({ sesion_id: id, alumno_id: a }))));
+    const filas = Object.entries(lista).map(([a, v]) => ({ sesion_id: id, alumno_id: a, estado: v.e, cobra: v.c }));
+    if (filas.length) await need(sb.from('asistencia').insert(filas));
   },
+  async ajusteClases(x) { const d = await need(sb.from('ajustes_clases').insert({ alumno_id: x.alumno, fecha: x.fecha, clases: x.clases, motivo: x.motivo || null }).select('id').single()); x.id = d.id; },
+  async gasto(g, nuevo) {
+    const row = { fecha: g.fecha, concepto: g.concepto, categoria: g.categoria, importe: g.importe, metodo: g.metodo, notas: g.notas || null };
+    const d = nuevo ? await need(sb.from('gastos').insert(row).select('id').single()) : await need(sb.from('gastos').update(row).eq('id', g.id).select('id').single());
+    g.id = d.id;
+  },
+  async borrarGasto(id) { await need(sb.from('gastos').delete().eq('id', id)); },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
   async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null }).select('id').single()); r.id = d.id; },
   async alumno(a, nuevo) {
-    const row = { nombre: a.nombre, email: a.email, telefono: a.tlf || null, grupo_id: a.grupo, fecha_nacimiento: a.fnac || null, sexo: a.sexo, peso_kg: a.peso || null, clases_iniciales: a.inicial || 0, tutor_nombre: a.tutor || null, consentimiento_salud: !!a.salud, consentimiento_imagen: !!a.imagen };
+    const row = { modalidad: a.modalidad || 'fijo', nombre: a.nombre, email: a.email, telefono: a.tlf || null, grupo_id: a.grupo, fecha_nacimiento: a.fnac || null, sexo: a.sexo, peso_kg: a.peso || null, clases_iniciales: a.inicial || 0, tutor_nombre: a.tutor || null, consentimiento_salud: !!a.salud, consentimiento_imagen: !!a.imagen };
     const d = nuevo ? await need(sb.from('alumnos').insert(row).select('id, codigo_acceso').single()) : await need(sb.from('alumnos').update(row).eq('id', a.id).select('id, codigo_acceso').single());
     a.id = d.id; a.codigo = d.codigo_acceso;
   },
@@ -1581,7 +1723,7 @@ function render() {
   if (ui.role === 'admin') {
     if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
     else if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
-    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
+    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
     else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); }, pagos: () => { html = vPagosAlumno(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
@@ -1595,7 +1737,7 @@ function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -1609,6 +1751,15 @@ document.addEventListener('click', async e => {
   if (d.open === 'alta') return modalAlta(d.for);
   if (d.open === 'grupo') return modalGrupo(d.for);
   if (d.open === 'partido') return modalPartido();
+  if (d.open === 'ajuste') return modalAjuste(d.for);
+  if (d.open === 'gasto') return modalGasto(d.for);
+  if (d.ajstep) { const i = $('#ajN'); i.value = (parseInt(i.value, 10) || 0) + +d.ajstep; return; }
+  if (d.asextra !== undefined) { const v = $('#asExtra').value; if (!v) return toast('Elige el alumno que ha venido');
+    const f = document.getElementById('fAsis'); const dr = {}; f.querySelectorAll('input[data-fijo]:checked').forEach(i => { dr[i.dataset.fijo] = { e: i.value, c: true }; }); f.querySelectorAll('input[name=ex]').forEach(i => { if (i.checked) dr[i.value] = { e: 'presente', c: true }; });
+    ui.asisDraft = { [ui.claseKey]: dr }; ui.extraAsis = ui.extraAsis || {}; (ui.extraAsis[ui.claseKey] = ui.extraAsis[ui.claseKey] || []).push(v); return render(); }
+  if (d.gdel) { state.gastos = state.gastos.filter(x => x.id !== d.gdel); closeModal(); return tras(() => P.borrarGasto(d.gdel), 'Gasto eliminado'); }
+  if (d.ptab) { ui.ptab = d.ptab; return render(); }
+  if (d.bmes) { ui.bmes = d.bmes; return render(); }
   if (d.hrfull !== undefined) return openFull();
   if (d.hrclose !== undefined) return closeFull();
   if (d.addSlot !== undefined) { if (live.slots.length < MAX_SENSORES) live.slots.push(mkSlot(live.slots.length)); return render(); }
@@ -1635,7 +1786,7 @@ document.addEventListener('click', async e => {
   if (d.close !== undefined) return closeModal();
   if (d.aviso) { const m = queueEmail(alumno(d.aviso), 'aviso'); return tras(() => P.email(m), LIVE ? null : 'Aviso de pago en la bandeja de salida'); }
   if (d.filtro) { ui.filtroGrupo = d.filtro; return render(); }
-  if (d.clase) { ui.claseKey = d.clase; return render(); }
+  if (d.clase) { ui.claseKey = d.clase; ui.asisDraft = null; return render(); }
   if (d.copy) { const v = d.copy; (navigator.clipboard?.writeText(v) || Promise.reject()).then(() => toast('Código copiado'), () => { const r = document.createRange(); const el = t.previousElementSibling; r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Código seleccionado'); }); return; }
   if (d.preview) { ui.role = 'alumno'; ui.studentLogged = d.preview; ui.view = 'inicio'; return render(); }
   if (d.bt) return connectBT(+d.bt);
@@ -1717,11 +1868,29 @@ async function onSubmit(f) {
     return tras(async () => { await P.pago(p); if (m) await P.email(m); }, sent ? `Pago registrado. Email de confirmación para ${a.nombre.split(' ')[0]}.` : 'Pago registrado');
   }
   if (f.id === 'fAsis') {
-    const ids = [...f.querySelectorAll('input[name=p]:checked')].map(i => i.value);
-    const key = ui.claseKey;
-    state.asistencia[key] = ids; const nuevos = checkAvisos(ids);
-    return tras(async () => { await P.asistencia(key, ids); for (const { a, n, m } of nuevos) { await P.aviso(a, n); await P.email(m); } },
-      nuevos.length ? `Asistencia guardada. ${nuevos.length} ${nuevos.length === 1 ? 'aviso de pago' : 'avisos de pago'}.` : 'Asistencia guardada');
+    const key = ui.claseKey; const lista = {};
+    f.querySelectorAll('input[data-fijo]:checked').forEach(i => { const a = alumno(i.dataset.fijo); lista[a.id] = { e: i.value, c: cobraDe(i.value, a) }; });
+    f.querySelectorAll('input[name=ex]:checked').forEach(i => { lista[i.value] = { e: 'presente', c: true }; });
+    state.asistencia[key] = lista; if (ui.extraAsis) delete ui.extraAsis[key]; ui.asisDraft = null;
+    const cobrados = Object.entries(lista).filter(([, v]) => v.c).map(([id]) => id);
+    const nuevos = checkAvisos(cobrados);
+    return tras(async () => { await P.asistencia(key, lista); for (const { a, n, m } of nuevos) { await P.aviso(a, n); await P.email(m); } },
+      `Lista guardada: se cobra la clase a ${cobrados.length}${nuevos.length ? `. ${nuevos.length} ${nuevos.length === 1 ? 'aviso de pago' : 'avisos de pago'}` : ''}.`);
+  }
+  if (f.id === 'fAjuste') {
+    const a = alumno(f.dataset.id); const n = parseInt($('#ajN').value, 10);
+    if (!n) return toast('Indica cuántas clases sumar o restar');
+    const x = { id: 'AJ' + Date.now(), alumno: a.id, fecha: TODAY_ISO, clases: n, motivo: $('#ajM').value.trim() };
+    state.ajustesClases = state.ajustesClases || []; state.ajustesClases.push(x); closeModal();
+    return tras(() => P.ajusteClases(x), `Saldo de ${a.nombre.split(' ')[0]}: ${saldo(a)} clases`);
+  }
+  if (f.id === 'fGasto') {
+    const editId = f.dataset.id;
+    const datos = { fecha: $('#gaF').value || TODAY_ISO, concepto: $('#gaC').value.trim(), categoria: $('#gaK').value, importe: Math.round((+$('#gaI').value || 0) * 100) / 100, metodo: $('#gaM').value, notas: $('#gaN').value.trim() };
+    closeModal();
+    if (editId) { const g = state.gastos.find(x => x.id === editId); Object.assign(g, datos); return tras(() => P.gasto(g, false), 'Gasto guardado'); }
+    const g = { id: 'GA' + Date.now(), ...datos }; state.gastos.push(g);
+    return tras(() => P.gasto(g, true), 'Gasto registrado');
   }
   if (f.id === 'fCont') {
     const c = { titulo: $('#cTit').value.trim() || 'Sin título', items: $('#cItems').value.split('\n').map(s => s.trim()).filter(Boolean) };
@@ -1730,7 +1899,7 @@ async function onSubmit(f) {
   }
   if (f.id === 'fAlta') {
     const editId = f.dataset.id;
-    const datos = { nombre: $('#nN').value.trim(), email: $('#nE').value.trim(), tlf: $('#nT').value.trim(), grupo: $('#nG').value, fnac: $('#nF').value, sexo: $('#nS').value, peso: +$('#nP').value || 70, inicial: +$('#nI').value || 0, tutor: $('#nTu').value.trim(), salud: $('#nSal').checked, imagen: $('#nIm').checked };
+    const datos = { nombre: $('#nN').value.trim(), email: $('#nE').value.trim(), tlf: $('#nT').value.trim(), grupo: $('#nG').value, fnac: $('#nF').value, sexo: $('#nS').value, peso: +$('#nP').value || 70, inicial: +$('#nI').value || 0, tutor: $('#nTu').value.trim(), salud: $('#nSal').checked, imagen: $('#nIm').checked, modalidad: $('#nMo').value };
     datos.edad = edadDe(datos.fnac);
     closeModal();
     if (editId) { const a = alumno(editId); Object.assign(a, datos); return tras(() => P.alumno(a, false), 'Ficha actualizada'); }

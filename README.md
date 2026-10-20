@@ -25,6 +25,17 @@ La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMI
 
 Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge (Android, Windows, macOS, ChromeOS). No funciona en Safari de iPhone/iPad; allí se puede usar el navegador Bluefy.
 
+## Bonos, fijos y relevos
+
+- **Fijo del grupo:** se le cobra cada clase con lista pasada, aunque falte, salvo que le cubra un relevo.
+- **Relevo:** pertenece a un grupo, pero solo se le cobra la clase cuando viene. Cualquier alumno puede añadirse a la lista de otro grupo.
+- **Ajustes:** desde la ficha del alumno se suman o restan clases con un motivo (por ejemplo, una clase que no hay que cobrarle).
+- Saldo = clases pagadas + ajustes − clases cobradas.
+
+## Gastos y balance
+
+En *Pagos* hay tres pestañas: cobros, gastos (por categoría) y balance mensual con ingresos, gastos, resultado, margen y clases impartidas.
+
 ## Partidos (hoja ANÁLISIS ESTADÍSTICO)
 
 - Cada punto se registra como winner o error no forzado de un jugador con su golpe (S, D, R, PD, PR, CP, VD, VR, B, RMP, RML), o como punto sin winner ni error.
