@@ -26,10 +26,10 @@ async function generar(system: string, usuario: string): Promise<{ texto: string
     try {
       if (prov === 'groq') {
         const key = await config('GROQ_API_KEY'); if (!key) continue;
-        const modelos = [...new Set([(await config('GROQ_MODEL')) || 'llama-3.3-70b-versatile', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'])];
+        const modelos = [...new Set([(await config('GROQ_MODEL')) || 'openai/gpt-oss-120b', 'openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b'])];
         for (const model of modelos) {
           const r = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(30000), headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-            body: JSON.stringify({ model, temperature: 0.6, max_tokens: 1500, messages: [{ role: 'system', content: system }, { role: 'user', content: usuario }] }) });
+            body: JSON.stringify({ model, temperature: 0.6, max_tokens: 4000, messages: [{ role: 'system', content: system }, { role: 'user', content: usuario }] }) });
           const o = await r.json().catch(() => ({}));
           const t = o?.choices?.[0]?.message?.content?.trim();
           if (r.ok && t) return { texto: t, proveedor: 'Groq' };
