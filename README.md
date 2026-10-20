@@ -15,6 +15,7 @@ App de la escuela de pádel: pagos y bonos con emails automáticos, pulsómetros
 | `supabase/functions/enviar-emails` | Supabase Edge Functions | Envía la cola de emails a través de Gmail |
 | `supabase/functions/interpretar` | Supabase Edge Functions | Informes del alumno y lectura táctica del partido con IA gratuita (Groq y, si falla, Gemini), sin datos personales |
 | `apps-script/Code.gs` | Google Apps Script en escuelapadelag@gmail.com | Envía los emails desde la Gmail de la escuela |
+| `icon.svg`, `icon-*.png`, `og.png`, `manifest.webmanifest` | GitHub Pages | Icono de la app, miniatura al compartir el enlace e instalación en la pantalla de inicio |
 | `.github/workflows/mantener-activo.yml` | GitHub Actions | Consulta mínima cada 3 días para que Supabase no pause el proyecto |
 
 ## Configuración privada
@@ -28,6 +29,13 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 - Si un sensor aparece pero no conecta, casi siempre está conectado a otra app o dispositivo (Polar Flow, Polar Beat, reloj, ajustes de Bluetooth del iPhone). La app reintenta tres veces, explica la causa probable y permite «Buscar todos los dispositivos».
 - Si se cae la conexión durante la sesión, intenta reconectar sola.
 - Al guardar la sesión, cada alumno recibe por email un resumen visual (fases, curva de pulso, comparativas e interpretación con referencias: ACSM 2018, OMS 2020, Díaz García et al. 2017, Carbonell Martínez et al. 2017, Edwards 1993).
+
+## Alumnos y emails
+
+- Al dar de alta se puede marcar o desmarcar «Enviar ahora el email de bienvenida». Así se puede dar de alta a todo el mundo sin enviar nada.
+- En *Alumnos* cada fila tiene una casilla y la cabecera una para marcar todos. El botón «Seleccionar los que aún no lo han recibido» marca a quienes no tienen la bienvenida enviada; después, «Enviar email de bienvenida» manda a cada uno su código. Cada alumno muestra si la bienvenida está sin enviar, en cola, enviada o si ya activó su acceso.
+- Gmail permite unos 100 emails al día desde una cuenta gratuita: la app no deja enviar más de 90 de una vez.
+- Al registrar un pago, el alumno recibe un email de agradecimiento con el pago y el estado de su bono.
 
 ## Bonos, fijos y relevos
 
@@ -49,6 +57,7 @@ En *Pagos* hay tres pestañas: cobros, gastos (por categoría) y balance mensual
 - Estadística de saque y resto por pareja y por jugador.
 - % ENF = errores del jugador / puntos perdidos por su pareja. % WIN = winners del jugador / puntos ganados por su pareja.
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
+- En *Mis partidos* el alumno ve sus estadísticas agrupadas en Resultado, Ataque, Errores no forzados, Saque, Resto y Momentos clave, cada una comparada con su grupo y con la escuela; su perfil de golpes, su evolución partido a partido y una tabla con cada pareja con la que ha jugado.
 
 ## Cálculos de pulsómetro (hoja GESTIÓN ESCUELA)
 
