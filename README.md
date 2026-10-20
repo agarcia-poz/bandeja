@@ -13,13 +13,13 @@ App de la escuela de pádel: pagos y bonos con emails automáticos, pulsómetros
 | `supabase/migrations/` | Supabase (proyecto `bandeja`, París) | Tablas, seguridad por filas y comparativa anónima |
 | `supabase/functions/activar-acceso` | Supabase Edge Functions | El alumno activa su cuenta con código + email |
 | `supabase/functions/enviar-emails` | Supabase Edge Functions | Envía la cola de emails a través de Gmail |
-| `supabase/functions/interpretar` | Supabase Edge Functions | Borrador del informe con Gemini (solo porcentajes y medias, sin datos personales) |
+| `supabase/functions/interpretar` | Supabase Edge Functions | Informes del alumno y lectura táctica del partido con IA gratuita (Groq y, si falla, Gemini), sin datos personales |
 | `apps-script/Code.gs` | Google Apps Script en escuelapadelag@gmail.com | Envía los emails desde la Gmail de la escuela |
 | `.github/workflows/mantener-activo.yml` | GitHub Actions | Consulta mínima cada 3 días para que Supabase no pause el proyecto |
 
 ## Configuración privada
 
-La URL del script de Gmail, su secreto y la clave de Gemini (`GEMINI_API_KEY`, opcionalmente `GEMINI_MODEL`) están en la tabla `config_privada` de Supabase, que solo leen las funciones del servidor. Nunca en este repositorio.
+La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMINI_API_KEY`; opcionalmente `GROQ_MODEL`, `GEMINI_MODEL` e `IA_ORDEN`) están en la tabla `config_privada` de Supabase, que solo leen las funciones del servidor. Nunca en este repositorio.
 
 ## Pulsómetros
 

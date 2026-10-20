@@ -645,9 +645,9 @@ function iaPanel(a) {
   const inf = state.informes[a.id]; const n = Math.max(sesionesDe(a.id).length, filasPartidos().filter(f => f.alumno === a.id).length * 2);
   return `<section class="panel p-5 flex flex-col gap-3 min-w-0">
     <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Interpretación para el alumno</h2>${inf ? `<span class="chip ${inf.publicado ? 'chip-ok' : 'chip-warn'}">${inf.publicado ? 'Publicada en su portal' : 'Borrador sin publicar'}</span>` : '<span class="chip chip-neutral">Sin generar</span>'}</div>
-    <p class="text-[13.5px] text-muted max-w-2xl">Gemini redacta un borrador con sus datos de pulsómetro y de partidos comparados con su grupo y la escuela. Solo se envían porcentajes y medias, nunca su nombre ni su contacto. Revísalo, añade lo que veas en pista y publícalo: el alumno solo ve la versión publicada.</p>
+    <p class="text-[13.5px] text-muted max-w-2xl">La IA redacta un borrador con sus datos de pulsómetro y de partidos comparados con su grupo y la escuela. Solo se envían porcentajes y medias, nunca su nombre ni su contacto. Revísalo, añade lo que veas en pista y publícalo: el alumno solo ve la versión publicada.</p>
     ${inf ? `<label class="lbl" for="iaTxt">Texto</label><textarea id="iaTxt" rows="9" class="field leading-relaxed">${esc(inf.texto)}</textarea>` : ''}
-    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Redactar de nuevo con Gemini' : 'Redactar con Gemini'}</button><button class="btn btn-ghost" data-ia-local="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>Borrador automático</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
+    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Redactar de nuevo con IA' : 'Redactar con IA'}</button><button class="btn btn-ghost" data-ia-local="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>Borrador automático</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
     ${n < 2 ? '<p class="text-[13px] text-muted">Hacen falta al menos 2 sesiones con pulsómetro o un partido.</p>' : ''}
   </section>`;
 }
@@ -1067,7 +1067,7 @@ function vPartido(id) {
 }
 function vMarcador(m) {
   const st = motor(m); const [p0, p1] = puntosTxt(st, m);
-  const S = statsDe(m);
+  const S = statsDe(m); const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
   const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
   const oro = !st.tb && m.oro && pr === 3 && ps === 3;
   const bp = !st.tb && m.formato !== 'libre' ? pr >= 3 && (m.oro || pr > ps) : !st.tb && pr >= 3 && (m.oro || pr > ps);
@@ -1077,7 +1077,7 @@ function vMarcador(m) {
       ${st.fin ? '' : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
     </div>`;
   const jugador = j => { const x = S.jug[j]; return `<div class="pcard">
-      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div><div class="text-[12.5px] text-muted tnum shrink-0">W ${x.win} · E ${x.enf}</div></div>
+      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
       <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${st.fin ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${st.fin ? 'disabled' : ''}>Error</button></div>
     </div>`; };
   const ult = st.puntos.slice(-6).reverse();
@@ -1093,6 +1093,7 @@ function vMarcador(m) {
       ${[0, 1].map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
         <button class="btn btn-ghost w-full" data-ppunto="${k}" ${st.fin ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
     </section>
+    ${vLectura(m)}
     <section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-2">Últimos puntos</h2>
       ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span><span>${descPunto(m, p)}</span>${p.oro ? '<span class="chip chip-warn">Oro</span>' : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
     </section>`;
@@ -1129,6 +1130,86 @@ function guardarPartido(m, ya) {
   guardarT = setTimeout(run, 1200);
 }
 
+/* Lectura en directo: claves del partido calculadas en cada punto (sin IA, instantáneo) */
+function lecturaPartido(m) {
+  const S = statsDe(m); const st = S.st; const P = st.puntos; const out = [];
+  if (P.length < 4) return [{ tono: 'neutral', t: 'Arrancando', d: 'Con unos puntos más aparecerán aquí las claves del partido: rachas, quién regala puntos, armas de cada jugador y cómo va el saque.' }];
+  const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
+  const nom = j => corto(nombreJ(m, j));
+  // Racha y momento
+  const last = P[P.length - 1].par; let racha = 0; for (let i = P.length - 1; i >= 0 && P[i].par === last; i--) racha++;
+  const ult = P.slice(-10), u0 = ult.filter(p => p.par === 0).length;
+  if (racha >= 3) out.push({ tono: 'warn', prio: 2, t: `Racha de la pareja ${last + 1}`, d: `${racha} puntos seguidos. Últimos ${ult.length} puntos: ${u0}-${ult.length - u0}.` });
+  else if (ult.length >= 8 && Math.abs(2 * u0 - ult.length) >= 4) { const dom = u0 * 2 > ult.length ? 0 : 1; out.push({ tono: 'warn', prio: 2, t: `La pareja ${dom + 1} domina el momento`, d: `Se ha llevado ${dom ? ult.length - u0 : u0} de los últimos ${ult.length} puntos.` }); }
+  else out.push({ tono: 'neutral', prio: 6, t: 'Momento del partido', d: `Últimos ${ult.length} puntos: pareja 1 ${u0}, pareja 2 ${ult.length - u0}.` });
+  // Cómo se deciden los puntos
+  const nE = P.filter(p => p.ev.tipo === 'e').length, nW = P.filter(p => p.ev.tipo === 'w').length;
+  out.push({ tono: 'neutral', prio: 7, t: 'Cómo se deciden los puntos', d: `${pct(nE / P.length)} por error no forzado, ${pct(nW / P.length)} con winner y ${pct((P.length - nE - nW) / P.length)} de otra forma (errores forzados, etc.).` });
+  // Quién regala puntos
+  [0, 1].forEach(k => {
+    const pr = S.pair[k]; if (pr.lost < 3) return;
+    const x = [S.jug[k * 2], S.jug[k * 2 + 1]].sort((a, b) => b.enf - a.enf)[0];
+    if (x.enf < 2 || x.pctEnf < .3) return;
+    const id = m.jugadores[x.j]?.id; const suyo = id ? Mh.alumno(id) : null; const gr = id && alumno(id) ? Mh.grupo(alumno(id).grupo) : null;
+    const ref = suyo?.pctEnf != null ? ` Su media habitual es ${pct(suyo.pctEnf)}${gr?.pctEnf != null ? ` y la de su grupo ${pct(gr.pctEnf)}` : ''}.` : gr?.pctEnf != null ? ` La media de su grupo es ${pct(gr.pctEnf)}.` : '';
+    out.push({ tono: 'bad', prio: 1, t: `${nom(x.j)} concentra los errores`, d: `${x.enf} errores no forzados: el ${pct(x.pctEnf)} de los puntos que pierde su pareja${x.gEnf ? `, sobre todo de ${GOLPE_N[x.gEnf].toLowerCase()} (${x.ge[x.gEnf]})` : ''}.${ref}` });
+  });
+  // Armas
+  S.jug.filter(x => x.win >= 2).sort((a, b) => b.win - a.win).slice(0, 2).forEach(x => {
+    out.push({ tono: 'ok', prio: 3, t: `El arma de ${nom(x.j)}`, d: `${x.win} winners (${pct(x.pctWin)} de los puntos de su pareja)${x.gWin ? `; ${x.gw[x.gWin]} de ${GOLPE_N[x.gWin].toLowerCase()}` : ''}.` });
+  });
+  // Saque
+  const J = st.juegos.filter(j => !j.tb);
+  [0, 1].forEach(k => {
+    const sv = J.filter(j => j.server === k); if (sv.length < 2) return;
+    const held = sv.filter(j => j.winner === k).length;
+    if (held / sv.length < .5) out.push({ tono: 'warn', prio: 2, t: `La pareja ${k + 1} sufre con su saque`, d: `Ha ganado ${held} de ${sv.length} juegos sacando (${dec(S.pair[k].ppjS ?? 0, 1)} puntos por juego al saque, ${dec(S.pair[k].ppjR ?? 0, 1)} al resto).` });
+  });
+  // Momentos clave
+  const bp = [0, 1].filter(k => S.pair[k].bpO).map(k => `pareja ${k + 1} ${S.pair[k].bpC}/${S.pair[k].bpO}`);
+  const oro = S.pair[0].oroJ ? `${bp.length ? 'Puntos' : 'Puntos'} de oro ganados: pareja 1 ${S.pair[0].oroG}/${S.pair[0].oroJ}, pareja 2 ${S.pair[1].oroG}/${S.pair[1].oroJ}` : '';
+  if (bp.length || oro) out.push({ tono: 'neutral', prio: 4, t: 'Momentos clave', d: [bp.length ? `Bolas de break convertidas: ${bp.join(', ')}` : '', oro].filter(Boolean).join('. ') + '.' });
+  // Rendimiento por encima o por debajo de lo habitual
+  S.jug.forEach(x => {
+    const id = m.jugadores[x.j]?.id; const suyo = id ? Mh.alumno(id) : null;
+    if (!suyo || suyo.pctWin == null || x.pctWin == null || S.pair[x.k].won < 6) return;
+    if (x.pctWin - suyo.pctWin > .12) out.push({ tono: 'ok', prio: 5, t: `${nom(x.j)} está inspirado`, d: `Firma el ${pct(x.pctWin)} de los puntos de su pareja con winner; lo habitual en él es ${pct(suyo.pctWin)}.` });
+  });
+  return out.sort((a, b) => a.prio - b.prio).slice(0, 6);
+}
+function vLectura(m) {
+  const L = lecturaPartido(m);
+  const col = { ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' };
+  return `<section class="panel p-4 min-w-0" aria-live="polite"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-xl font-bold">Lectura en directo</h2>
+      <button class="btn btn-ghost !py-1.5 text-[13px]" data-pia>Pedir lectura táctica a la IA</button></div>
+    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${L.map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${col[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[14px] text-muted mt-1 leading-snug">${esc(x.d)}</p></article>`).join('')}</div></section>`;
+}
+/* Datos para la IA: los jugadores van como A1, A2, B1, B2 y los nombres se ponen después en la app */
+function datosIAPartido(m) {
+  const S = statsDe(m); const etiqueta = ['A1', 'A2', 'B1', 'B2']; const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
+  const r2 = v => v == null ? null : Math.round(v * 100) / 100;
+  return {
+    formato: FORMATOS[m.formato], punto_de_oro: !!m.oro, marcador: resultadoTxt(S.st), terminado: S.st.fin,
+    ultimos_10_puntos_para: S.st.puntos.slice(-10).map(p => p.par ? 'B' : 'A').join(''),
+    parejas: [0, 1].map(k => { const p = S.pair[k]; return { pareja: k ? 'B (B1+B2)' : 'A (A1+A2)', puntos_ganados: p.won, juegos_ganados: p.gw, puntos_por_juego_saque: r2(p.ppjS), puntos_por_juego_resto: r2(p.ppjR), oro: `${p.oroG}/${p.oroJ}`, roturas: `${p.bpC}/${p.bpO}`, errores_no_forzados: p.enf, winners: p.win }; }),
+    jugadores: S.jug.map(x => { const id = m.jugadores[x.j]?.id; const h = id ? Mh.alumno(id) : null; const g = id && alumno(id) ? Mh.grupo(alumno(id).grupo) : null;
+      return { jugador: etiqueta[x.j], errores_no_forzados: x.enf, pct_errores_no_forzados: r2(x.pctEnf), errores_por_golpe: x.ge, winners: x.win, pct_winners: r2(x.pctWin), winners_por_golpe: x.gw,
+        media_habitual: h ? { pct_errores_no_forzados: r2(h.pctEnf), pct_winners: r2(h.pctWin) } : null, media_grupo: g ? { pct_errores_no_forzados: r2(g.pctEnf), pct_winners: r2(g.pctWin) } : null }; })
+  };
+}
+async function pedirLecturaIA(m, btn) {
+  if (!LIVE) return openModal(`<div class="flex flex-col gap-3">${modalHead('Lectura táctica')}<p class="text-[14.5px] leading-relaxed">${lecturaPartido(m).map(x => `<strong>${esc(x.t)}.</strong> ${esc(x.d)}`).join('<br><br>')}</p><p class="text-[13px] text-muted">En el modo demostración se muestra la lectura automática. Con la app conectada, aquí responde la IA.</p></div>`);
+  btn.disabled = true; btn.textContent = 'Pensando…';
+  try {
+    const r = await fn('interpretar', { modo: 'partido', datos: datosIAPartido(m) });
+    let txt = r.texto || '';
+    ['A1', 'A2', 'B1', 'B2'].forEach((e, j) => { txt = txt.replace(new RegExp(`\\b${e}\\b`, 'g'), corto(nombreJ(m, j))); });
+    txt = txt.replace(/\bpareja A\b/gi, 'pareja 1').replace(/\bpareja B\b/gi, 'pareja 2');
+    openModal(`<div class="flex flex-col gap-3">${modalHead('Lectura táctica')}${txt.split(/\n{2,}/).map(p => `<p class="text-[14.5px] leading-relaxed">${esc(p)}</p>`).join('')}<p class="text-[12.5px] text-muted">Redactado por ${esc(r.proveedor || 'la IA')} con las estadísticas del partido, sin nombres.</p></div>`);
+  } catch (err) { toast('La IA no respondió: ' + err.message); }
+  btn.disabled = false; btn.textContent = 'Pedir lectura táctica a la IA';
+}
+
 function vInformePartido(m) {
   const sets = motor(m).sets.length + (motor(m).fin ? 0 : 1);
   const sel = ui.pset ?? null;
@@ -1142,6 +1223,7 @@ function vInformePartido(m) {
       ${ui.role === 'admin' && m.estado === 'terminado' ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-preabrir>Reabrir para corregir</button>` : ''}</div>` +
     pageHead(`${esc(nombrePar(m, 0))} <span class="text-muted">vs</span> ${esc(nombrePar(m, 1))}`, `${fmtDate(m.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]} · Resultado ${resultadoTxt(motor(m))}`) + `
   <div class="flex flex-wrap gap-2">${tabs.map(([k, l]) => `<button class="chip ${sel === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-pset="${k ?? ''}">${l}</button>`).join('')}</div>
+  ${sel == null && m.eventos.length >= 4 ? `<section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-3">Claves del partido</h2><div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${lecturaPartido(m).map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${{ ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' }[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[14px] text-muted mt-1 leading-snug">${esc(x.d)}</p></article>`).join('')}</div></section>` : ''}
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Jugadores</h2></div>
     <table class="data min-w-[720px]"><thead><tr><th>Jugador</th><th class="text-right">Nº ENF</th><th class="text-right">% ENF</th><th>Golpe + ENF</th><th class="text-right">Nº WIN</th><th class="text-right">% WIN</th><th>Golpe + WIN</th><th class="text-right">% oro</th><th class="text-right">% break</th><th class="text-right">Pts/juego</th><th class="text-right">Índice win</th></tr></thead><tbody>
     ${S.jug.map(x => `<tr><td class="font-semibold"><span class="chip ${x.k ? 'chip-p1' : 'chip-p0'} mr-1">P${x.k + 1}</span>${esc(nombreJ(m, x.j))}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${f(x.pctEnf, pct)}</td><td>${x.gEnf ? `${x.gEnf} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gEnf]}</span>` : '—'}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${f(x.pctWin, pct)}</td><td>${x.gWin ? `${x.gWin} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gWin]}</span>` : '—'}</td><td class="text-right tnum">${f(x.pctOro, pct)}</td><td class="text-right tnum">${f(x.pctBreak, pct)}</td><td class="text-right tnum">${f(x.ppj, v => dec(v, 2))}</td><td class="text-right tnum">${f(x.indice, v => dec(v, 2))}</td></tr>`).join('')}
@@ -1513,7 +1595,7 @@ function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -1537,6 +1619,7 @@ document.addEventListener('click', async e => {
   {
     const m = partidoActual();
     if (m && d.pick) return pickGolpe(m, +d.j, d.pick);
+    if (m && d.pia !== undefined) return pedirLecturaIA(m, t);
     if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? parDe(j) : 1 - parDe(j) }); }
     if (m && d.ppunto !== undefined) return anotar(m, { tipo: 'p', j: null, g: null, par: +d.ppunto });
     if (m && d.undo !== undefined) { m.eventos.pop(); if (m.estado === 'terminado') m.estado = 'en_juego'; m.resultado = resultadoTxt(motor(m)); guardarPartido(m); toast('Último punto deshecho'); return render(); }
@@ -1573,8 +1656,8 @@ document.addEventListener('click', async e => {
   if (d.reload !== undefined) return loadAll();
   if (d.iaGen && LIVE) {
     const a = alumno(d.iaGen); t.disabled = true; t.textContent = 'Redactando…';
-    try { const r = await fn('interpretar', { alumno_id: a.id }); state.informes[a.id] = r; toast('Borrador de Gemini listo. Revísalo antes de publicarlo.'); }
-    catch (err) { toast('Gemini no respondió: ' + err.message + '. Prueba el borrador automático.'); }
+    try { const r = await fn('interpretar', { alumno_id: a.id }); state.informes[a.id] = r; toast(`Borrador de ${r.proveedor || 'la IA'} listo. Revísalo antes de publicarlo.`); }
+    catch (err) { toast('La IA no respondió: ' + err.message + '. Prueba el borrador automático.'); }
     return render();
   }
   if (d.iaGen || d.iaLocal) {

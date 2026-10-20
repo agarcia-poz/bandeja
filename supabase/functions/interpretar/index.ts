@@ -1,4 +1,4 @@
-// Redacta con Gemini una interpretación de los datos de pulsómetro y de partidos de un alumno,
+// Redacta con IA (Groq o Gemini, ambos gratuitos) una interpretación de los datos de pulsómetro y de partidos de un alumno,
 // comparados con su grupo y con la escuela. Solo se envían porcentajes y medias (sin nombre, edad ni contacto).
 // El texto queda como borrador: el entrenador lo revisa y lo publica desde la app.
 import { cors, json, servicio, esAdmin, config } from '../_shared/comun.ts';
@@ -16,12 +16,57 @@ function agregar(filas: Fila[], claves: string[]) {
   return { al, alumno: (id: string) => al.find((x) => x.id === id), grupo: (g: string | null) => agg(al.filter((x) => x.grupo === g)), escuela: agg(al) };
 }
 
+
+/* Proveedores gratuitos en orden: el primero que responda gana.
+   Orden configurable con IA_ORDEN (por defecto "groq,gemini"); solo se usan los que tienen clave. */
+async function generar(system: string, usuario: string): Promise<{ texto: string; proveedor: string }> {
+  const orden = ((await config('IA_ORDEN')) || 'groq,gemini').split(',').map((x) => x.trim());
+  const errores: string[] = [];
+  for (const prov of orden) {
+    try {
+      if (prov === 'groq') {
+        const key = await config('GROQ_API_KEY'); if (!key) continue;
+        const modelos = [...new Set([(await config('GROQ_MODEL')) || 'llama-3.3-70b-versatile', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant'])];
+        for (const model of modelos) {
+          const r = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(30000), headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+            body: JSON.stringify({ model, temperature: 0.6, max_tokens: 1500, messages: [{ role: 'system', content: system }, { role: 'user', content: usuario }] }) });
+          const o = await r.json().catch(() => ({}));
+          const t = o?.choices?.[0]?.message?.content?.trim();
+          if (r.ok && t) return { texto: t, proveedor: 'Groq' };
+          errores.push(`Groq ${model}: ${o?.error?.message ?? r.status}`);
+        }
+      } else if (prov === 'gemini') {
+        const key = await config('GEMINI_API_KEY'); if (!key) continue;
+        const modelos = [...new Set([(await config('GEMINI_MODEL')) || 'gemini-flash-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest'])];
+        for (const modelo of modelos) {
+          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, { method: 'POST', signal: AbortSignal.timeout(30000), headers: { 'x-goog-api-key': key, 'content-type': 'application/json' },
+            body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: usuario }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 4096 } }) });
+          const o = await r.json().catch(() => ({}));
+          const t = (o.candidates?.[0]?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought).map((p: { text: string }) => p.text).join('\n').trim();
+          if (r.ok && t) return { texto: t, proveedor: 'Gemini' };
+          errores.push(`Gemini ${modelo}: ${o?.error?.message ?? r.status}`);
+        }
+      }
+    } catch (e) { errores.push(`${prov}: ${(e as Error).message}`); }
+  }
+  throw new Error(errores.length ? errores.join(' | ').slice(0, 400) : 'No hay ninguna clave de IA configurada');
+}
+
+const SISTEMA_PARTIDO = `Eres el entrenador de una escuela de pádel y lees las estadísticas de un partido en curso para dar indicaciones en el descanso.
+Los jugadores se llaman A1 y A2 (pareja A) y B1 y B2 (pareja B); usa exactamente esas etiquetas.
+% errores no forzados = errores del jugador sobre los puntos que perdió su pareja (más bajo es mejor). % winners = winners del jugador sobre los puntos que ganó su pareja.
+Golpes: S saque, D derecha, R revés, PD pared derecha, PR pared revés, CP contrapared, VD volea derecha, VR volea revés, B bandeja, RMP remate plano, RML remate liftado.
+Escribe en español de España, 3 o 4 párrafos muy breves y directos, sin títulos, listas ni markdown: qué está decidiendo el partido, qué debe ajustar cada pareja (en qué golpe arriesga de más, qué arma está funcionando, cómo va con el saque y el resto) y una consigna táctica concreta para cada pareja. Compara con la media habitual del jugador y de su grupo cuando esté disponible. Usa solo los datos del JSON.`;
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (!(await esAdmin(req))) return json({ error: 'Solo el administrador puede generar informes' }, 401);
-  const key = await config('GEMINI_API_KEY');
-  if (!key) return json({ error: 'Falta la clave de Gemini' }, 500);
-  const { alumno_id } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  if (body.modo === 'partido') {
+    try { return json(await generar(SISTEMA_PARTIDO, `Estadísticas del partido (JSON):\n${JSON.stringify(body.datos ?? {})}`)); }
+    catch (e) { return json({ error: (e as Error).message }, 502); }
+  }
+  const { alumno_id } = body;
   if (!alumno_id) return json({ error: 'Falta alumno_id' }, 400);
 
   const sb = servicio();
@@ -66,23 +111,11 @@ Pulsómetro: porcentajes sobre su FC máxima teórica; zonas Z1 50-60 %, Z2 60-7
 Partidos: % errores no forzados = sus errores sobre los puntos que perdió su pareja (más bajo es mejor). % winners = sus winners sobre los puntos que ganó su pareja. Índice win = media de % puntos de oro ganados y % roturas conseguidas. Golpes: S saque, D derecha, R revés, PD pared derecha, PR pared revés, CP contrapared, VD volea derecha, VR volea revés, B bandeja, RMP remate plano, RML remate liftado.
 Escribe entre 3 y 5 párrafos breves, sin títulos, listas ni markdown: cómo trabaja su corazón en clase frente a su grupo y la escuela; qué dicen sus partidos (errores, winners, golpes más fuertes y más débiles, momentos clave); evolución si se aprecia; y 2 o 3 recomendaciones concretas para pista. Cita cifras redondeadas. Usa solo los datos del JSON. No hagas diagnósticos médicos; si algo parece anómalo, sugiere comentarlo con el entrenador.`;
 
-  const modelos = [...new Set([(await config('GEMINI_MODEL')) || 'gemini-flash-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest'])];
-  let texto = '', ultimoError = '';
-  for (const modelo of modelos) {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-      method: 'POST',
-      headers: { 'x-goog-api-key': key, 'content-type': 'application/json' },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: `Datos (JSON):\n${JSON.stringify(datos)}` }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 4096 } })
-    });
-    const out = await resp.json().catch(() => ({}));
-    if (!resp.ok) { ultimoError = out?.error?.message ?? `Error ${resp.status}`; continue; }
-    texto = (out.candidates?.[0]?.content?.parts ?? []).filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought).map((p: { text: string }) => p.text).join('\n').trim();
-    if (texto) break;
-    ultimoError = 'Gemini devolvió una respuesta vacía';
-  }
-  if (!texto) return json({ error: ultimoError || 'Gemini no respondió' }, 502);
+  let texto = '', proveedor = '';
+  try { ({ texto, proveedor } = await generar(system, `Datos (JSON):\n${JSON.stringify(datos)}`)); }
+  catch (e) { return json({ error: (e as Error).message }, 502); }
 
   const { data: inf, error } = await sb.from('informes_ia').insert({ alumno_id, texto, publicado: false }).select('id, texto, generado, publicado').single();
   if (error) return json({ error: error.message }, 500);
-  return json(inf);
+  return json({ ...inf, proveedor });
 });
