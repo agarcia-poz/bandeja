@@ -145,10 +145,66 @@
   .email-paper { background: rgb(var(--surface)); border: 1px solid rgb(var(--line)); border-radius: 14px; }
   .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sheet-backdrop { background: rgb(var(--ink) / .45); }
+  /* Pantalla completa de pulsómetros: fondo = zona (el texto de la zona lo repite, no solo el color) */
+  .hz0, .hzx { background: rgb(var(--surface2)); color: rgb(var(--ink)); }
+  .hz1 { background: rgb(var(--z1)); color: #0c1b38; } .hz2 { background: rgb(var(--z2)); color: #fff; }
+  .hz3 { background: rgb(var(--z3)); color: #fff; } .hz4 { background: rgb(var(--z4)); color: #1d1300; } .hz5 { background: rgb(var(--z5)); color: #fff; }
+  .hf-wrap { position: fixed; inset: 0; z-index: 90; background: #07122a; color: #fff; display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  .hf-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .6rem max(16px, env(safe-area-inset-left, 0px)); }
+  .hf-btn { min-height: 48px; padding: 0 1.1rem; border-radius: 999px; background: rgb(255 255 255 / .14); color: #fff; font-weight: 700; }
+  .hf-btn:hover { background: rgb(255 255 255 / .24); }
+  .hf-rec { width: 12px; height: 12px; border-radius: 999px; background: rgb(255 255 255 / .35); display: inline-block; }
+  .hf-rec.on { background: #ff4d5e; box-shadow: 0 0 0 4px rgb(255 77 94 / .3); }
+  .hf-grid { flex: 1; display: grid; gap: 6px; padding: 6px; min-height: 0; }
+  .hf-grid.n1 { grid-template-columns: 1fr; }
+  .hf-grid.n2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  @media (orientation: landscape) { .hf-grid.n2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; } }
+  .hf-grid.n3, .hf-grid.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .hf-panel { border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; min-height: 0; overflow: hidden; transition: background-color .6s ease, color .6s ease; }
+  .hf-name { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.5rem, 5vmin, 3.2rem); line-height: 1; }
+  .hf-bpm { font-family: var(--f-display); font-weight: 800; line-height: .9; font-size: clamp(5rem, 30vmin, 22rem); }
+  .hf-grid.n2 .hf-bpm { font-size: clamp(4.5rem, 22vmin, 16rem); } .hf-grid.n3 .hf-bpm, .hf-grid.n4 .hf-bpm { font-size: clamp(3.5rem, 16vmin, 11rem); }
+  .hf-zone { font-weight: 700; font-size: clamp(1rem, 3.4vmin, 2rem); }
+  .hf-meta { opacity: .85; font-size: clamp(.9rem, 2.4vmin, 1.3rem); margin-top: .3rem; }
+  @media (prefers-reduced-motion: reduce) { .hf-panel { transition: none; } }
+  .dock { position: fixed; z-index: 45; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); display: flex; justify-content: flex-end; pointer-events: none; }
+  @media (min-width: 1024px) { .dock { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: auto; } }
+  .dock-in { pointer-events: auto; display: flex; align-items: center; gap: .5rem; max-width: 100%; overflow-x: auto; background: #07122a; color: #fff; border-radius: 999px; padding: .4rem .5rem .4rem .9rem; box-shadow: 0 10px 30px -10px rgb(0 0 0 / .5); min-height: 52px; }
+  .dock-in svg { width: 20px; height: 20px; flex: none; margin-right: .3rem; }
+  .dock-chip { display: inline-flex; align-items: center; gap: .45rem; border-radius: 999px; padding: .2rem .7rem; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  /* Marcador */
+  .scoreboard { background: #07122a; color: #fff; border-radius: 20px; padding: .9rem 1rem 1rem; display: flex; flex-direction: column; gap: .35rem; }
+  .sb-head { display: flex; align-items: center; gap: .6rem; font-size: 13px; font-weight: 600; opacity: .9; }
+  .sb-badge { background: rgb(var(--ball)); color: rgb(var(--ball-ink)); border-radius: 999px; padding: .1rem .6rem; font-weight: 700; }
+  .sb-badge.oro { background: #ffcf3a; color: #241a00; }
+  .sb-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(auto-fit, minmax(0, max-content)); grid-auto-flow: column; align-items: center; gap: .5rem; border-radius: 14px; padding: .35rem .5rem; }
+  .sb-row.srv { background: rgb(255 255 255 / .07); }
+  .sb-name { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: clamp(1rem, 3.6vw, 1.35rem); min-width: 0; }
+  .sb-ball { width: 12px; height: 12px; border-radius: 999px; flex: none; background: transparent; }
+  .sb-row.srv .sb-ball { background: rgb(var(--ball)); }
+  .sb-set { font-family: var(--f-display); font-size: 1.6rem; font-weight: 700; opacity: .55; min-width: 1.4rem; text-align: center; }
+  .sb-set.won { opacity: 1; }
+  .sb-games { font-family: var(--f-display); font-size: 2.2rem; font-weight: 800; min-width: 2.2rem; text-align: center; background: rgb(255 255 255 / .1); border-radius: 10px; }
+  .sb-pts { font-family: var(--f-display); font-size: clamp(2.6rem, 9vw, 3.6rem); font-weight: 800; min-width: 4.2rem; text-align: center; color: rgb(var(--ball)); line-height: 1; }
+  .sb-final { font-weight: 700; color: rgb(var(--ball)); padding: .2rem .5rem; }
+  .pcol { display: flex; flex-direction: column; gap: .75rem; padding: .75rem; border-radius: 20px; background: rgb(var(--surface)); border: 1px solid rgb(var(--line)); border-top: 6px solid rgb(var(--court)); }
+  .pcol-1 { border-top-color: rgb(var(--z4)); }
+  .pcol-head { display: flex; justify-content: space-between; font-weight: 700; color: rgb(var(--muted)); font-size: 13px; padding: 0 .25rem; }
+  .pcard { display: flex; flex-direction: column; gap: .5rem; padding: .75rem; border-radius: 16px; background: rgb(var(--surface2) / .6); }
+  .pbtn { min-height: 64px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; color: #fff; transition: transform .1s ease, filter .15s ease; }
+  .pbtn:active { transform: scale(.97); } .pbtn:hover { filter: brightness(1.07); } .pbtn:disabled { opacity: .4; }
+  .pbtn-w { background: rgb(var(--ok)); } .pbtn-e { background: rgb(var(--bad)); }
+  .gbtn { min-height: 72px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgb(var(--surface2)); color: rgb(var(--ink)); padding: .4rem; }
+  .gbtn-w { box-shadow: inset 0 -4px 0 rgb(var(--ok)); } .gbtn-e { box-shadow: inset 0 -4px 0 rgb(var(--bad)); }
+  .gbtn:hover { background: rgb(var(--line)); }
+  .chip-p0 { background: rgb(var(--court) / .14); color: rgb(var(--court)); } .chip-p1 { background: rgb(var(--z4) / .18); color: rgb(var(--warn)); }
 </style>
 
 <div id="app" class="min-h-full"></div>
 <div id="toast" class="toast" hidden></div>
+<div id="hrfull" class="hf-wrap" hidden></div>
+<div id="hrdock" class="dock" hidden></div>
 <div id="modal" class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center sheet-backdrop" hidden></div>
 
 <script>
@@ -160,7 +216,7 @@ const S = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
-const KEY = 'bandeja-demo-v1';
+const KEY = 'bandeja-demo-v2';
 const $ = sel => document.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -239,7 +295,7 @@ function seed() {
   const r = rng(20261016);
   const st = {
     settings: { escuela: 'Escuela de Pádel AG', umbral: 1, remitente: 'escuelapadelag@gmail.com', temporada: '26/27', inicio: SEASON_START, auto: true },
-    grupos: GRUPOS, alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], tests: [], outbox: [], warned: {}, informes: {}, sesionIds: {}
+    grupos: GRUPOS, alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], partidos: [], statsAnon: [], outbox: [], warned: {}, informes: {}, sesionIds: {}
   };
   ALUMNOS_BASE.forEach(([nombre, g, sexo, edad, peso, plan, inicial], i) => {
     const first = nombre.split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -280,22 +336,26 @@ function seed() {
       });
     });
   });
-  // tests de condición física (octubre)
-  st.alumnos.forEach(a => {
-    const lvl = { G1: 0, G2: .5, G3: 1 }[a.grupo];
-    const ageF = (a.edad - 30) / 40;
-    st.tests.push({
-      id: 'T' + a.id, alumno: a.id, periodo: 'Octubre', fecha: '2026-10-05',
-      peso: a.peso, ag1: +(12.4 - lvl * 1.6 + ageF * 1.4 + r() * .9).toFixed(2), ag2: +(9.8 - lvl * 1.2 + ageF * 1.1 + r() * .7).toFixed(2),
-      ag3: +(15.6 - lvl * 2 + ageF * 1.8 + r() * 1.1).toFixed(2), precision: Math.round(8 + lvl * 7 + r() * 4 - ageF * 2), rpe: Math.round(5 + r() * 3)
-    });
-  });
-  // temporada pasada para dos alumnos que vuelven
-  [['A3', [13.6, 13.1, 12.7, 12.3], [10.8, 10.4, 10.1, 9.9], [16.9, 16.5, 16.0, 15.6], [9, 10, 12, 13]],
-   ['A7', [12.0, 11.7, 11.5, 11.3], [9.5, 9.3, 9.1, 9.0], [15.0, 14.6, 14.3, 14.1], [12, 13, 13, 15]]].forEach(([id, a1, a2, a3, pr]) => {
-    ['Oct 24', 'Dic 24', 'Abr 25', 'Jun 25'].forEach((p, i) => st.tests.push({ id: `H${id}${i}`, alumno: id, periodo: p, fecha: ['2024-10-07', '2024-12-09', '2025-04-07', '2025-06-09'][i], peso: null, ag1: a1[i], ag2: a2[i], ag3: a3[i], precision: pr[i], rpe: null, historico: true }));
-  });
   return st;
+}
+function seedPartidos(st) {
+  const r = rng(77); const out = [];
+  const golpe = () => GOLPES[Math.floor(r() * GOLPES.length)][0];
+  const planes = [['G1', '1set', 6], ['G2', '3sets', 13], ['G3', '1set', 13], ['G1', '1set', 13], ['G2', '1set', 6]];
+  planes.forEach(([gid, formato, dd], n) => {
+    const miembros = st.alumnos.filter(a => a.grupo === gid);
+    let js = miembros.slice(0, 4).map(a => ({ id: a.id, nombre: a.nombre }));
+    while (js.length < 4) js.push({ id: null, nombre: ['Invitado Ana', 'Invitado Luis'][js.length % 2] });
+    if (n % 2) js = [js[0], js[2], js[1], js[3]];
+    const m = { id: 'M' + (n + 1), fecha: iso(new Date(TODAY.getTime() - (dd + n) * 86400000)), tipo: n % 3 ? 'clase' : 'partido', grupo: gid, jugadores: js, formato, oro: true, saque: n % 2, eventos: [], estado: 'terminado', creado: '' };
+    const sesgo = .44 + r() * .12; let guard = 0;
+    while (!motor(m).fin && guard++ < 600) {
+      const par = r() < sesgo ? 1 : 0; const x = r(); const j = (1 - par) * 2 + (r() < .5 ? 0 : 1); const jw = par * 2 + (r() < .5 ? 0 : 1);
+      m.eventos.push(x < .42 ? { tipo: 'e', j, g: golpe(), par } : x < .7 ? { tipo: 'w', j: jw, g: golpe(), par } : { tipo: 'p', j: null, g: null, par });
+    }
+    m.resultado = resultadoTxt(motor(m)); out.push(m);
+  });
+  return out;
 }
 function mkPago(a, concepto, fecha, metodo, tarifa) {
   const c = CONCEPTOS.find(x => x.id === concepto);
@@ -332,11 +392,12 @@ function metrics(sess, a) {
 /* ---------- Estado ---------- */
 const LIVE = !!(window.BANDEJA && BANDEJA.supabaseUrl && BANDEJA.supabaseKey && window.supabase) && location.hash !== '#demo';
 const sb = LIVE ? supabase.createClient(BANDEJA.supabaseUrl, BANDEJA.supabaseKey) : null;
-const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1, remitente: '', temporada: '26/27', inicio: SEASON_START, auto: true }, grupos: [], alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], tests: [], outbox: [], warned: {}, informes: {}, sesionIds: {} });
+const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1, remitente: '', temporada: '26/27', inicio: SEASON_START, auto: true }, grupos: [], alumnos: [], pagos: [], asistencia: {}, contenidos: {}, sesionesFC: [], partidos: [], statsAnon: [], outbox: [], warned: {}, informes: {}, sesionIds: {} });
 let state = LIVE ? emptyState() : (S.get(KEY) || seed());
 state.informes = state.informes || {};
+state.statsAnon = state.statsAnon || [];
 const save = () => { if (!LIVE) S.set(KEY, state); };
-let ui = { role: 'admin', view: 'panel', alumnoId: null, studentLogged: null, filtroGrupo: 'todos', claseKey: null, periodo: 'Octubre', auth: LIVE ? 'cargando' : 'ok', isAdmin: !LIVE };
+let ui = { role: 'admin', view: 'panel', alumnoId: null, studentLogged: null, filtroGrupo: 'todos', claseKey: null, pmodo: null, pset: null, auth: LIVE ? 'cargando' : 'ok', isAdmin: !LIVE };
 const alumno = id => state.alumnos.find(a => a.id === id);
 const SIN_GRUPO = { id: null, nombre: 'Sin grupo', dia: 1, hora: '--:--', fin: '--:--', tarifa: 'T1', nivel: '' };
 const grupo = id => state.grupos.find(g => g.id === id) || { ...SIN_GRUPO, tarifa: TARIFAS[0].id };
@@ -414,17 +475,19 @@ const I = {
   bt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></svg>',
   copy: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
   out: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l4-4-4-4M14 12H4"/></svg>',
+  expand: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  partidos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14M3 12h18"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>'
 };
 const LOGO = `<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="rgb(var(--ball))"/><path d="M9 26c6-1 13-6 18-15" stroke="rgb(var(--ball-ink))" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="29" cy="27" r="4" fill="rgb(var(--ball-ink))"/></svg>`;
 
 /* ---------- Shell ---------- */
-const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Sesión en vivo'], ['fisica', 'Condición física'], ['emails', 'Emails']];
-const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi informe'], ['fisica', 'Condición física'], ['pagos', 'Mis pagos']];
+const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Pulsómetros'], ['partidos', 'Partidos'], ['emails', 'Emails']];
+const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos', 'Mis partidos'], ['pagos', 'Mis pagos']];
 
 function shell(content) {
   const nav = ui.role === 'admin' ? ADMIN_NAV : ALUMNO_NAV;
-  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view;
+  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view;
   const pendientes = state.outbox.filter(e => e.estado === 'En cola').length;
   const who = ui.role === 'admin' ? (LIVE ? esc(ui.email || 'Administrador') : 'Andrés · administrador') : esc(alumno(ui.studentLogged).nombre);
   const canSwitch = !LIVE || ui.isAdmin; const canLogout = LIVE || ui.role === 'alumno';
@@ -451,7 +514,7 @@ function shell(content) {
       <main class="gutter py-5"><div class="max-w-6xl mx-auto flex flex-col gap-6">${content}</div></main>
     </div>
     <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface border-t border-line" style="padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)" aria-label="Secciones">
-      <div class="flex overflow-x-auto">${nav.map(([k, l]) => `<a href="#" class="tab" data-go="${k}" ${cur === k ? 'aria-current="page"' : ''}>${I[k] || I.panel}<span>${l.replace('Condición física', 'Físico').replace('Sesión en vivo', 'En vivo')}</span></a>`).join('')}</div>
+      <div class="flex overflow-x-auto">${nav.map(([k, l]) => `<a href="#" class="tab" data-go="${k}" ${cur === k ? 'aria-current="page"' : ''}>${I[k] || I.panel}<span>${l.replace('Pulsómetros', 'FC')}</span></a>`).join('')}</div>
     </nav>
   </div>`;
 }
@@ -547,7 +610,6 @@ function vAlumnos() {
 function vAlumnoDetalle(id) {
   const a = alumno(id); const g = grupo(a.grupo); const ss = sesionesDe(id);
   const pagos = state.pagos.filter(p => p.alumno === id).sort((x, y) => y.fecha.localeCompare(x.fecha));
-  const t = state.tests.filter(x => x.alumno === id && !x.historico).slice(-1)[0];
   const avg = k => ss.length ? ss.reduce((s, x) => s + metrics(x, a)[k], 0) / ss.length : 0;
   return `<div><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="alumnos">${I.back}Alumnos</button></div>` +
     pageHead(esc(a.nombre), `${esc(g.nombre)} · ${DAYS[g.dia]} ${g.hora}–${g.fin} · ${tarifaDe(a).nombre} · ${a.edad} años`,
@@ -567,6 +629,10 @@ function vAlumnoDetalle(id) {
     </div>
   </section>
   <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Frecuencia cardíaca por sesión</h2><span class="text-[13px] text-muted">% sobre su FC máxima teórica</span></div><div class="h-64"><canvas id="chFC"></canvas></div></section>
+  ${(() => { const F = mediasPor(filasFC(), METRICAS_FC), Pm = mediasPor(filasPartidos(), METRICAS_P); return `<section class="grid xl:grid-cols-2 gap-4">
+    <div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Pulsómetro frente a grupo y escuela</h2>${F.alumno(a.id) ? cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela, 'Alumno') : '<p class="text-muted">Sin sesiones con pulsómetro.</p>'}</div>
+    <div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Partidos frente a grupo y escuela</h2>${Pm.alumno(a.id) ? cmpTabla(METRICAS_P, Pm.alumno(a.id), Pm.grupo(a.grupo), Pm.escuela, 'Alumno') : '<p class="text-muted">Sin partidos registrados.</p>'}</div>
+  </section>`; })()}
   <section class="grid lg:grid-cols-2 gap-4">
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2></div><table class="data min-w-[520px]"><thead><tr><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th></tr></thead><tbody>
       ${[...ss].reverse().map(s => `<tr><td>${fmtDate(s.fecha)}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td></tr>`).join('') || '<tr><td colspan="5" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
@@ -576,21 +642,20 @@ function vAlumnoDetalle(id) {
   ${iaPanel(a)}`;
 }
 function iaPanel(a) {
-  const inf = state.informes[a.id]; const n = sesionesDe(a.id).length;
+  const inf = state.informes[a.id]; const n = Math.max(sesionesDe(a.id).length, filasPartidos().filter(f => f.alumno === a.id).length * 2);
   return `<section class="panel p-5 flex flex-col gap-3 min-w-0">
     <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Interpretación para el alumno</h2>${inf ? `<span class="chip ${inf.publicado ? 'chip-ok' : 'chip-warn'}">${inf.publicado ? 'Publicada en su portal' : 'Borrador sin publicar'}</span>` : '<span class="chip chip-neutral">Sin generar</span>'}</div>
-    <p class="text-[13.5px] text-muted max-w-2xl">La app redacta un borrador comparando sus sesiones con pulsómetro con la media de su grupo. Revísalo, añade tus observaciones de pista y publícalo: el alumno solo ve la versión publicada.</p>
+    <p class="text-[13.5px] text-muted max-w-2xl">Gemini redacta un borrador con sus datos de pulsómetro y de partidos comparados con su grupo y la escuela. Solo se envían porcentajes y medias, nunca su nombre ni su contacto. Revísalo, añade lo que veas en pista y publícalo: el alumno solo ve la versión publicada.</p>
     ${inf ? `<label class="lbl" for="iaTxt">Texto</label><textarea id="iaTxt" rows="9" class="field leading-relaxed">${esc(inf.texto)}</textarea>` : ''}
-    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Generar de nuevo' : 'Generar borrador'}</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
-    ${n < 2 ? '<p class="text-[13px] text-muted">Hacen falta al menos 2 sesiones con pulsómetro.</p>' : ''}
+    <div class="flex flex-wrap gap-2"><button class="btn ${inf ? 'btn-ghost' : 'btn-primary'}" data-ia-gen="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>${inf ? 'Redactar de nuevo con Gemini' : 'Redactar con Gemini'}</button><button class="btn btn-ghost" data-ia-local="${a.id}" ${n < 2 ? 'disabled style="opacity:.45"' : ''}>Borrador automático</button>${inf ? `<button class="btn btn-primary" data-ia-pub="${a.id}">${inf.publicado ? 'Guardar cambios' : 'Publicar al alumno'}</button>` : ''}</div>
+    ${n < 2 ? '<p class="text-[13px] text-muted">Hacen falta al menos 2 sesiones con pulsómetro o un partido.</p>' : ''}
   </section>`;
 }
 function zoneBar(z) { const tot = z.reduce((s, x) => s + x, 0) || 1; return `<div class="zbar" title="${z.map((m, i) => `Z${i + 1}: ${m} min`).join(' · ')}">${z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>`; }
 function afterAlumnoDetalle(id) { fcChart('chFC', id); }
 function fcChart(canvasId, id) {
   const a = alumno(id); const ss = sesionesDe(id);
-  const grupoIds = state.alumnos.filter(x => x.grupo === a.grupo).map(x => x.id);
-  const gAvg = ss.map(s => { const gs = state.sesionesFC.filter(x => x.fecha === s.fecha && grupoIds.includes(x.alumno)); return gs.length ? +(gs.reduce((t, x) => t + x.fcMed / fcMaxTeo(alumno(x.alumno)), 0) / gs.length * 100).toFixed(1) : null; });
+  const M = mediasPor(filasFC(), METRICAS_FC); const gm = M.grupo(a.grupo).med, em = M.escuela.med;
   mkChart(canvasId, {
     type: 'line',
     data: {
@@ -598,7 +663,8 @@ function fcChart(canvasId, id) {
       datasets: [
         { label: 'FC máxima', data: ss.map(s => +(s.fcMax / fcMaxTeo(a) * 100).toFixed(1)), borderColor: cv('--heart'), backgroundColor: cv('--heart'), tension: .35, pointRadius: 3 },
         { label: 'FC media', data: ss.map(s => +(s.fcMed / fcMaxTeo(a) * 100).toFixed(1)), borderColor: cv('--court'), backgroundColor: cv('--court', .12), fill: true, tension: .35, pointRadius: 3 },
-        { label: 'FC media del grupo', data: gAvg, borderColor: cv('--muted'), borderDash: [5, 4], tension: .35, pointRadius: 0 }
+        { label: 'FC media del grupo', data: ss.map(() => gm == null ? null : +(gm * 100).toFixed(1)), borderColor: cv('--z4'), borderDash: [6, 4], pointRadius: 0, borderWidth: 2 },
+        { label: 'FC media de la escuela', data: ss.map(() => em == null ? null : +(em * 100).toFixed(1)), borderColor: cv('--muted'), borderDash: [2, 4], pointRadius: 0, borderWidth: 2 }
       ]
     },
     options: baseOpts({ y: { title: '% FC máx.', min: 40 } })
@@ -643,48 +709,57 @@ function vClases() {
 }
 
 /* ---------- Sesión en vivo (Web Bluetooth) ---------- */
-const live = { running: false, start: 0, timer: null, slots: [mkSlot(0), mkSlot(1)] };
-function mkSlot(i) { return { i, device: null, name: null, alumno: null, hr: null, samples: [], sim: null, status: 'libre', kcal: 0, z: [0, 0, 0, 0, 0] }; }
+/* La sesión vive fuera de las vistas: sigue registrando aunque cambies de pestaña
+   (barra flotante abajo) y tiene una pantalla completa con el fondo del color de la zona. */
+const live = { running: false, start: 0, timer: null, slots: [mkSlot(0), mkSlot(1)], wake: null };
+function mkSlot(i) { return { i, device: null, name: null, alumno: null, hr: null, samples: [], sim: null, status: 'libre', kcal: 0, z: [0, 0, 0, 0, 0], rec: [] }; }
 const BT_OK = typeof navigator !== 'undefined' && !!navigator.bluetooth;
+const MAX_SENSORES = 4;
+const ZONA_TXT = ['Por debajo de zona', 'Zona 1 · Recuperación', 'Zona 2 · Aeróbica suave', 'Zona 3 · Aeróbica', 'Zona 4 · Umbral', 'Zona 5 · Máxima'];
+const conectados = () => live.slots.filter(s => s.device || s.sim);
+function slotInfo(s) { const a = s.alumno ? alumno(s.alumno) : null; const max = a ? fcMaxTeo(a) : 190; return { a, max, z: s.hr ? zoneOf(s.hr, max) : 0, nombre: a ? a.nombre.split(' ')[0] : `Sensor ${s.i + 1}` }; }
 
 function vVivo() {
-  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
-  return pageHead('Sesión en vivo', 'Conecta los dos pulsómetros por Bluetooth, asigna cada uno a un alumno y guarda la sesión al terminar. Las zonas se calculan sobre la FC máxima teórica de cada alumno.',
-    `<button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
-  ${BT_OK ? '' : `<div class="panel p-4 border-warn/40 text-[14px]"><strong>Bluetooth no disponible en esta vista.</strong> La conexión directa funciona al abrir la app desde su dirección propia en Chrome o Edge (Android, Windows, Mac o ChromeOS). En iPhone hace falta un navegador como Bluefy. Aquí puedes probar el flujo con el simulador.</div>`}
+  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  return pageHead('Sesión en vivo', 'Conecta los pulsómetros, asigna cada uno a un alumno e inicia la sesión. Puedes cambiar de pestaña (por ejemplo, al marcador de partidos): el registro sigue y lo verás en la barra de abajo.',
+    `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
+  ${BT_OK ? '' : `<div class="panel p-4 text-[14px]"><strong>Bluetooth no disponible en este navegador.</strong> Funciona en Chrome o Edge (Android, Windows, Mac o ChromeOS). En iPhone hace falta un navegador como Bluefy. Mientras tanto puedes probar con el simulador.</div>`}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="lg:col-span-2 panel p-3 flex items-center justify-center min-w-0">${courtSVG()}</div>
-    <div class="lg:col-span-3 grid sm:grid-cols-2 gap-4">${live.slots.map(s => slotCard(s, sel(s))).join('')}</div>
+    <div class="lg:col-span-3 grid sm:grid-cols-2 gap-4 content-start">${live.slots.map(s => slotCard(s, sel(s))).join('')}
+      ${live.slots.length < MAX_SENSORES ? `<button class="panel p-4 border-dashed text-muted font-semibold hover:bg-surface2/60 min-h-[120px]" data-add-slot>+ Añadir sensor</button>` : ''}</div>
   </section>
   <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Últimos 3 minutos</h2><div class="num text-2xl font-bold" id="liveClock">${clockTxt()}</div></div><canvas id="liveCanvas" class="w-full" height="180" aria-label="Frecuencia cardíaca en directo"></canvas></section>`;
 }
 function slotCard(s, selHTML) {
-  const a = s.alumno ? alumno(s.alumno) : null; const max = a ? fcMaxTeo(a) : 190; const z = s.hr ? zoneOf(s.hr, max) : 0;
+  const { max, z } = slotInfo(s);
   const tot = s.z.reduce((t, x) => t + x, 0) || 1;
   return `<div class="panel p-4 flex flex-col gap-3 min-w-0" id="slot${s.i}">
-    <div class="flex items-center justify-between gap-2"><div class="font-display text-xl font-bold">Sensor ${s.i + 1}</div><span class="chip ${s.status === 'conectado' || s.status === 'simulado' ? 'chip-ok' : s.status === 'conectando' ? 'chip-warn' : 'chip-neutral'}" data-f="status">${s.status === 'libre' ? 'Sin conectar' : s.status === 'simulado' ? 'Simulador' : s.status === 'conectando' ? 'Conectando…' : esc(s.name || 'Conectado')}</span></div>
+    <div class="flex items-center justify-between gap-2"><div class="font-display text-xl font-bold">Sensor ${s.i + 1}</div><span class="chip ${s.status === 'conectado' || s.status === 'simulado' ? 'chip-ok' : s.status === 'conectando' ? 'chip-warn' : 'chip-neutral'}" data-f="status">${statusTxt(s)}</span></div>
     ${selHTML}
-    <div class="flex items-end gap-3"><div class="num text-7xl font-bold leading-none ${z ? 'tz' + z : 'text-muted'}" data-f="hr">${s.hr ?? '––'}</div><div class="pb-2"><div class="text-[13px] text-muted">ppm</div><div class="font-semibold" data-f="zone">${s.hr ? (z ? `Zona ${z} · ${pct(s.hr / max)}` : 'Reposo') : '&nbsp;'}</div></div></div>
+    <div class="flex items-end gap-3"><div class="num text-7xl font-bold leading-none ${z ? 'tz' + z : 'text-muted'}" data-f="hr">${s.hr ?? '––'}</div><div class="pb-2"><div class="text-[13px] text-muted">ppm</div><div class="font-semibold" data-f="zone">${s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : '&nbsp;'}</div></div></div>
     <div class="zbar" data-f="zbar">${s.z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>
     <div class="flex justify-between text-[13px] text-muted tnum"><span data-f="kcal">${Math.round(s.kcal)} kcal</span><span data-f="trimp">eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}</span></div>
     <div class="flex flex-wrap gap-2">
       ${s.device || s.sim ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-bt-off="${s.i}">Desconectar</button>` : `<button class="btn btn-primary !py-1.5 !px-3 text-[13px]" data-bt="${s.i}" ${BT_OK ? '' : 'disabled style="opacity:.45"'}>${I.bt.replace('<svg', '<svg width="16" height="16"')}Conectar pulsómetro</button><button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-sim="${s.i}">Simular</button>`}
+      ${live.slots.length > 1 && !(s.device || s.sim) && s.i === live.slots.length - 1 ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-del-slot>Quitar</button>` : ''}
     </div></div>`;
 }
+const statusTxt = s => s.status === 'libre' ? 'Sin conectar' : s.status === 'simulado' ? 'Simulador' : s.status === 'conectando' ? 'Conectando…' : (s.name || 'Conectado');
+const POS = [[60, 92], [140, 238], [140, 92], [60, 238]];
 function courtSVG() {
-  const p = live.slots.map((s, i) => { const a = s.alumno ? alumno(s.alumno) : null; const z = s.hr && a ? zoneOf(s.hr, fcMaxTeo(a)) : 0; return { s, z, a, cx: i ? 140 : 60, cy: i ? 238 : 92 }; });
-  return `<svg class="court-svg w-full max-w-[300px]" viewBox="0 0 200 330" role="img" aria-label="Pista con la posición de los dos sensores">
+  return `<svg class="court-svg w-full max-w-[300px]" viewBox="0 0 200 330" role="img" aria-label="Pista con la posición de los sensores">
     <rect x="4" y="4" width="192" height="322" rx="10" class="turf"/>
     <rect x="14" y="14" width="172" height="302" fill="none" class="glass" stroke-width="2"/>
     <g class="lines" stroke-width="1.6" fill="none"><rect x="20" y="20" width="160" height="290"/><line x1="20" y1="77" x2="180" y2="77"/><line x1="20" y1="253" x2="180" y2="253"/><line x1="100" y1="77" x2="100" y2="253"/></g>
     <line x1="10" y1="165" x2="190" y2="165" class="net" stroke-width="3"/>
-    ${p.map(({ s, z, a, cx, cy }) => `
-      <g id="mark${s.i}">
-        ${s.hr ? `<circle cx="${cx}" cy="${cy}" r="16" fill="none" stroke="rgb(var(--z${z || 1}))" stroke-width="2" class="ring" style="animation-duration:${(60 / s.hr).toFixed(2)}s"/>` : ''}
-        <circle cx="${cx}" cy="${cy}" r="16" fill="${s.hr ? `rgb(var(--z${z || 1}))` : 'rgb(var(--turf-ink) / .25)'}" class="${s.hr ? 'beat' : ''}" style="animation-duration:${s.hr ? (60 / s.hr).toFixed(2) : 1}s"/>
+    ${live.slots.map(s => { const { z, nombre } = slotInfo(s); const [cx, cy] = POS[s.i]; const on = !!s.hr; return `
+      <g>
+        ${on ? `<circle cx="${cx}" cy="${cy}" r="16" fill="none" stroke="rgb(var(--z${z || 1}))" stroke-width="2" class="ring" style="animation-duration:${(60 / s.hr).toFixed(2)}s"/>` : ''}
+        <circle cx="${cx}" cy="${cy}" r="16" fill="${on ? `rgb(var(--z${z || 1}))` : 'rgb(var(--turf-ink) / .25)'}" class="${on ? 'beat' : ''}" style="animation-duration:${on ? (60 / s.hr).toFixed(2) : 1}s"/>
         <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="Saira Condensed, sans-serif" font-weight="700" font-size="15" fill="#fff">${s.hr ?? s.i + 1}</text>
-        <text x="${cx}" y="${cy + 32}" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="600" font-size="10" fill="rgb(var(--turf-ink))">${a ? esc(a.nombre.split(' ')[0]) : 'Sensor ' + (s.i + 1)}</text>
-      </g>`).join('')}
+        <text x="${cx}" y="${cy + 32}" text-anchor="middle" font-family="Figtree, sans-serif" font-weight="600" font-size="10" fill="rgb(var(--turf-ink))">${esc(nombre)}</text>
+      </g>`; }).join('')}
   </svg>`;
 }
 function clockTxt() { if (!live.running) return '00:00'; const t = Math.floor((Date.now() - live.start) / 1000); return `${pad(Math.floor(t / 60))}:${pad(t % 60)}`; }
@@ -702,7 +777,7 @@ async function connectBT(i) {
     s.status = 'conectando'; updateSlot(i);
     const device = await navigator.bluetooth.requestDevice({ filters: [{ services: ['heart_rate'] }], optionalServices: ['battery_service'] });
     s.device = device; s.name = device.name || 'Pulsómetro';
-    device.addEventListener('gattserverdisconnected', () => { s.status = 'libre'; s.device = null; s.hr = null; rerenderIf('vivo'); toast(`${s.name} se ha desconectado`); });
+    device.addEventListener('gattserverdisconnected', () => { s.status = 'libre'; s.device = null; s.hr = null; rerenderIf('vivo'); refreshLive(i); toast(`${s.name} se ha desconectado`); });
     const server = await device.gatt.connect();
     const svc = await server.getPrimaryService('heart_rate');
     const ch = await svc.getCharacteristic('heart_rate_measurement');
@@ -718,7 +793,7 @@ function startSim(i) {
   const s = live.slots[i]; s.status = 'simulado'; s.name = 'Simulador';
   let hr = 92 + i * 6, target = 140;
   s.sim = setInterval(() => {
-    if (Math.random() < .04) target = 118 + Math.random() * 62;
+    if (Math.random() < .04) target = 105 + Math.random() * 80;
     hr += (target - hr) * .08 + (Math.random() - .5) * 3;
     onHR(i, Math.round(hr));
   }, 1000);
@@ -729,7 +804,7 @@ function stopSlot(i) {
   if (s.sim) clearInterval(s.sim);
   if (s.device && s.device.gatt.connected) s.device.gatt.disconnect();
   s.sim = null; s.device = null; s.status = 'libre'; s.hr = null;
-  rerenderIf('vivo');
+  rerenderIf('vivo'); refreshLive(i);
 }
 function onHR(i, hr) {
   const s = live.slots[i]; s.hr = hr;
@@ -739,21 +814,23 @@ function onHR(i, hr) {
     const a = alumno(s.alumno); const z = zoneOf(hr, fcMaxTeo(a));
     if (z) s.z[z - 1] += 1;
     s.kcal += keytel(a, hr) / 60;
-    s.rec = s.rec || []; s.rec.push(hr);
+    s.rec.push(hr);
   }
   const cutoff = now - 180000; while (s.samples.length && s.samples[0].t < cutoff) s.samples.shift();
   if (ui.view === 'vivo') { updateSlot(i); drawLive(); }
+  refreshLive(i);
 }
+function refreshLive(i) { updateFull(i); updateDock(); }
 function updateSlot(i) {
   const s = live.slots[i]; const el = document.getElementById('slot' + i); if (!el) return;
-  const a = s.alumno ? alumno(s.alumno) : null; const max = a ? fcMaxTeo(a) : 190; const z = s.hr ? zoneOf(s.hr, max) : 0;
+  const { max, z } = slotInfo(s);
   const hrEl = el.querySelector('[data-f="hr"]'); hrEl.textContent = s.hr ?? '––'; hrEl.className = `num text-7xl font-bold leading-none ${z ? 'tz' + z : 'text-muted'}`;
-  el.querySelector('[data-f="zone"]').innerHTML = s.hr ? (z ? `Zona ${z} · ${pct(s.hr / max)}` : 'Reposo') : '&nbsp;';
+  el.querySelector('[data-f="zone"]').innerHTML = s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : '&nbsp;';
   const tot = s.z.reduce((t, x) => t + x, 0) || 1;
   el.querySelector('[data-f="zbar"]').innerHTML = s.z.map((m, k) => `<span class="z${k + 1}" style="width:${m / tot * 100}%"></span>`).join('');
   el.querySelector('[data-f="kcal"]').textContent = `${Math.round(s.kcal)} kcal`;
   el.querySelector('[data-f="trimp"]').textContent = `eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}`;
-  const st = el.querySelector('[data-f="status"]'); st.textContent = s.status === 'libre' ? 'Sin conectar' : s.status === 'simulado' ? 'Simulador' : s.status === 'conectando' ? 'Conectando…' : (s.name || 'Conectado');
+  el.querySelector('[data-f="status"]').textContent = statusTxt(s);
   const host = document.querySelector('.court-svg')?.parentElement; if (host) host.innerHTML = courtSVG();
   const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt();
 }
@@ -767,19 +844,22 @@ function drawLive() {
   ctx.font = '11px Figtree, sans-serif'; ctx.fillStyle = cv('--muted'); ctx.strokeStyle = cv('--line'); ctx.lineWidth = 1;
   [80, 120, 160, 200].forEach(v => { ctx.beginPath(); ctx.moveTo(L, y(v)); ctx.lineTo(w - R, y(v)); ctx.stroke(); ctx.fillText(v, 4, y(v) + 4); });
   ['-3 min', '-2 min', '-1 min', 'ahora'].forEach((l, k) => ctx.fillText(l, Math.min(w - 34, L + (w - L - R) * k / 3 - (k ? 14 : 0)), h - 4));
+  const cols = ['--court', '--z4', '--heart', '--z3'];
   live.slots.forEach((s, k) => {
     if (s.samples.length < 2) return;
-    ctx.strokeStyle = k ? cv('--z4') : cv('--court'); ctx.lineWidth = 2.2; ctx.beginPath();
+    ctx.strokeStyle = cv(cols[k]); ctx.lineWidth = 2.2; ctx.beginPath();
     s.samples.forEach((p, j) => j ? ctx.lineTo(x(p.t), y(p.hr)) : ctx.moveTo(x(p.t), y(p.hr))); ctx.stroke();
     const lp = s.samples[s.samples.length - 1]; ctx.fillStyle = ctx.strokeStyle; ctx.beginPath(); ctx.arc(x(lp.t), y(lp.hr), 3.5, 0, Math.PI * 2); ctx.fill();
   });
 }
+async function mantenerPantalla() { try { if (navigator.wakeLock && !live.wake) { live.wake = await navigator.wakeLock.request('screen'); live.wake.addEventListener('release', () => { live.wake = null; }); } } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && (live.running || !document.getElementById('hrfull').hidden)) mantenerPantalla(); });
 function toggleLive() {
   if (!live.running) {
     if (!live.slots.some(s => s.alumno && (s.device || s.sim))) { toast('Conecta al menos un sensor y asígnale un alumno'); return; }
     live.running = true; live.start = Date.now(); live.slots.forEach(s => { s.z = [0, 0, 0, 0, 0]; s.kcal = 0; s.rec = []; });
-    live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); }, 1000);
-    rerenderIf('vivo'); return;
+    live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
+    mantenerPantalla(); rerenderIf('vivo'); updateFull(); return;
   }
   live.running = false; clearInterval(live.timer);
   const nuevos = [];
@@ -789,48 +869,317 @@ function toggleLive() {
     const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec } };
     state.sesionesFC.push(r); nuevos.push(r);
   });
+  updateFull(); updateDock();
   if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
   const n = nuevos.length;
   tras(async () => { for (const r of nuevos) await P.fc(r); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}`);
 }
 
-/* ---------- Condición física ---------- */
-const TEST_FIELDS = [['peso', 'Peso (kg)', 0], ['ag1', 'Agilidad 1 (s)', -1], ['ag2', 'Agilidad 2 (s)', -1], ['ag3', 'Agilidad 3 (s)', -1], ['precision', 'Precisión (pts)', 1], ['rpe', 'RPE (0–10)', 0]];
-function radarScores(id) {
-  // 0–100 sobre el rango de la escuela; en agilidad, menos segundos = más puntuación
-  const cur = state.tests.filter(t => !t.historico);
-  const keys = [['ag1', -1], ['ag2', -1], ['ag3', -1], ['precision', 1]];
-  const rec = a => { const ss = sesionesDe(a.id); return ss.length ? ss.reduce((t, s) => t + metrics(s, a).rec, 0) / ss.length : 0; };
-  const trimp = a => { const ss = sesionesDe(a.id); return ss.length ? ss.reduce((t, s) => t + etrimp(s.zonas) / s.duracion, 0) / ss.length : 0; };
-  const vals = id2 => { const t = cur.find(x => x.alumno === id2); const a = alumno(id2); return [...keys.map(([k]) => t ? t[k] : null), rec(a), trimp(a)]; };
-  const dirs = [...keys.map(k => k[1]), 1, 1];
-  const all = state.alumnos.map(a => vals(a.id));
-  const norm = v => v.map((x, i) => { const col = all.map(r => r[i]).filter(z => z != null); const mn = Math.min(...col), mx = Math.max(...col); if (x == null || mx === mn) return 50; const n = (x - mn) / (mx - mn); return Math.round(20 + 80 * (dirs[i] > 0 ? n : 1 - n)); });
-  const me = norm(vals(id));
-  const gIds = state.alumnos.filter(a => a.grupo === alumno(id).grupo).map(a => a.id);
-  const gm = gIds.map(x => norm(vals(x))); const grp = me.map((_, i) => Math.round(gm.reduce((t, r) => t + r[i], 0) / gm.length));
-  return { me, grp, labels: ['Agilidad 1', 'Agilidad 2', 'Agilidad 3', 'Precisión', 'Recuperación', 'Intensidad/min'] };
+/* Pantalla completa: un panel por sensor, fondo del color de la zona */
+function openFull() {
+  const el = document.getElementById('hrfull');
+  el.innerHTML = fullHTML(); el.hidden = false; document.body.style.overflow = 'hidden';
+  try { el.requestFullscreen?.().catch(() => {}); } catch (e) {}
+  mantenerPantalla(); updateDock();
 }
-function vFisica() {
-  const per = ui.periodo; const periodos = ['Octubre', 'Diciembre', 'Abril', 'Junio'];
-  const rows = reales().map(a => ({ a, t: state.tests.find(t => t.alumno === a.id && t.periodo === per) }));
-  const groupAvg = (gid, k) => { const v = rows.filter(r => r.a.grupo === gid && r.t && r.t[k] != null).map(r => r.t[k]); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
-  return pageHead('Condición física', 'Tests de cada trimestre (agilidad, precisión, peso y RPE), como en tu hoja GENERAL.', `<button class="btn btn-primary" data-open="test">Registrar test</button>`) + `
-  <div class="flex flex-wrap gap-2">${periodos.map(p => `<button class="chip ${p === per ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-periodo="${p}">${p}</button>`).join('')}</div>
-  <section class="grid lg:grid-cols-3 gap-4">
-    <div class="panel p-5 lg:col-span-2 min-w-0"><h2 class="text-2xl font-bold mb-2">Agilidad media por grupo</h2><p class="text-[13px] text-muted mb-2">Segundos. Menos es mejor.</p><div class="h-60"><canvas id="chAg"></canvas></div></div>
-    <div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Medias de ${per.toLowerCase()}</h2>
-      ${state.grupos.map(g => `<div class="py-2 border-b border-line last:border-0"><div class="font-semibold">${esc(g.nombre)}</div><div class="text-[13px] text-muted tnum">${groupAvg(g.id, 'ag1') != null ? `Ag. 1 ${dec(groupAvg(g.id, 'ag1'), 2)} s · Precisión ${dec(groupAvg(g.id, 'precision'), 1)} pts` : 'Sin tests en este periodo'}</div></div>`).join('')}
-    </div>
-  </section>
-  <div class="panel scroll-x"><table class="data min-w-[760px]"><thead><tr><th>Alumno</th>${TEST_FIELDS.map(f => `<th>${f[1]}</th>`).join('')}<th></th></tr></thead><tbody>
-    ${rows.map(({ a, t }) => `<tr><td class="font-semibold">${esc(a.nombre)}<div class="text-[13px] text-muted font-normal">${esc(grupo(a.grupo).nombre)}</div></td>${TEST_FIELDS.map(([k]) => `<td class="tnum">${t && t[k] != null ? dec(t[k], k.startsWith('ag') ? 2 : 0) : '<span class="text-muted">—</span>'}</td>`).join('')}<td><button class="btn btn-ghost !py-1 !px-3 text-[13px]" data-open="test" data-for="${a.id}">${t ? 'Editar' : 'Añadir'}</button></td></tr>`).join('')}
-  </tbody></table></div>`;
+function closeFull() {
+  const el = document.getElementById('hrfull'); el.hidden = true; el.innerHTML = ''; document.body.style.overflow = '';
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+  updateDock();
 }
-function afterFisica() {
-  const per = ui.periodo;
-  const avg = (gid, k) => { const v = state.tests.filter(t => t.periodo === per && alumno(t.alumno).grupo === gid && t[k] != null).map(t => t[k]); return v.length ? +(v.reduce((s, x) => s + x, 0) / v.length).toFixed(2) : null; };
-  mkChart('chAg', { type: 'bar', data: { labels: ['Agilidad 1', 'Agilidad 2', 'Agilidad 3'], datasets: state.grupos.map((g, i) => ({ label: g.nombre, data: ['ag1', 'ag2', 'ag3'].map(k => avg(g.id, k)), backgroundColor: [cv('--court'), cv('--z4'), cv('--heart')][i], borderRadius: 6, maxBarThickness: 34 })) }, options: baseOpts({ y: { title: 'segundos', beginAtZero: true } }) });
+function fullSlots() { const c = live.slots.filter(s => s.device || s.sim || s.alumno); return c.length ? c : live.slots.slice(0, 1); }
+function fullHTML() {
+  const list = fullSlots();
+  return `<div class="hf-bar"><div class="flex items-center gap-3"><span class="hf-rec ${live.running ? 'on' : ''}"></span><span class="font-semibold">${live.running ? 'Grabando' : 'Sin grabar'}</span><span class="num text-2xl font-bold" id="hfClock">${clockTxt()}</span></div>
+    <div class="flex gap-2"><button class="hf-btn" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button><button class="hf-btn" data-hrclose aria-label="Salir de pantalla completa">Salir</button></div></div>
+    <div class="hf-grid n${list.length}">${list.map(hfPanel).join('')}</div>`;
+}
+function hfPanel(s) {
+  const { max, z, nombre } = slotInfo(s);
+  return `<section class="hf-panel hz${s.hr ? z : 'x'}" id="hf${s.i}" role="status" aria-atomic="true">
+    <div class="hf-name">${esc(nombre)}</div>
+    <div class="hf-bpm num" data-f="bpm">${s.hr ?? '––'}</div>
+    <div class="hf-zone" data-f="zona">${s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : (s.device || s.sim ? 'Esperando señal…' : 'Sensor sin conectar')}</div>
+    <div class="hf-meta tnum" data-f="meta">${live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : ''}</div>
+  </section>`;
+}
+function updateFull(i) {
+  const el = document.getElementById('hrfull'); if (!el || el.hidden) return;
+  const list = fullSlots();
+  if (i == null || !document.getElementById('hf' + i) || el.querySelectorAll('.hf-panel').length !== list.length) { el.innerHTML = fullHTML(); return; }
+  const s = live.slots[i]; const p = document.getElementById('hf' + i); const { max, z } = slotInfo(s);
+  p.className = `hf-panel hz${s.hr ? z : 'x'}`;
+  p.querySelector('[data-f="bpm"]').textContent = s.hr ?? '––';
+  p.querySelector('[data-f="zona"]').textContent = s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : 'Esperando señal…';
+  p.querySelector('[data-f="meta"]').textContent = live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : '';
+}
+/* Barra flotante cuando la sesión sigue en otra pestaña */
+function updateDock() {
+  const d = document.getElementById('hrdock'); if (!d) return;
+  const vis = conectados().length && ui.view !== 'vivo' && document.getElementById('hrfull').hidden && ui.role === 'admin' && (!LIVE || ui.auth === 'ok');
+  if (!vis) { d.hidden = true; return; }
+  d.hidden = false;
+  d.innerHTML = `<button class="dock-in" data-hrfull aria-label="Abrir pulsómetros en pantalla completa">
+    <span class="hf-rec ${live.running ? 'on' : ''}"></span><span class="num font-bold text-lg">${live.running ? clockTxt() : 'FC'}</span>
+    ${conectados().map(s => { const { z, nombre } = slotInfo(s); return `<span class="dock-chip hz${s.hr ? z : 'x'}"><span class="truncate max-w-[6rem]">${esc(nombre)}</span><span class="num text-lg font-bold">${s.hr ?? '––'}</span></span>`; }).join('')}
+    ${I.expand}</button>`;
+}
+
+/* ==========================================================
+   PARTIDOS · marcador y estadística (como la hoja ANÁLISIS ESTADÍSTICO)
+   ========================================================== */
+const GOLPES = [['S', 'Saque'], ['D', 'Derecha'], ['R', 'Revés'], ['PD', 'Pared derecha'], ['PR', 'Pared revés'], ['CP', 'Contrapared'], ['VD', 'Volea derecha'], ['VR', 'Volea revés'], ['B', 'Bandeja'], ['RMP', 'Remate plano'], ['RML', 'Remate liftado']];
+const GOLPE_N = Object.fromEntries(GOLPES);
+const parDe = j => (j < 2 ? 0 : 1);
+const FORMATOS = { '3sets': 'Mejor de 3 sets', '1set': 'Un set', libre: 'Juegos libres (clase)' };
+
+/* Reproduce los puntos y devuelve marcador, servicio y el detalle de cada punto y juego. */
+function motor(m) {
+  const st = { sets: [], games: [0, 0], pts: [0, 0], tb: false, tbN: 0, tbS0: null, server: m.saque || 0, setsWon: [0, 0], fin: false, ganador: null, puntos: [], juegos: [] };
+  const setsToWin = m.formato === '1set' ? 1 : 2;
+  let gp = [0, 0];
+  for (const ev of m.eventos) {
+    if (st.fin) break;
+    const w = ev.par, o = 1 - w;
+    if (st.tb) st.server = st.tbN === 0 ? st.tbS0 : (Math.floor((st.tbN - 1) / 2) % 2 === 0 ? 1 - st.tbS0 : st.tbS0);
+    const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
+    const info = { ev, par: w, set: st.sets.length, server: st.server, tb: st.tb, oro: false, bp: false };
+    if (!st.tb) { info.oro = !!m.oro && pr === 3 && ps === 3; info.bp = pr >= 3 && (m.oro ? true : pr > ps); }
+    st.puntos.push(info); gp[w]++;
+    st.pts[w]++;
+    let ganaJuego = false;
+    if (st.tb) { st.tbN++; ganaJuego = st.pts[w] >= 7 && st.pts[w] - st.pts[o] >= 2; }
+    else if (m.oro) ganaJuego = st.pts[w] >= 4;
+    else { ganaJuego = st.pts[w] >= 4 && st.pts[w] - st.pts[o] >= 2; if (!ganaJuego && st.pts[w] >= 4 && st.pts[w] === st.pts[o]) st.pts = [3, 3]; }
+    if (!ganaJuego) continue;
+    const eraTb = st.tb;
+    st.juegos.push({ set: st.sets.length, server: eraTb ? st.tbS0 : st.server, winner: w, gp, tb: eraTb });
+    gp = [0, 0]; st.games[w]++; st.pts = [0, 0];
+    st.server = eraTb ? 1 - st.tbS0 : 1 - st.server;
+    if (m.formato === 'libre') continue;
+    const g = st.games;
+    if (eraTb || (g[w] >= 6 && g[w] - g[o] >= 2)) {
+      st.sets.push([...g]); st.setsWon[w]++; st.games = [0, 0]; st.tb = false;
+      if (st.setsWon[w] >= setsToWin) { st.fin = true; st.ganador = w; }
+    } else if (g[0] === 6 && g[1] === 6) { st.tb = true; st.tbN = 0; st.tbS0 = st.server; }
+  }
+  if (st.tb && !st.fin) st.server = st.tbN === 0 ? st.tbS0 : (Math.floor((st.tbN - 1) / 2) % 2 === 0 ? 1 - st.tbS0 : st.tbS0);
+  return st;
+}
+function puntosTxt(st, m) {
+  if (st.fin) return ['', ''];
+  const [a, b] = st.pts;
+  if (st.tb) return [String(a), String(b)];
+  if (!m.oro && a >= 3 && b >= 3) return a === b ? ['40', '40'] : a > b ? ['AD', '40'] : ['40', 'AD'];
+  const L = ['0', '15', '30', '40'];
+  return [L[Math.min(a, 3)], L[Math.min(b, 3)]];
+}
+function resultadoTxt(st) { const s = st.sets.map(x => x.join('-')); if (!st.fin && (st.games[0] || st.games[1])) s.push(st.games.join('-')); return s.join(' · ') || '0-0'; }
+const nombreJ = (m, j) => m.jugadores[j]?.nombre || `Jugador ${j + 1}`;
+const nombrePar = (m, k) => `${corto(nombreJ(m, k * 2))} / ${corto(nombreJ(m, k * 2 + 1))}`;
+const corto = n => { const p = String(n).trim().split(/\s+/); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
+const media = xs => { const v = xs.filter(x => x != null && !Number.isNaN(x)); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+const topGolpe = obj => { const e = Object.entries(obj).sort((a, b) => b[1] - a[1]); return e.length && e[0][1] > 0 ? e[0][0] : null; };
+
+/* Estadísticas de un partido (o de un set) por pareja y por jugador */
+function statsDe(m, set = null) {
+  const st = motor(m);
+  const P = st.puntos.filter(p => set == null || p.set === set);
+  const J = st.juegos.filter(j => set == null || j.set === set);
+  const pair = [0, 1].map(k => {
+    const won = P.filter(p => p.par === k).length, lost = P.length - won;
+    const sv = J.filter(j => !j.tb && j.server === k), rs = J.filter(j => !j.tb && j.server !== k);
+    const oroJ = P.filter(p => p.oro).length, oroG = P.filter(p => p.oro && p.par === k).length;
+    const bpO = P.filter(p => p.bp && p.server !== k).length, bpC = P.filter(p => p.bp && p.server !== k && p.par === k).length;
+    const js = [k * 2, k * 2 + 1];
+    const enf = P.filter(p => p.ev.tipo === 'e' && js.includes(p.ev.j)).length, win = P.filter(p => p.ev.tipo === 'w' && js.includes(p.ev.j)).length;
+    const pctOro = oroJ ? oroG / oroJ : null, pctBreak = bpO ? bpC / bpO : null;
+    return { won, lost, gw: J.filter(j => j.winner === k).length, jugados: J.length,
+      ppj: J.length ? won / J.length : null, ppjS: sv.length ? media(sv.map(j => j.gp[k])) : null, ppjR: rs.length ? media(rs.map(j => j.gp[k])) : null,
+      oroJ, oroG, pctOro, bpO, bpC, pctBreak, enf, win, pctEnf: lost ? enf / lost : null, pctWin: won ? win / won : null, dif: win - enf, indice: media([pctOro, pctBreak]) };
+  });
+  const jug = [0, 1, 2, 3].map(j => {
+    const k = parDe(j); const ge = {}, gw = {};
+    P.forEach(p => { if (p.ev.j !== j || !p.ev.g) return; const t = p.ev.tipo === 'e' ? ge : p.ev.tipo === 'w' ? gw : null; if (t) t[p.ev.g] = (t[p.ev.g] || 0) + 1; });
+    const enf = P.filter(p => p.ev.tipo === 'e' && p.ev.j === j).length, win = P.filter(p => p.ev.tipo === 'w' && p.ev.j === j).length;
+    return { j, k, enf, win, ge, gw, gEnf: topGolpe(ge), gWin: topGolpe(gw), pctEnf: pair[k].lost ? enf / pair[k].lost : null, pctWin: pair[k].won ? win / pair[k].won : null, pctOro: pair[k].pctOro, pctBreak: pair[k].pctBreak, ppj: pair[k].ppj, indice: pair[k].indice };
+  });
+  return { st, pair, jug };
+}
+
+/* Filas por alumno y partido, para medias y comparativas */
+function filasPartidos() {
+  const out = [];
+  (state.partidos || []).forEach(m => {
+    if (!m.eventos.length) return;
+    const { st, jug } = statsDe(m);
+    jug.forEach(x => { const id = m.jugadores[x.j]?.id; if (!id || !alumno(id)) return; out.push({ alumno: id, grupo: alumno(id).grupo, partido: m.id, fecha: m.fecha, ...x, ganado: st.fin ? st.ganador === x.k : null }); });
+  });
+  return out.concat(state.statsAnon || []);
+}
+const METRICAS_P = [
+  ['pctEnf', '% errores no forzados', v => pct(v), true], ['pctWin', '% winners', v => pct(v), false],
+  ['enf', 'Errores por partido', v => dec(v, 1), true], ['win', 'Winners por partido', v => dec(v, 1), false],
+  ['pctOro', '% puntos de oro ganados', v => pct(v), false], ['pctBreak', '% roturas conseguidas', v => pct(v), false],
+  ['ppj', 'Puntos por juego', v => dec(v, 2), false], ['indice', 'Índice win', v => dec(v, 2), false]
+];
+const METRICAS_FC = [
+  ['med', 'FC media (% máx.)', v => pct(v), null], ['mx', 'FC máxima (% máx.)', v => pct(v), null],
+  ['rec', 'Índice de recuperación', v => pct(v), false], ['tmin', 'Carga por minuto (eTRIMP)', v => dec(v, 2), null], ['kmin', 'kcal por minuto', v => dec(v, 1), null]
+];
+function filasFC() {
+  return state.sesionesFC.map(s => { const a = alumno(s.alumno); if (!a) return null; const m = metrics(s, a); return { alumno: a.id, grupo: a.grupo, med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (s.duracion || 1), kmin: s.kcal / (s.duracion || 1) }; }).filter(Boolean);
+}
+/* Media por alumno primero (para que nadie pese más por jugar más), luego por grupo y escuela */
+function mediasPor(filas, metricas) {
+  const porAl = {}; filas.forEach(f => { (porAl[f.alumno] = porAl[f.alumno] || { grupo: f.grupo, f: [] }).f.push(f); });
+  const al = Object.entries(porAl).map(([id, v]) => ({ id, grupo: v.grupo, n: v.f.length, ...Object.fromEntries(metricas.map(([k]) => [k, media(v.f.map(x => x[k]))])) }));
+  const agg = list => Object.fromEntries(metricas.map(([k]) => [k, media(list.map(x => x[k]))]));
+  return { al, alumno: id => al.find(x => x.id === id), grupo: gid => agg(al.filter(x => x.grupo === gid)), escuela: agg(al), nGrupo: gid => al.filter(x => x.grupo === gid).length, nEscuela: al.length };
+}
+function cmpTabla(metricas, yo, grp, esc, etiquetaYo = 'Tú') {
+  const sig = (k, low, a, b) => { if (a == null || b == null || low == null || Math.abs(a - b) < 1e-9) return ''; const mejor = low ? a < b : a > b; return `<span class="${mejor ? 'text-ok' : 'text-warn'} font-semibold" title="${mejor ? 'Mejor' : 'Peor'} que la media">${mejor ? '▲' : '▼'}</span>`; };
+  return `<div class="scroll-x"><table class="data min-w-[340px]"><thead><tr><th>Métrica</th><th class="text-right">${etiquetaYo}</th><th class="text-right">Grupo</th><th class="text-right">Escuela</th></tr></thead><tbody>
+    ${metricas.map(([k, l, f, low]) => `<tr><td>${l}</td><td class="text-right num text-lg font-bold">${yo?.[k] == null ? '—' : f(yo[k])} ${sig(k, low, yo?.[k], grp?.[k])}</td><td class="text-right tnum">${grp?.[k] == null ? '—' : f(grp[k])}</td><td class="text-right tnum">${esc?.[k] == null ? '—' : f(esc[k])}</td></tr>`).join('')}
+  </tbody></table></div><p class="text-[12.5px] text-muted mt-2">▲ mejor que la media de su grupo · ▼ peor. En FC media y máxima no hay mejor ni peor: depende del objetivo de la sesión.</p>`;
+}
+
+/* ---------- Vistas de partidos ---------- */
+function vPartidos() {
+  const lista = [...(state.partidos || [])].sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado));
+  const M = mediasPor(filasPartidos(), METRICAS_P);
+  return pageHead('Partidos', 'Marca el partido punto a punto: cada winner o error no forzado suma el punto a la pareja que corresponde y alimenta las estadísticas de cada jugador.', `<button class="btn btn-primary" data-open="partido">Nuevo partido</button>`) + `
+  ${lista.length ? `<div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Tipo</th><th>Pareja 1</th><th>Pareja 2</th><th>Resultado</th><th>Estado</th></tr></thead><tbody>
+    ${lista.map(m => { const st = motor(m); return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${m.tipo === 'clase' ? 'Clase' : 'Partido'}</td><td class="${st.fin && st.ganador === 0 ? 'font-bold' : ''}">${esc(nombrePar(m, 0))}</td><td class="${st.fin && st.ganador === 1 ? 'font-bold' : ''}">${esc(nombrePar(m, 1))}</td><td class="num text-lg font-bold">${resultadoTxt(st)}</td><td>${m.estado === 'terminado' ? '<span class="chip chip-neutral">Terminado</span>' : '<span class="chip chip-ok">En juego</span>'}</td></tr>`; }).join('')}
+  </tbody></table></div>` : `<div class="panel p-6"><h2 class="text-2xl font-bold">Aún no hay partidos</h2><p class="text-muted mt-1 max-w-xl">Elige las dos parejas y empieza a marcar. Puedes registrar tanto partidos como juegos dentro de una clase.</p><button class="btn btn-primary mt-3" data-open="partido">Nuevo partido</button></div>`}
+  ${M.nEscuela ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Medias por grupo</h2><p class="text-[13px] text-muted mb-3">Media de cada alumno en todos sus partidos, agrupada.</p>
+    <div class="scroll-x"><table class="data min-w-[720px]"><thead><tr><th>Grupo</th><th class="text-right">Alumnos</th>${METRICAS_P.map(x => `<th class="text-right">${x[1]}</th>`).join('')}</tr></thead><tbody>
+    ${state.grupos.filter(g => M.nGrupo(g.id)).map(g => { const v = M.grupo(g.id); return `<tr><td class="font-semibold">${esc(g.nombre)}</td><td class="text-right tnum">${M.nGrupo(g.id)}</td>${METRICAS_P.map(([k, , f]) => `<td class="text-right tnum">${v[k] == null ? '—' : f(v[k])}</td>`).join('')}</tr>`; }).join('')}
+    <tr><td class="font-bold">Escuela</td><td class="text-right tnum font-bold">${M.nEscuela}</td>${METRICAS_P.map(([k, , f]) => `<td class="text-right tnum font-bold">${M.escuela[k] == null ? '—' : f(M.escuela[k])}</td>`).join('')}</tr>
+    </tbody></table></div></section>` : ''}`;
+}
+
+function vPartido(id) {
+  const m = (state.partidos || []).find(x => x.id === id);
+  if (!m) return `<p class="text-muted">Partido no encontrado.</p>`;
+  if (ui.role === 'admin' && m.estado !== 'terminado' && ui.pmodo !== 'stats') return vMarcador(m);
+  return vInformePartido(m);
+}
+function vMarcador(m) {
+  const st = motor(m); const [p0, p1] = puntosTxt(st, m);
+  const S = statsDe(m);
+  const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
+  const oro = !st.tb && m.oro && pr === 3 && ps === 3;
+  const bp = !st.tb && m.formato !== 'libre' ? pr >= 3 && (m.oro || pr > ps) : !st.tb && pr >= 3 && (m.oro || pr > ps);
+  const fila = k => `<div class="sb-row ${st.server === k ? 'srv' : ''}">
+      <div class="sb-name"><span class="sb-ball" aria-hidden="true"></span><span class="truncate">${esc(nombrePar(m, k))}</span><span class="sr-only">${st.server === k ? '(saca)' : ''}</span></div>
+      ${st.sets.map(x => `<div class="sb-set ${x[k] > x[1 - k] ? 'won' : ''}">${x[k]}</div>`).join('')}
+      ${st.fin ? '' : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
+    </div>`;
+  const jugador = j => { const x = S.jug[j]; return `<div class="pcard">
+      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div><div class="text-[12.5px] text-muted tnum shrink-0">W ${x.win} · E ${x.enf}</div></div>
+      <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${st.fin ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${st.fin ? 'disabled' : ''}>Error</button></div>
+    </div>`; };
+  const ult = st.puntos.slice(-6).reverse();
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Partidos</button>
+      <span class="chip chip-neutral">${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}${m.oro ? ' · punto de oro' : ''}</span>
+      <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : `<button class="btn btn-ghost !py-1.5 text-[13px]" data-psaque>Cambiar saque</button>`}<button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : 'Terminar partido'}</button></div></div>
+    <section class="scoreboard" aria-live="polite" aria-atomic="true">
+      <div class="sb-head"><span>${st.tb ? 'Tie-break' : st.fin ? 'Final' : `Set ${st.sets.length + 1}`}</span>${oro ? '<span class="sb-badge oro">Punto de oro</span>' : bp ? '<span class="sb-badge">Bola de break</span>' : ''}</div>
+      ${fila(0)}${fila(1)}
+      ${st.fin ? `<div class="sb-final">Gana ${esc(nombrePar(m, st.ganador))}</div>` : ''}
+    </section>
+    <section class="grid md:grid-cols-2 gap-4">
+      ${[0, 1].map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
+        <button class="btn btn-ghost w-full" data-ppunto="${k}" ${st.fin ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
+    </section>
+    <section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-2">Últimos puntos</h2>
+      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span><span>${descPunto(m, p)}</span>${p.oro ? '<span class="chip chip-warn">Oro</span>' : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
+    </section>`;
+}
+function descPunto(m, p) {
+  const e = p.ev;
+  if (e.tipo === 'w') return `Winner de ${esc(corto(nombreJ(m, e.j)))}${e.g ? ` (${GOLPE_N[e.g].toLowerCase()})` : ''}`;
+  if (e.tipo === 'e') return `Error no forzado de ${esc(corto(nombreJ(m, e.j)))}${e.g ? ` (${GOLPE_N[e.g].toLowerCase()})` : ''}`;
+  return 'Punto sin winner ni error no forzado';
+}
+function pickGolpe(m, j, tipo) {
+  openModal(`<div class="flex flex-col gap-3">${modalHead(`${tipo === 'w' ? 'Winner' : 'Error no forzado'} de ${esc(corto(nombreJ(m, j)))}`)}
+    <p class="text-[13.5px] text-muted -mt-1">¿Con qué golpe? El punto se suma a la pareja ${tipo === 'w' ? parDe(j) + 1 : 2 - parDe(j)}.</p>
+    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">${GOLPES.map(([c, n]) => `<button class="gbtn ${tipo === 'w' ? 'gbtn-w' : 'gbtn-e'}" data-golpe="${c}" data-j="${j}" data-tipo="${tipo}"><span class="num text-2xl font-bold">${c}</span><span class="text-[12px] leading-tight">${n}</span></button>`).join('')}
+      <button class="gbtn" data-golpe="" data-j="${j}" data-tipo="${tipo}"><span class="num text-2xl font-bold">?</span><span class="text-[12px] leading-tight">Sin indicar</span></button></div></div>`);
+}
+function partidoActual() { const id = ui.view.startsWith('partido:') ? ui.view.split(':')[1] : null; return (state.partidos || []).find(x => x.id === id); }
+function anotar(m, ev) {
+  const antes = motor(m);
+  if (antes.fin) return;
+  m.eventos.push({ ...ev, t: Date.now() });
+  const st = motor(m);
+  if (st.fin && m.estado !== 'terminado') toast(`Partido terminado: gana ${nombrePar(m, st.ganador)}. Pulsa «Guardar y cerrar».`);
+  else if (st.juegos.length > antes.juegos.length) { const jg = st.juegos[st.juegos.length - 1]; toast(`Juego para la pareja ${jg.winner + 1} · ${st.sets.length > antes.sets.length ? 'set ' + st.sets[st.sets.length - 1].join('-') : st.games.join('-')}`); }
+  m.resultado = resultadoTxt(st);
+  guardarPartido(m); render();
+}
+let guardarT = null;
+function guardarPartido(m, ya) {
+  if (!LIVE) { save(); return; }
+  clearTimeout(guardarT);
+  const run = () => P.partido(m).catch(err => toast('No se pudo guardar el partido: ' + err.message + '. Sigue marcando; se reintentará.'));
+  if (ya) return run();
+  guardarT = setTimeout(run, 1200);
+}
+
+function vInformePartido(m) {
+  const sets = motor(m).sets.length + (motor(m).fin ? 0 : 1);
+  const sel = ui.pset ?? null;
+  const S = statsDe(m, sel); const st = S.st;
+  const tabs = [[null, 'Partido'], ...Array.from({ length: sets }, (_, i) => [i, `Set ${i + 1}`])];
+  const f = (v, fn) => v == null ? '—' : fn(v);
+  const M = mediasPor(filasPartidos(), METRICAS_P);
+  const misJ = [0, 1, 2, 3].filter(j => m.jugadores[j]?.id && alumno(m.jugadores[j].id) && (ui.role === 'admin' || m.jugadores[j].id === ui.studentLogged));
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Partidos</button>
+      ${ui.role === 'admin' && m.estado !== 'terminado' ? `<button class="btn btn-primary !py-1.5 text-[13px]" data-pmodo="marcador">Volver al marcador</button>` : ''}
+      ${ui.role === 'admin' && m.estado === 'terminado' ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-preabrir>Reabrir para corregir</button>` : ''}</div>` +
+    pageHead(`${esc(nombrePar(m, 0))} <span class="text-muted">vs</span> ${esc(nombrePar(m, 1))}`, `${fmtDate(m.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]} · Resultado ${resultadoTxt(motor(m))}`) + `
+  <div class="flex flex-wrap gap-2">${tabs.map(([k, l]) => `<button class="chip ${sel === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-pset="${k ?? ''}">${l}</button>`).join('')}</div>
+  <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Jugadores</h2></div>
+    <table class="data min-w-[720px]"><thead><tr><th>Jugador</th><th class="text-right">Nº ENF</th><th class="text-right">% ENF</th><th>Golpe + ENF</th><th class="text-right">Nº WIN</th><th class="text-right">% WIN</th><th>Golpe + WIN</th><th class="text-right">% oro</th><th class="text-right">% break</th><th class="text-right">Pts/juego</th><th class="text-right">Índice win</th></tr></thead><tbody>
+    ${S.jug.map(x => `<tr><td class="font-semibold"><span class="chip ${x.k ? 'chip-p1' : 'chip-p0'} mr-1">P${x.k + 1}</span>${esc(nombreJ(m, x.j))}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${f(x.pctEnf, pct)}</td><td>${x.gEnf ? `${x.gEnf} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gEnf]}</span>` : '—'}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${f(x.pctWin, pct)}</td><td>${x.gWin ? `${x.gWin} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gWin]}</span>` : '—'}</td><td class="text-right tnum">${f(x.pctOro, pct)}</td><td class="text-right tnum">${f(x.pctBreak, pct)}</td><td class="text-right tnum">${f(x.ppj, v => dec(v, 2))}</td><td class="text-right tnum">${f(x.indice, v => dec(v, 2))}</td></tr>`).join('')}
+    </tbody></table></section>
+  <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Parejas</h2></div>
+    <table class="data min-w-[560px]"><thead><tr><th></th><th class="text-right">Pareja 1</th><th class="text-right">Pareja 2</th></tr></thead><tbody>
+    ${[['Juegos ganados', p => p.gw], ['Puntos ganados', p => p.won], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Al saque', p => f(p.ppjS, v => dec(v, 2))], ['Al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
+      .map(([l, fn]) => `<tr><td>${l}</td><td class="text-right tnum">${fn(S.pair[0])}</td><td class="text-right tnum">${fn(S.pair[1])}</td></tr>`).join('')}
+    </tbody></table></section>
+  <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Golpes</h2><p class="text-[13px] text-muted">Errores no forzados / winners por golpe.</p></div>
+    <table class="data min-w-[760px]"><thead><tr><th>Jugador</th>${GOLPES.map(([c, n]) => `<th class="text-center" title="${n}">${c}</th>`).join('')}</tr></thead><tbody>
+    ${S.jug.map(x => `<tr><td class="font-semibold whitespace-nowrap">${esc(corto(nombreJ(m, x.j)))}</td>${GOLPES.map(([c]) => { const e = x.ge[c] || 0, w = x.gw[c] || 0; return `<td class="text-center tnum">${e || w ? `<span class="text-bad">${e}</span>/<span class="text-ok">${w}</span>` : '<span class="text-muted">·</span>'}</td>`; }).join('')}</tr>`).join('')}
+    </tbody></table></section>
+  ${misJ.length ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Comparado con su grupo y la escuela</h2><p class="text-[13px] text-muted mb-3">Este partido frente a la media de todos los partidos registrados.</p>
+    <div class="grid lg:grid-cols-2 gap-5">${misJ.map(j => { const a = alumno(m.jugadores[j].id); const x = statsDe(m).jug[j]; return `<div class="min-w-0"><div class="font-semibold mb-1">${esc(a.anon ? 'Tú' : a.nombre)}</div>${cmpTabla(METRICAS_P, x, M.grupo(a.grupo), M.escuela, 'Este partido')}</div>`; }).join('')}</div></section>` : ''}`;
+}
+
+function modalPartido() {
+  if (reales().length < 1) return toast('Da de alta a algún alumno antes de marcar partidos');
+  const opts = sel => `<option value="">— Elige jugador —</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${sel === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}<option value="inv">Invitado (escribir nombre)</option>`;
+  const g0 = ui.filtroGrupo !== 'todos' ? ui.filtroGrupo : state.grupos[0]?.id; const sug = reales().filter(a => a.grupo === g0).slice(0, 4).map(a => a.id);
+  openModal(`<form id="fPartido" class="flex flex-col gap-3">${modalHead('Nuevo partido')}
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mF">Fecha</label><input id="mF" type="date" class="field" value="${TODAY_ISO}"></div><div><label class="lbl" for="mT">Tipo</label><select id="mT" class="field"><option value="clase">Durante la clase</option><option value="partido">Partido</option></select></div></div>
+    ${[0, 1].map(k => `<fieldset class="rounded-2xl border border-line p-3 flex flex-col gap-2"><legend class="px-1 text-[13px] font-semibold ${k ? 'text-warn' : 'text-court'}">Pareja ${k + 1}</legend>
+      ${[0, 1].map(n => { const j = k * 2 + n; return `<div class="grid grid-cols-[1fr_auto] gap-2"><select id="mJ${j}" class="field" aria-label="Jugador ${j + 1}" data-jsel="${j}">${opts(sug[j])}</select><input id="mN${j}" class="field w-36" placeholder="Nombre invitado" aria-label="Nombre del invitado ${j + 1}" hidden></div>`; }).join('')}</fieldset>`).join('')}
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mFo">Formato</label><select id="mFo" class="field">${Object.entries(FORMATOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><div><label class="lbl" for="mS">Empieza sacando</label><select id="mS" class="field"><option value="0">Pareja 1</option><option value="1">Pareja 2</option></select></div></div>
+    <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="mO" class="w-4 h-4" checked> Punto de oro en 40-40</label>
+    <button class="btn btn-primary" type="submit">Empezar a marcar</button></form>`);
+}
+function vPartidosAlumno() {
+  const a = alumno(ui.studentLogged);
+  const mios = (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length).sort((x, y) => y.fecha.localeCompare(x.fecha));
+  const M = mediasPor(filasPartidos(), METRICAS_P);
+  return pageHead('Mis partidos', 'Tus estadísticas en los partidos y juegos marcados por tu entrenador, comparadas con tu grupo y con toda la escuela.') + `
+  <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Tu media frente al grupo y la escuela</h2>${M.alumno(a.id) ? cmpTabla(METRICAS_P, M.alumno(a.id), M.grupo(a.grupo), M.escuela) : '<p class="text-muted">Aún no hay partidos tuyos registrados.</p>'}</section>
+  ${mios.length ? `<div class="panel scroll-x"><table class="data min-w-[620px]"><thead><tr><th>Fecha</th><th>Partido</th><th>Resultado</th><th class="text-right">ENF</th><th class="text-right">Winners</th><th class="text-right">Índice win</th></tr></thead><tbody>
+    ${mios.map(m => { const j = m.jugadores.findIndex(x => x.id === a.id); const S = statsDe(m); const x = S.jug[j]; const gano = S.st.fin ? S.st.ganador === parDe(j) : null; return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${esc(nombrePar(m, 0))} vs ${esc(nombrePar(m, 1))}</td><td class="tnum">${resultadoTxt(S.st)} ${gano == null ? '' : gano ? '<span class="chip chip-ok">Ganado</span>' : '<span class="chip chip-neutral">Perdido</span>'}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${x.indice == null ? '—' : dec(x.indice, 2)}</td></tr>`; }).join('')}
+  </tbody></table></div>` : ''}`;
 }
 
 /* ---------- Emails ---------- */
@@ -898,23 +1247,27 @@ function interpretacion(a) {
   const avg = k => m.reduce((t, x) => t + x[k], 0) / m.length;
   const gIds = state.alumnos.filter(x => x.grupo === a.grupo && x.id !== a.id).map(x => x.id);
   const gs = state.sesionesFC.filter(s => gIds.includes(s.alumno)).map(s => metrics(s, alumno(s.alumno)));
+  const es = state.sesionesFC.map(s => alumno(s.alumno) && metrics(s, alumno(s.alumno))).filter(Boolean); const eavg = k => es.length ? es.reduce((t, x) => t + x[k], 0) / es.length : avg(k);
   const gavg = k => gs.length ? gs.reduce((t, x) => t + x[k], 0) / gs.length : avg(k);
   const first = m.slice(0, Math.ceil(m.length / 2)), second = m.slice(Math.ceil(m.length / 2));
   const trend = (second.reduce((t, x) => t + x.med, 0) / second.length) - (first.reduce((t, x) => t + x.med, 0) / first.length);
   const z45 = ss.reduce((t, s) => t + s.zonas[3] + s.zonas[4], 0) / ss.reduce((t, s) => t + s.zonas.reduce((u, x) => u + x, 0), 0);
   const out = [];
-  out.push(`En tus ${ss.length} sesiones trabajas de media al ${pct(avg('med'))} de tu frecuencia máxima teórica (${fcMaxTeo(a)} ppm). ${avg('med') > gavg('med') + .02 ? 'Es algo más que la media de tu grupo: estás poniendo mucha intensidad.' : avg('med') < gavg('med') - .02 ? 'Es algo menos que la media de tu grupo, así que tienes margen para apretar en los ejercicios de juego.' : 'Estás en línea con la media de tu grupo.'}`);
+  out.push(`En tus ${ss.length} sesiones trabajas de media al ${pct(avg('med'))} de tu frecuencia máxima teórica (${fcMaxTeo(a)} ppm); la media de tu grupo es el ${pct(gavg('med'))} y la de la escuela el ${pct(eavg('med'))}. ${avg('med') > gavg('med') + .02 ? 'Es algo más que la media de tu grupo: estás poniendo mucha intensidad.' : avg('med') < gavg('med') - .02 ? 'Es algo menos que la media de tu grupo, así que tienes margen para apretar en los ejercicios de juego.' : 'Estás en línea con la media de tu grupo.'}`);
   out.push(`Pasas el ${pct(z45)} del tiempo en zonas 4 y 5, las de mayor esfuerzo. ${z45 > .3 ? 'Es un porcentaje alto; cuida el descanso entre clases e hidrátate bien.' : z45 < .12 ? 'Es un porcentaje bajo: los puntos largos y los ejercicios de red son buenos momentos para subir el ritmo.' : 'Es un reparto equilibrado para una clase técnica.'}`);
   out.push(`Tu índice de recuperación (diferencia entre la FC máxima y la media) es del ${pct(avg('rec'))}${avg('rec') > gavg('rec') ? ', por encima de tu grupo: tu corazón baja bien entre esfuerzos.' : ', algo por debajo de tu grupo; mejorará con trabajo aeróbico suave fuera de pista.'}`);
+  const Pm = mediasPor(filasPartidos(), METRICAS_P); const yo = Pm.alumno(a.id);
+  if (yo) { const g = Pm.grupo(a.grupo), e = Pm.escuela; out.push(`En partidos cometes de media el ${pct(yo.pctEnf ?? 0)} de los errores no forzados de tu pareja (grupo ${pct(g.pctEnf ?? 0)}, escuela ${pct(e.pctEnf ?? 0)}) y firmas el ${pct(yo.pctWin ?? 0)} de sus puntos con winner (grupo ${pct(g.pctWin ?? 0)}). ${(yo.pctEnf ?? 0) > (g.pctEnf ?? 0) + .03 ? 'Reducir errores es tu mayor margen de mejora: busca más seguridad antes de arriesgar.' : (yo.pctWin ?? 0) > (g.pctWin ?? 0) + .03 ? 'Tienes buena capacidad para cerrar puntos; mantén esa iniciativa.' : 'Estás en la línea de tu grupo.'}`); }
   if (Math.abs(trend) > .015) out.push(trend > 0 ? 'En las últimas clases tu FC media ha subido. Puede deberse a contenidos más exigentes o a cansancio acumulado; lo comentamos en pista.' : 'En las últimas clases tu FC media ha bajado con contenidos parecidos, una buena señal de adaptación.');
   return out;
 }
 function vInforme() {
   const a = alumno(ui.studentLogged); const ss = sesionesDe(a.id);
   const totK = ss.reduce((t, s) => t + s.kcal, 0); const totMin = ss.reduce((t, s) => t + s.duracion, 0);
-  return pageHead('Mi informe', `Frecuencia cardíaca registrada con pulsómetro en ${ss.length} sesiones. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`) + `
+  return pageHead('Mi corazón en pista', `Frecuencia cardíaca registrada con pulsómetro en ${ss.length} sesiones. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`) + `
   <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Sesiones', ss.length, `${totMin} min en pista`)}${stat('Calorías', totK.toLocaleString('es-ES'), 'kcal acumuladas')}${stat('FC media', pct(ss.reduce((t, s) => t + s.fcMed / fcMaxTeo(a), 0) / (ss.length || 1)), 'promedio de la temporada')}${stat('Pico más alto', Math.max(0, ...ss.map(s => s.fcMax)) + ' ppm', 'máximo registrado')}</section>
   <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Tu frecuencia cardíaca, sesión a sesión</h2><div class="h-64"><canvas id="chFCs"></canvas></div></section>
+  ${(() => { const F = mediasPor(filasFC(), METRICAS_FC); return F.alumno(a.id) ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Tú frente a tu grupo y la escuela</h2>${cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela)}</section>` : ''; })()}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-2">Minutos en cada zona</h2><div class="h-60"><canvas id="chZ"></canvas></div></div>
     <div class="panel p-5 lg:col-span-2 min-w-0 flex flex-col gap-3">
@@ -929,30 +1282,6 @@ function afterInforme() {
   const a = alumno(ui.studentLogged); const ss = sesionesDe(a.id);
   fcChart('chFCs', a.id);
   mkChart('chZ', { type: 'bar', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: [0, 1, 2, 3, 4].map(z => ({ label: `Zona ${z + 1}`, data: ss.map(s => s.zonas[z]), backgroundColor: cv(`--z${z + 1}`), stack: 'z', maxBarThickness: 38 })) }, options: baseOpts({ stacked: true, y: { title: 'minutos' } }) });
-}
-function vFisicaAlumno() {
-  const a = alumno(ui.studentLogged);
-  const tests = state.tests.filter(t => t.alumno === a.id).sort((x, y) => (x.fecha || '').localeCompare(y.fecha || ''));
-  const r = radarScores(a.id);
-  return pageHead('Condición física', 'Tus tests comparados con la media de tu grupo. Cuanto más hacia fuera, mejor.') + `
-  <section class="grid lg:grid-cols-2 gap-4">
-    <div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Tu perfil frente al grupo</h2><p class="text-[13px] text-muted mb-2">Puntuación de 20 a 100 dentro del rango de la escuela.</p><div class="h-80"><canvas id="chRad"></canvas></div></div>
-    <div class="panel p-5 min-w-0 flex flex-col gap-3"><h2 class="text-2xl font-bold">Qué mide cada test</h2>
-      <dl class="text-[14px] flex flex-col gap-2">
-        <div><dt class="font-semibold">Agilidad 1, 2 y 3</dt><dd class="text-muted">Recorridos cronometrados con cambios de dirección, como los desplazamientos en pista.</dd></div>
-        <div><dt class="font-semibold">Precisión</dt><dd class="text-muted">Bolas dirigidas a dianas desde el fondo y la red.</dd></div>
-        <div><dt class="font-semibold">Recuperación</dt><dd class="text-muted">Lo bien que baja tu pulso entre esfuerzos, según los pulsómetros.</dd></div>
-        <div><dt class="font-semibold">Intensidad por minuto</dt><dd class="text-muted">Carga de entrenamiento media por minuto de clase.</dd></div>
-      </dl></div>
-  </section>
-  <div class="panel scroll-x"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Tu evolución</h2>${tests.some(t => t.historico) ? '<p class="text-[13px] text-muted">Incluye tus tests de temporadas anteriores.</p>' : ''}</div><table class="data min-w-[600px]"><thead><tr><th>Periodo</th>${TEST_FIELDS.slice(1, 5).map(f => `<th>${f[1]}</th>`).join('')}</tr></thead><tbody>
-    ${tests.length ? '' : '<tr><td colspan="5" class="text-muted">Todavía no hay tests registrados.</td></tr>'}${tests.map(t => `<tr><td class="font-semibold">${t.periodo}${t.historico ? '' : ' ' + state.settings.temporada}</td>${['ag1', 'ag2', 'ag3', 'precision'].map(k => `<td class="tnum">${t[k] == null ? '—' : dec(t[k], k === 'precision' ? 0 : 2)}</td>`).join('')}</tr>`).join('')}
-  </tbody></table></div>`;
-}
-function afterFisicaAlumno() {
-  const r = radarScores(ui.studentLogged);
-  mkChart('chRad', { type: 'radar', data: { labels: r.labels, datasets: [{ label: 'Tú', data: r.me, borderColor: cv('--court'), backgroundColor: cv('--court', .18), pointBackgroundColor: cv('--court') }, { label: 'Media del grupo', data: r.grp, borderColor: cv('--z4'), backgroundColor: cv('--z4', .08), borderDash: [5, 4], pointRadius: 0 }] },
-    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color: cv('--ink'), font: { family: 'Figtree' } } } }, scales: { r: { min: 0, max: 100, ticks: { display: false, stepSize: 20 }, grid: { color: cv('--line') }, angleLines: { color: cv('--line') }, pointLabels: { color: cv('--ink'), font: { family: 'Figtree', size: 12, weight: '600' } } } } } });
 }
 function vPagosAlumno() {
   const a = alumno(ui.studentLogged); const ps = state.pagos.filter(p => p.alumno === a.id).sort((x, y) => y.fecha.localeCompare(x.fecha));
@@ -981,15 +1310,6 @@ function modalPago(forId) {
     <button class="btn btn-primary" type="submit">Registrar pago</button></form>`);
   const upd = () => { const a = alumno($('#pA').value); const c = CONCEPTOS.find(x => x.id === $('#pC').value); $('#pI').value = precioDe(grupo(a.grupo).tarifa, c.id) || $('#pI').value; $('#pHint').textContent = `${tarifaDe(a).nombre}. Saldo actual: ${saldo(a)} clases → quedará en ${saldo(a) + c.clases}.`; };
   $('#pA').onchange = upd; $('#pC').onchange = upd; upd();
-}
-function modalTest(forId) {
-  if (!reales().length) return toast('Da de alta a un alumno primero');
-  const a0 = forId ? alumno(forId) : reales()[0]; const per = ui.periodo;
-  const t = state.tests.find(x => x.alumno === a0.id && x.periodo === per) || {};
-  openModal(`<form id="fTest" class="flex flex-col gap-3">${modalHead(`Test de ${per.toLowerCase()}`)}
-    <div><label class="lbl" for="tA">Alumno</label><select id="tA" class="field">${reales().map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
-    <div class="grid grid-cols-2 gap-3">${TEST_FIELDS.map(([k, l]) => `<div><label class="lbl" for="t_${k}">${l}</label><input id="t_${k}" type="number" step="0.01" class="field tnum" value="${t[k] ?? ''}"></div>`).join('')}</div>
-    <button class="btn btn-primary" type="submit">Guardar test</button></form>`);
 }
 function modalAlta(id) {
   if (!state.grupos.length) { toast('Crea primero un grupo'); return modalGrupo(); }
@@ -1055,7 +1375,7 @@ async function loadAll(silencioso) {
     const vacio = Promise.resolve({ data: [], error: null });
     const [aj, tar, gr, al, pa, se, as, fc, te, em, av, ia] = (await Promise.all([
       q('ajustes').maybeSingle(), q('tarifas').order('id'), q('grupos').eq('activo', true).order('dia_semana'), q('alumnos').order('nombre'), q('pagos'),
-      q('sesiones'), q('asistencia'), q('registros_fc').order('fecha'), q('tests_fisicos'),
+      q('sesiones'), q('asistencia'), q('registros_fc').order('fecha'), q('partidos').order('fecha'),
       ui.isAdmin ? q('emails').order('creado', { ascending: false }).limit(300) : vacio, ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false })
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
@@ -1068,7 +1388,7 @@ async function loadAll(silencioso) {
     se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; });
     as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || []).push(x.alumno_id); });
     s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor }));
-    s.tests = te.map(t => { const hist = t.temporada !== s.settings.temporada; return { id: t.id, alumno: t.alumno_id, periodo: hist ? `${t.periodo.slice(0, 3)} ${t.temporada}` : t.periodo, fecha: t.fecha || '', historico: hist, peso: t.peso == null ? null : +t.peso, ag1: t.agilidad_1 == null ? null : +t.agilidad_1, ag2: t.agilidad_2 == null ? null : +t.agilidad_2, ag3: t.agilidad_3 == null ? null : +t.agilidad_3, precision: t.precision, rpe: t.rpe }; });
+    s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
     s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
     av.forEach(x => { s.warned[`${x.alumno_id}|${x.clases_recibidas}`] = true; });
     ia.forEach(x => { if (!s.informes[x.alumno_id]) s.informes[x.alumno_id] = { id: x.id, texto: x.texto, publicado: x.publicado, generado: x.generado }; });
@@ -1079,8 +1399,9 @@ async function loadAll(silencioso) {
       const comp = await need(sb.rpc('comparativa'));
       (comp?.alumnos || []).forEach(x => state.alumnos.push({ id: x.k, anon: true, nombre: 'Compañero', grupo: x.grupo, edad: x.edad, sexo: x.sexo, peso: 70, inicial: 0, email: '' }));
       (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0 }));
-      (comp?.tests || []).forEach(x => state.tests.push({ id: x.k + x.periodo, alumno: x.k, periodo: x.periodo, fecha: '', ag1: x.ag1 == null ? null : +x.ag1, ag2: x.ag2 == null ? null : +x.ag2, ag3: x.ag3 == null ? null : +x.ag3, precision: x.precision }));
-      ui.role = 'alumno'; ui.studentLogged = me.id; if (!['inicio', 'informe', 'fisica', 'pagos'].includes(ui.view)) ui.view = 'inicio';
+      const num = v => v == null ? null : +v;
+      state.statsAnon = (comp?.partidos || []).map(x => ({ alumno: x.k, grupo: x.grupo, partido: x.p, fecha: x.fecha, enf: x.enf, win: x.win, pctEnf: num(x.pct_enf), pctWin: num(x.pct_win), pctOro: num(x.pct_oro), pctBreak: num(x.pct_break), ppj: num(x.ppj), indice: num(x.indice), ganado: x.ganado }));
+      ui.role = 'alumno'; ui.studentLogged = me.id; if (!['inicio', 'informe', 'partidos', 'pagos'].includes(ui.view) && !ui.view.startsWith('partido:')) ui.view = 'inicio';
     } else if (!silencioso) { ui.role = 'admin'; ui.view = 'panel'; }
     ui.auth = 'ok';
   } catch (err) {
@@ -1104,9 +1425,6 @@ const P = {
   },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
   async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null }).select('id').single()); r.id = d.id; },
-  async test(t) {
-    const d = await need(sb.from('tests_fisicos').upsert({ alumno_id: t.alumno, temporada: state.settings.temporada, periodo: t.periodo, fecha: t.fecha || TODAY_ISO, peso: t.peso, agilidad_1: t.ag1, agilidad_2: t.ag2, agilidad_3: t.ag3, precision: t.precision == null ? null : Math.round(t.precision), rpe: t.rpe == null ? null : Math.round(t.rpe) }, { onConflict: 'alumno_id,temporada,periodo' }).select('id').single()); t.id = d.id;
-  },
   async alumno(a, nuevo) {
     const row = { nombre: a.nombre, email: a.email, telefono: a.tlf || null, grupo_id: a.grupo, fecha_nacimiento: a.fnac || null, sexo: a.sexo, peso_kg: a.peso || null, clases_iniciales: a.inicial || 0, tutor_nombre: a.tutor || null, consentimiento_salud: !!a.salud, consentimiento_imagen: !!a.imagen };
     const d = nuevo ? await need(sb.from('alumnos').insert(row).select('id, codigo_acceso').single()) : await need(sb.from('alumnos').update(row).eq('id', a.id).select('id, codigo_acceso').single());
@@ -1116,6 +1434,14 @@ const P = {
     const row = { nombre: g.nombre, dia_semana: g.dia, hora_inicio: g.hora, hora_fin: g.fin, tarifa_id: g.tarifa, nivel: g.nivel || null };
     const d = nuevo ? await need(sb.from('grupos').insert(row).select('id').single()) : await need(sb.from('grupos').update(row).eq('id', g.id).select('id').single());
     g.id = d.id;
+  },
+  async partido(m) {
+    await need(sb.from('partidos').upsert({ id: m.id, fecha: m.fecha, tipo: m.tipo, grupo_id: m.grupo && grupo(m.grupo).id ? m.grupo : null, jugadores: m.jugadores, alumnos: m.jugadores.map(j => j.id).filter(Boolean), formato: m.formato, punto_oro: m.oro, saque_inicial: m.saque, eventos: m.eventos, estado: m.estado, resultado: m.resultado, actualizado: new Date().toISOString() }));
+    if (m.estado !== 'terminado' && m.eventos.length % 10) return;   // estadísticas: al cerrar y cada 10 puntos
+    const { st, jug } = statsDe(m);
+    const filas = jug.filter(x => m.jugadores[x.j]?.id).map(x => ({ partido_id: m.id, alumno_id: m.jugadores[x.j].id, pareja: x.k, fecha: m.fecha, ganado: st.fin ? st.ganador === x.k : null, enf: x.enf, win: x.win, pct_enf: x.pctEnf, pct_win: x.pctWin, g_enf: x.gEnf, g_win: x.gWin, pct_oro: x.pctOro, pct_break: x.pctBreak, ppj: x.ppj, indice: x.indice, golpes_enf: x.ge, golpes_win: x.gw }));
+    await need(sb.from('stats_jugador').delete().eq('partido_id', m.id));
+    if (filas.length) await need(sb.from('stats_jugador').insert(filas));
   },
   async ajustes(s) { await need(sb.from('ajustes').update({ escuela: s.escuela, remitente: s.remitente, umbral_aviso: s.umbral }).eq('id', 1)); },
   async enviar(manual) {
@@ -1172,19 +1498,22 @@ function render() {
   let html, after;
   if (ui.role === 'admin') {
     if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
-    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, fisica: () => { html = vFisica(); after = afterFisica; }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
+    else if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
+    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
-    ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, fisica: () => { html = vFisicaAlumno(); after = afterFisicaAlumno; }, pagos: () => { html = vPagosAlumno(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
+    if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
+    else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); }, pagos: () => { html = vPagosAlumno(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
   }
   app.innerHTML = shell(html);
   if (after) after();
+  updateDock();
 }
 function rerenderIf(v) { if (ui.view === v) render(); }
-function go(v) { ui.view = v; render(); window.scrollTo({ top: 0 }); }
+function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -1195,14 +1524,35 @@ document.addEventListener('click', async e => {
   }
   if (d.alumno) return go('alumno:' + d.alumno);
   if (d.open === 'pago') return modalPago(d.for);
-  if (d.open === 'test') return modalTest(d.for);
   if (d.open === 'alta') return modalAlta(d.for);
   if (d.open === 'grupo') return modalGrupo(d.for);
+  if (d.open === 'partido') return modalPartido();
+  if (d.hrfull !== undefined) return openFull();
+  if (d.hrclose !== undefined) return closeFull();
+  if (d.addSlot !== undefined) { if (live.slots.length < MAX_SENSORES) live.slots.push(mkSlot(live.slots.length)); return render(); }
+  if (d.delSlot !== undefined) { const s = live.slots[live.slots.length - 1]; if (s && !(s.device || s.sim)) live.slots.pop(); return render(); }
+  if (d.partido) return go('partido:' + d.partido);
+  if (d.pset !== undefined) { ui.pset = d.pset === '' ? null : +d.pset; return render(); }
+  if (d.pmodo) { ui.pmodo = d.pmodo; return render(); }
+  {
+    const m = partidoActual();
+    if (m && d.pick) return pickGolpe(m, +d.j, d.pick);
+    if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? parDe(j) : 1 - parDe(j) }); }
+    if (m && d.ppunto !== undefined) return anotar(m, { tipo: 'p', j: null, g: null, par: +d.ppunto });
+    if (m && d.undo !== undefined) { m.eventos.pop(); if (m.estado === 'terminado') m.estado = 'en_juego'; m.resultado = resultadoTxt(motor(m)); guardarPartido(m); toast('Último punto deshecho'); return render(); }
+    if (m && d.psaque !== undefined) { m.saque = 1 - (m.saque || 0); guardarPartido(m); return render(); }
+    if (m && d.preabrir !== undefined) { m.estado = 'en_juego'; ui.pmodo = null; guardarPartido(m, true); return render(); }
+    if (m && d.pfin !== undefined) {
+      if (!m.eventos.length) { m.estado = 'terminado'; }
+      m.estado = 'terminado'; m.resultado = resultadoTxt(motor(m)); ui.pmodo = 'stats';
+      if (LIVE) { try { await guardarPartido(m, true); toast('Partido guardado'); } catch (e) {} } else { save(); toast('Partido guardado'); }
+      return render();
+    }
+  }
   if (d.close !== undefined) return closeModal();
   if (d.aviso) { const m = queueEmail(alumno(d.aviso), 'aviso'); return tras(() => P.email(m), LIVE ? null : 'Aviso de pago en la bandeja de salida'); }
   if (d.filtro) { ui.filtroGrupo = d.filtro; return render(); }
   if (d.clase) { ui.claseKey = d.clase; return render(); }
-  if (d.periodo) { ui.periodo = d.periodo; return render(); }
   if (d.copy) { const v = d.copy; (navigator.clipboard?.writeText(v) || Promise.reject()).then(() => toast('Código copiado'), () => { const r = document.createRange(); const el = t.previousElementSibling; r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Código seleccionado'); }); return; }
   if (d.preview) { ui.role = 'alumno'; ui.studentLogged = d.preview; ui.view = 'inicio'; return render(); }
   if (d.bt) return connectBT(+d.bt);
@@ -1213,7 +1563,7 @@ document.addEventListener('click', async e => {
     if (LIVE) { t.disabled = true; return P.enviar(true); }
     state.outbox.forEach(m => { if (m.estado === 'En cola') m.estado = 'Enviado (demo)'; }); save(); toast('Marcados como enviados. Con Supabase conectado salen de verdad.'); return render();
   }
-  if (d.reset !== undefined) { S.del(KEY); state = seed(); ui.claseKey = null; toast('Datos de ejemplo restablecidos'); return render(); }
+  if (d.reset !== undefined) { S.del(KEY); state = seed(); state.partidos = seedPartidos(state); state.pseed = true; state.statsAnon = []; ui.claseKey = null; toast('Datos de ejemplo restablecidos'); return render(); }
   if (d.fill) { $('#lCode').value = d.fill; return; }
   if (d.logout !== undefined) {
     if (LIVE) { await sb.auth.signOut(); state = emptyState(); ui = { ...ui, auth: 'login', role: 'admin', studentLogged: null, view: 'panel', authMsg: null }; return render(); }
@@ -1221,8 +1571,14 @@ document.addEventListener('click', async e => {
   }
   if (d.authTab) { ui.authTab = d.authTab; ui.authMsg = null; return render(); }
   if (d.reload !== undefined) return loadAll();
-  if (d.iaGen) {
-    const a = alumno(d.iaGen);
+  if (d.iaGen && LIVE) {
+    const a = alumno(d.iaGen); t.disabled = true; t.textContent = 'Redactando…';
+    try { const r = await fn('interpretar', { alumno_id: a.id }); state.informes[a.id] = r; toast('Borrador de Gemini listo. Revísalo antes de publicarlo.'); }
+    catch (err) { toast('Gemini no respondió: ' + err.message + '. Prueba el borrador automático.'); }
+    return render();
+  }
+  if (d.iaGen || d.iaLocal) {
+    const a = alumno(d.iaGen || d.iaLocal);
     const texto = interpretacion(a).join('\n\n');
     if (!LIVE) { state.informes[a.id] = { id: 'demo', texto, publicado: false }; save(); return render(); }
     try { const r = await need(sb.from('informes_ia').insert({ alumno_id: a.id, texto, publicado: false }).select('id, texto, publicado, generado').single()); state.informes[a.id] = r; toast('Borrador generado. Revísalo y complétalo antes de publicarlo.'); }
@@ -1237,6 +1593,7 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset.jsel !== undefined) { const n = document.getElementById('mN' + e.target.dataset.jsel); if (n) { n.hidden = e.target.value !== 'inv'; if (!n.hidden) n.focus(); } }
   if (e.target.dataset.slotAlumno !== undefined) { live.slots[+e.target.dataset.slotAlumno].alumno = e.target.value || null; updateSlot(+e.target.dataset.slotAlumno); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal').hidden) closeModal(); });
@@ -1288,12 +1645,6 @@ async function onSubmit(f) {
     state.contenidos[ui.claseKey] = c; const key = ui.claseKey;
     return tras(() => P.sesion(key, { titulo: c.titulo, contenidos: c.items }), 'Contenidos guardados');
   }
-  if (f.id === 'fTest') {
-    const id = $('#tA').value; let t = state.tests.find(x => x.alumno === id && x.periodo === ui.periodo);
-    if (!t) { t = { id: 'T' + Date.now(), alumno: id, periodo: ui.periodo, fecha: TODAY_ISO }; state.tests.push(t); }
-    TEST_FIELDS.forEach(([k]) => { const v = $('#t_' + k).value; t[k] = v === '' ? null : +v; });
-    closeModal(); return tras(() => P.test(t), 'Test guardado');
-  }
   if (f.id === 'fAlta') {
     const editId = f.dataset.id;
     const datos = { nombre: $('#nN').value.trim(), email: $('#nE').value.trim(), tlf: $('#nT').value.trim(), grupo: $('#nG').value, fnac: $('#nF').value, sexo: $('#nS').value, peso: +$('#nP').value || 70, inicial: +$('#nI').value || 0, tutor: $('#nTu').value.trim(), salud: $('#nSal').checked, imagen: $('#nIm').checked };
@@ -1315,6 +1666,15 @@ async function onSubmit(f) {
     const g = { id: 'G' + Date.now(), ...datos }; state.grupos.push(g); ui.filtroGrupo = 'todos';
     return tras(() => P.grupo(g, true), 'Grupo creado');
   }
+  if (f.id === 'fPartido') {
+    const jugadores = [0, 1, 2, 3].map(j => { const v = $('#mJ' + j).value; if (v === 'inv') return { id: null, nombre: $('#mN' + j).value.trim() || `Invitado ${j + 1}` }; const a = v ? alumno(v) : null; return a ? { id: a.id, nombre: a.nombre } : { id: null, nombre: `Jugador ${j + 1}` }; });
+    const ids = jugadores.map(j => j.id).filter(Boolean);
+    if (new Set(ids).size !== ids.length) return toast('Hay un jugador repetido');
+    const g = ids.length ? alumno(ids[0]).grupo : null;
+    const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: $('#mT').value, grupo: g, jugadores, formato: $('#mFo').value, oro: $('#mO').checked, saque: +$('#mS').value, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
+    state.partidos = state.partidos || []; state.partidos.push(m);
+    closeModal(); guardarPartido(m, true); return go('partido:' + m.id);
+  }
   if (f.id === 'fAjustes') {
     state.settings.escuela = $('#sEsc').value.trim() || state.settings.escuela; state.settings.remitente = $('#sRem').value.trim(); state.settings.umbral = +$('#sUmb').value;
     return tras(() => P.ajustes(state.settings), 'Reglas guardadas');
@@ -1323,6 +1683,7 @@ async function onSubmit(f) {
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('resize', () => { if (ui.view === 'vivo') drawLive(); });
+if (!LIVE && !state.pseed) { state.partidos = seedPartidos(state); state.pseed = true; save(); }
 if (LIVE) {
   sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { ui.auth = 'nueva-clave'; render(); } });
   if (/type=recovery/.test(location.hash)) { ui.auth = 'nueva-clave'; render(); } else loadAll();

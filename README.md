@@ -1,6 +1,6 @@
 # Bandeja
 
-App de la escuela de pádel: pagos y bonos con emails automáticos, registro de frecuencia cardíaca con pulsómetros Bluetooth, tests de condición física, informes para cada alumno y un portal propio. Todo con servicios gratuitos.
+App de la escuela de pádel: pagos y bonos con emails automáticos, pulsómetros Bluetooth en directo (con pantalla completa por zonas), marcador de partidos con winners y errores no forzados, comparativas con el grupo y la escuela, informes redactados con Gemini y un portal para cada alumno. Todo con servicios gratuitos.
 
 - **App:** https://agarcia-poz.github.io/bandeja/
 - **Modo demostración** (datos de ejemplo, no toca la base de datos): https://agarcia-poz.github.io/bandeja/#demo
@@ -13,18 +13,26 @@ App de la escuela de pádel: pagos y bonos con emails automáticos, registro de 
 | `supabase/migrations/` | Supabase (proyecto `bandeja`, París) | Tablas, seguridad por filas y comparativa anónima |
 | `supabase/functions/activar-acceso` | Supabase Edge Functions | El alumno activa su cuenta con código + email |
 | `supabase/functions/enviar-emails` | Supabase Edge Functions | Envía la cola de emails a través de Gmail |
+| `supabase/functions/interpretar` | Supabase Edge Functions | Borrador del informe con Gemini (solo porcentajes y medias, sin datos personales) |
 | `apps-script/Code.gs` | Google Apps Script en escuelapadelag@gmail.com | Envía los emails desde la Gmail de la escuela |
 | `.github/workflows/mantener-activo.yml` | GitHub Actions | Consulta mínima cada 3 días para que Supabase no pause el proyecto |
 
 ## Configuración privada
 
-La URL del script de Gmail y su secreto están en la tabla `config_privada` de Supabase (solo la leen las funciones del servidor). Si cambias el secreto en Apps Script, cámbialo también ahí.
+La URL del script de Gmail, su secreto y la clave de Gemini (`GEMINI_API_KEY`, opcionalmente `GEMINI_MODEL`) están en la tabla `config_privada` de Supabase, que solo leen las funciones del servidor. Nunca en este repositorio.
 
 ## Pulsómetros
 
 Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge (Android, Windows, macOS, ChromeOS). No funciona en Safari de iPhone/iPad; allí se puede usar el navegador Bluefy.
 
-## Cálculos (los de la hoja GESTIÓN ESCUELA)
+## Partidos (hoja ANÁLISIS ESTADÍSTICO)
+
+- Cada punto se registra como winner o error no forzado de un jugador con su golpe (S, D, R, PD, PR, CP, VD, VR, B, RMP, RML), o como punto sin winner ni error.
+- El marcador lleva sets, juegos, tie-break a 6-6, punto de oro o ventajas, saque y bolas de break.
+- % ENF = errores del jugador / puntos perdidos por su pareja. % WIN = winners del jugador / puntos ganados por su pareja.
+- Índice win = media de % puntos de oro ganados y % roturas conseguidas.
+
+## Cálculos de pulsómetro (hoja GESTIÓN ESCUELA)
 
 - FC máxima teórica: 220 − edad.
 - Zonas: Z1 50–60 %, Z2 60–70 %, Z3 70–80 %, Z4 80–90 %, Z5 90–100 %.
@@ -34,4 +42,4 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 
 ## Protección de datos
 
-La frecuencia cardíaca es un dato de salud (art. 9 RGPD): la ficha recoge el consentimiento (y el tutor en menores). Cada alumno solo puede leer sus propios datos; las comparativas con el grupo se calculan sobre datos anónimos. Los informes se redactan dentro de la app; los datos no salen a servicios externos.
+La frecuencia cardíaca es un dato de salud (art. 9 RGPD): la ficha recoge el consentimiento (y el tutor en menores). Cada alumno solo puede leer sus propios datos; las comparativas con el grupo se calculan sobre datos anónimos. Para los informes con Gemini solo se envían porcentajes y medias, sin nombre, edad ni contacto. En el plan gratuito de la API de Gemini, Google puede usar lo que se le envía para mejorar sus productos.
