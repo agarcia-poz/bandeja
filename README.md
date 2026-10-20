@@ -25,6 +25,10 @@ La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMI
 
 Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge (Android, Windows, macOS, ChromeOS). No funciona en Safari de iPhone/iPad; allí se puede usar el navegador Bluefy.
 
+- Si un sensor aparece pero no conecta, casi siempre está conectado a otra app o dispositivo (Polar Flow, Polar Beat, reloj, ajustes de Bluetooth del iPhone). La app reintenta tres veces, explica la causa probable y permite «Buscar todos los dispositivos».
+- Si se cae la conexión durante la sesión, intenta reconectar sola.
+- Al guardar la sesión, cada alumno recibe por email un resumen visual (fases, curva de pulso, comparativas e interpretación con referencias: ACSM 2018, OMS 2020, Díaz García et al. 2017, Carbonell Martínez et al. 2017, Edwards 1993).
+
 ## Bonos, fijos y relevos
 
 - **Fijo del grupo:** se le cobra cada clase con lista pasada, aunque falte, salvo que le cubra un relevo.
@@ -40,6 +44,9 @@ En *Pagos* hay tres pestañas: cobros, gastos (por categoría) y balance mensual
 
 - Cada punto se registra como winner o error no forzado de un jugador con su golpe (S, D, R, PD, PR, CP, VD, VR, B, RMP, RML), o como punto sin winner ni error.
 - El marcador lleva sets, juegos, tie-break a 6-6, punto de oro o ventajas, saque y bolas de break.
+- Sorteo con moneda, primer sacador y sacador de la otra pareja; el orden queda fijo en el set y se puede cambiar al empezar cada set. Las parejas cambian de lado en pantalla en cada set.
+- En cada punto de oro se indica quién resta, para saber el % de oros ganados por cada jugador al resto.
+- Estadística de saque y resto por pareja y por jugador.
 - % ENF = errores del jugador / puntos perdidos por su pareja. % WIN = winners del jugador / puntos ganados por su pareja.
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
 

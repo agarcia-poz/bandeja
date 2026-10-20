@@ -146,10 +146,20 @@
   .email-paper { background: rgb(var(--surface)); border: 1px solid rgb(var(--line)); border-radius: 14px; }
   .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sheet-backdrop { background: rgb(var(--ink) / .45); }
-  /* Pantalla completa de pulsómetros: fondo = zona (el texto de la zona lo repite, no solo el color) */
-  .hz0, .hzx { background: rgb(var(--surface2)); color: rgb(var(--ink)); }
-  .hz1 { background: rgb(var(--z1)); color: #0c1b38; } .hz2 { background: rgb(var(--z2)); color: #fff; }
-  .hz3 { background: rgb(var(--z3)); color: #fff; } .hz4 { background: rgb(var(--z4)); color: #1d1300; } .hz5 { background: rgb(var(--z5)); color: #fff; }
+  /* Fases de FC: fondo con el color de la zona y cifras en negrita en el tono oscuro de esa zona.
+     El texto de la zona se repite siempre, así que el color nunca es la única pista. */
+  .hz0, .hzx { background: #E6ECF5; color: #334155; --zd: #334155; }
+  .hz1 { background: #D5DCE8; color: #1E293B; --zd: #1E293B; }
+  .hz2 { background: #BFDBFE; color: #1E3A8A; --zd: #1E3A8A; }
+  .hz3 { background: #BBF7D0; color: #14532D; --zd: #14532D; }
+  .hz4 { background: #FED7AA; color: #7C2D12; --zd: #7C2D12; }
+  .hz5 { background: #FECACA; color: #7F1D1D; --zd: #7F1D1D; }
+  .zcard { border-radius: 18px; transition: background-color .6s ease, color .6s ease; }
+  .zcard .zfig { color: var(--zd); font-weight: 800; }
+  .zcard .field { background: rgb(255 255 255 / .7); color: #0c1b38; border-color: rgb(0 0 0 / .12); }
+  .zcard .chip-neutral { background: rgb(255 255 255 / .55); color: #334155; }
+  .zcard .btn-ghost { color: #0c1b38; border-color: rgb(0 0 0 / .18); }
+  .zcard .zbar { background: rgb(255 255 255 / .55); }
   .hf-wrap { position: fixed; inset: 0; z-index: 90; background: #07122a; color: #fff; display: flex; flex-direction: column;
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
   .hf-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .6rem max(16px, env(safe-area-inset-left, 0px)); }
@@ -164,16 +174,22 @@
   .hf-grid.n3, .hf-grid.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
   .hf-panel { border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 1rem; min-height: 0; overflow: hidden; transition: background-color .6s ease, color .6s ease; }
   .hf-name { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.5rem, 5vmin, 3.2rem); line-height: 1; }
-  .hf-bpm { font-family: var(--f-display); font-weight: 800; line-height: .9; font-size: clamp(5rem, 30vmin, 22rem); }
-  .hf-grid.n2 .hf-bpm { font-size: clamp(4.5rem, 22vmin, 16rem); } .hf-grid.n3 .hf-bpm, .hf-grid.n4 .hf-bpm { font-size: clamp(3.5rem, 16vmin, 11rem); }
-  .hf-zone { font-weight: 700; font-size: clamp(1rem, 3.4vmin, 2rem); }
+  .hf-figs { display: flex; align-items: baseline; justify-content: center; gap: .25em 1em; flex-wrap: wrap; font-family: var(--f-display); font-weight: 800; color: var(--zd); line-height: .9; }
+  .hf-pct { font-size: clamp(4.5rem, 26vmin, 19rem); }
+  .hf-bpm { font-size: clamp(2.4rem, 12vmin, 8rem); opacity: .9; }
+  .hf-bpm small, .hf-pct small { font-size: .32em; font-weight: 700; margin-left: .08em; }
+  .hf-grid.n2 .hf-pct { font-size: clamp(4rem, 19vmin, 14rem); } .hf-grid.n2 .hf-bpm { font-size: clamp(2rem, 9vmin, 6rem); }
+  .hf-grid.n3 .hf-pct, .hf-grid.n4 .hf-pct { font-size: clamp(3rem, 13vmin, 9rem); } .hf-grid.n3 .hf-bpm, .hf-grid.n4 .hf-bpm { font-size: clamp(1.6rem, 6vmin, 4rem); }
+  .hf-zone { font-weight: 800; font-size: clamp(1rem, 3.4vmin, 2rem); color: var(--zd); }
   .hf-meta { opacity: .85; font-size: clamp(.9rem, 2.4vmin, 1.3rem); margin-top: .3rem; }
   @media (prefers-reduced-motion: reduce) { .hf-panel { transition: none; } }
   .dock { position: fixed; z-index: 45; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); display: flex; justify-content: flex-end; pointer-events: none; }
   @media (min-width: 1024px) { .dock { bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: auto; } }
   .dock-in { pointer-events: auto; display: flex; align-items: center; gap: .5rem; max-width: 100%; overflow-x: auto; background: #07122a; color: #fff; border-radius: 999px; padding: .4rem .5rem .4rem .9rem; box-shadow: 0 10px 30px -10px rgb(0 0 0 / .5); min-height: 52px; }
   .dock-in svg { width: 20px; height: 20px; flex: none; margin-right: .3rem; }
-  .dock-chip { display: inline-flex; align-items: center; gap: .45rem; border-radius: 999px; padding: .2rem .7rem; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .dock-chip { display: inline-flex; align-items: baseline; gap: .45rem; border-radius: 999px; padding: .25rem .8rem; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .dock-chip .dpct { font-family: var(--f-display); font-weight: 800; font-size: 1.35rem; color: var(--zd); line-height: 1; }
+  .dock-chip .dppm { font-size: 11.5px; opacity: .8; }
   /* Marcador */
   .scoreboard { background: #07122a; color: #fff; border-radius: 20px; padding: .9rem 1rem 1rem; display: flex; flex-direction: column; gap: .35rem; }
   .sb-head { display: flex; align-items: center; gap: .6rem; font-size: 13px; font-weight: 600; opacity: .9; }
@@ -207,6 +223,14 @@
   .seg input[value="falta"]:checked + span { color: rgb(var(--bad)); }
   .seg input[value="cubierta"]:checked + span { color: rgb(var(--warn)); }
   .seg input:focus-visible + span { outline: 2px solid rgb(var(--court)); outline-offset: 1px; }
+  .coin-stage { perspective: 800px; width: 140px; height: 140px; }
+  .coin { position: relative; width: 140px; height: 140px; transform-style: preserve-3d; transform: rotateY(var(--fin)); }
+  .coin.spin { animation: coinflip 1.6s cubic-bezier(.2,.7,.2,1) forwards; }
+  @keyframes coinflip { from { transform: rotateY(0) translateY(0); } 40% { transform: rotateY(calc(var(--fin) * .5)) translateY(-40px); } to { transform: rotateY(var(--fin)) translateY(0); } }
+  .coin-face { position: absolute; inset: 0; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 800; font-size: 2.6rem; backface-visibility: hidden; box-shadow: inset 0 0 0 8px rgb(0 0 0 / .12); }
+  .coin-face.c0 { background: rgb(var(--ball)); color: rgb(var(--ball-ink)); }
+  .coin-face.c1 { background: rgb(var(--court)); color: rgb(var(--court-ink)); transform: rotateY(180deg); }
+  @media (prefers-reduced-motion: reduce) { .coin.spin { animation: none; } }
   .chip-p0 { background: rgb(var(--court) / .14); color: rgb(var(--court)); } .chip-p1 { background: rgb(var(--z4) / .18); color: rgb(var(--warn)); }
 </style>
 
@@ -477,7 +501,9 @@ function queueEmail(a, tipo, extra = {}) {
     const estadoTxt = s < 0 ? `Has recibido ${-s} ${-s === 1 ? 'clase' : 'clases'} más de las que tienes pagadas.` : s === 0 ? 'Has consumido todas las clases de tu bono.' : `Te ${s === 1 ? 'queda' : 'quedan'} ${s} ${s === 1 ? 'clase' : 'clases'} de tu bono.`;
     body = `Hola ${nombre}:\n\n${estadoTxt}\n\nPara tu próxima clase (${nextClassOf(a)}) necesitas renovar:\n· Bono mensual, 4 clases: ${fmtEur(t.mes)}\n· Bono trimestral, 10 clases: ${fmtEur(t.trimestre)}\n\nPuedes pagar por Bizum, transferencia o en efectivo en la pista.\n\nGracias,\n${state.settings.escuela}`;
   }
-  const m = { id: 'E' + Date.now() + Math.random().toString(36).slice(2, 5), alumno: a.id, to: a.email, toName: a.nombre, tipo, subject, body, fecha: new Date().toISOString(), estado: 'En cola' };
+  let html = null;
+  if (tipo === 'sesion') ({ subject, body, html } = emailSesion(a, extra.registro));
+  const m = { id: 'E' + Date.now() + Math.random().toString(36).slice(2, 5), alumno: a.id, to: a.email, toName: a.nombre, tipo, subject, body, html, fecha: new Date().toISOString(), estado: 'En cola' };
   state.outbox.unshift(m);
   return m;
 }
@@ -584,6 +610,7 @@ function vPanel() {
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0">
       <div class="flex items-center justify-between gap-3 mb-3"><h2 class="text-2xl font-bold">Requieren atención</h2><span class="text-[13px] text-muted">Aviso cuando quedan ${state.settings.umbral} o menos clases</span></div>
+      ${(() => { const F = faltasSeguidas(); return F.length ? `<div class="rounded-xl bg-warn/10 p-3 mb-3 text-[14px]"><strong>Faltan varias clases seguidas:</strong> ${F.map(x => `<button class="underline decoration-dotted" data-alumno="${x.a.id}">${esc(corto(x.a.nombre))}</button> (${x.n}${x.pctAsis != null ? `, asiste al ${pct(x.pctAsis)}` : ''})`).join(', ')}. Puede ser buen momento para escribirles.</div>` : ''; })()}
       ${atencion.length ? `<ul class="divide-y divide-line">${atencion.map(a => `
         <li class="py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <button class="text-left min-w-0 flex-1" data-alumno="${a.id}"><div class="font-semibold truncate">${esc(a.nombre)}</div><div class="text-[13px] text-muted">${esc(grupo(a.grupo).nombre)} · ${tarifaDe(a).nombre}</div></button>
@@ -671,6 +698,7 @@ function vAlumnoDetalle(id) {
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
       ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
+  ${vPerfilGolpes(a.id)}
   ${iaPanel(a)}`;
 }
 function historialClases(a) {
@@ -836,6 +864,7 @@ function vVivo() {
   const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
   return pageHead('Sesión en vivo', 'Conecta los pulsómetros, asigna cada uno a un alumno e inicia la sesión. Puedes cambiar de pestaña (por ejemplo, al marcador de partidos): el registro sigue y lo verás en la barra de abajo.',
     `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
+  <label class="flex items-center gap-2 text-[14px] -mt-2"><input type="checkbox" id="resEmail" class="w-4 h-4" ${ui.resumenEmail === false ? '' : 'checked'} data-resemail> Al guardar, enviar a cada alumno el resumen de su sesión por email</label>
   ${BT_OK ? '' : `<div class="panel p-4 text-[14px]"><strong>Bluetooth no disponible en este navegador.</strong> Funciona en Chrome o Edge (Android, Windows, Mac o ChromeOS). En iPhone hace falta un navegador como Bluefy. Mientras tanto puedes probar con el simulador.</div>`}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="lg:col-span-2 panel p-3 flex items-center justify-center min-w-0">${courtSVG()}</div>
@@ -847,14 +876,20 @@ function vVivo() {
 function slotCard(s, selHTML) {
   const { max, z } = slotInfo(s);
   const tot = s.z.reduce((t, x) => t + x, 0) || 1;
-  return `<div class="panel p-4 flex flex-col gap-3 min-w-0" id="slot${s.i}">
+  const err = ui.btError?.[s.i];
+  return `<div class="zcard hz${s.hr ? z : 'x'} p-4 flex flex-col gap-3 min-w-0" id="slot${s.i}">
     <div class="flex items-center justify-between gap-2"><div class="font-display text-xl font-bold">Sensor ${s.i + 1}</div><span class="chip ${s.status === 'conectado' || s.status === 'simulado' ? 'chip-ok' : s.status === 'conectando' ? 'chip-warn' : 'chip-neutral'}" data-f="status">${statusTxt(s)}</span></div>
     ${selHTML}
-    <div class="flex items-end gap-3"><div class="num text-7xl font-bold leading-none ${z ? 'tz' + z : 'text-muted'}" data-f="hr">${s.hr ?? '––'}</div><div class="pb-2"><div class="text-[13px] text-muted">ppm</div><div class="font-semibold" data-f="zone">${s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : '&nbsp;'}</div></div></div>
+    <div class="flex items-end gap-4 flex-wrap">
+      <div><div class="num text-7xl leading-none zfig" data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}<span class="text-3xl">%</span></div><div class="text-[12.5px] font-semibold opacity-80">de su FC máxima</div></div>
+      <div><div class="num text-4xl leading-none zfig" data-f="hr">${s.hr ?? '––'}</div><div class="text-[12.5px] font-semibold opacity-80">ppm</div></div>
+    </div>
+    <div class="font-bold zfig" data-f="zone">${s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : '&nbsp;')}</div>
     <div class="zbar" data-f="zbar">${s.z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>
-    <div class="flex justify-between text-[13px] text-muted tnum"><span data-f="kcal">${Math.round(s.kcal)} kcal</span><span data-f="trimp">eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}</span></div>
+    <div class="flex justify-between text-[13px] font-semibold opacity-80 tnum"><span data-f="kcal">${Math.round(s.kcal)} kcal</span><span data-f="trimp">eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}</span></div>
+    ${err ? `<div class="rounded-xl bg-white/80 text-[13px] text-[#0c1b38] p-3 flex flex-col gap-1.5" role="alert"><strong>${esc(err.titulo)}</strong><span>${esc(err.texto)}</span>${err.pasos ? `<ul class="list-disc pl-5">${err.pasos.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<span class="opacity-70">Detalle técnico: ${esc(err.tecnico)}</span></div>` : ''}
     <div class="flex flex-wrap gap-2">
-      ${s.device || s.sim ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-bt-off="${s.i}">Desconectar</button>` : `<button class="btn btn-primary !py-1.5 !px-3 text-[13px]" data-bt="${s.i}" ${BT_OK ? '' : 'disabled style="opacity:.45"'}>${I.bt.replace('<svg', '<svg width="16" height="16"')}Conectar pulsómetro</button><button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-sim="${s.i}">Simular</button>`}
+      ${s.device || s.sim ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-bt-off="${s.i}">Desconectar</button>` : `<button class="btn btn-primary !py-1.5 !px-3 text-[13px]" data-bt="${s.i}" ${BT_OK ? '' : 'disabled style="opacity:.45"'}>${I.bt.replace('<svg', '<svg width="16" height="16"')}Conectar pulsómetro</button>${err ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-bt-all="${s.i}" ${BT_OK ? '' : 'disabled'}>Buscar todos los dispositivos</button>` : ''}<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-sim="${s.i}">Simular</button>`}
       ${live.slots.length > 1 && !(s.device || s.sim) && s.i === live.slots.length - 1 ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" data-del-slot>Quitar</button>` : ''}
     </div></div>`;
 }
@@ -884,23 +919,58 @@ function parseHR(dv) {
   const rr = []; if (f & 16) for (; i + 1 < dv.byteLength; i += 2) rr.push(Math.round(dv.getUint16(i, true) / 1024 * 1000));
   return { hr, rr };
 }
-async function connectBT(i) {
+/* Conexión con reintentos y mensajes que explican la causa real del fallo */
+const espera = ms => new Promise(r => setTimeout(r, ms));
+function errorBT(err) {
+  const n = err?.name || '', m = String(err?.message || '');
+  const tecnico = `${n || 'Error'}: ${m || 'sin detalle'}`;
+  if (n === 'NotFoundError' && /cancel/i.test(m)) return null;   // el usuario cerró el selector
+  if (n === 'NotFoundError' || /service/i.test(m)) return { titulo: 'Ese dispositivo no envía frecuencia cardíaca', texto: 'Se conectó, pero no ofrece el servicio estándar de pulso.', pasos: ['Comprueba que has elegido el pulsómetro y no otro aparato.', 'En algunos sensores (Polar Verity Sense, relojes) hay que activar el modo «emitir FC» o «HR broadcast».'], tecnico };
+  if (n === 'SecurityError' || /permission|not allowed/i.test(m)) return { titulo: 'El navegador no tiene permiso de Bluetooth', texto: 'Hay que permitir el Bluetooth a este navegador.', pasos: ['iPhone: Ajustes > Bluefy > activa Bluetooth.', 'Android: permite «Dispositivos cercanos» a Chrome.'], tecnico };
+  return { titulo: 'El pulsómetro aparece pero no acepta la conexión', texto: 'Casi siempre es porque ya está conectado a otra cosa: un sensor solo atiende a una app a la vez.', pasos: ['Cierra Polar Flow, Polar Beat u otras apps de entrenamiento en este móvil y en los cercanos.', 'Si está vinculado en los ajustes de Bluetooth del iPhone o en un reloj, pulsa «Olvidar este dispositivo».', 'Quítate la banda 30 segundos para que se apague y vuelve a ponértela (con los electrodos húmedos).', 'Si el otro sensor ya está conectado, conecta este primero y el otro después.', 'Prueba «Buscar todos los dispositivos».'], tecnico };
+}
+async function connectBT(i, todos = false) {
   const s = live.slots[i];
+  ui.btError = ui.btError || {}; delete ui.btError[i];
   try {
     s.status = 'conectando'; updateSlot(i);
-    const device = await navigator.bluetooth.requestDevice({ filters: [{ services: ['heart_rate'] }], optionalServices: ['battery_service'] });
+    const device = await navigator.bluetooth.requestDevice(todos ? { acceptAllDevices: true, optionalServices: ['heart_rate', 'battery_service'] } : { filters: [{ services: ['heart_rate'] }], optionalServices: ['battery_service'] });
+    const otro = live.slots.find(x => x !== s && x.device && x.device.id === device.id);
+    if (otro) { s.status = 'libre'; rerenderIf('vivo'); return toast(`Ese pulsómetro ya está en el sensor ${otro.i + 1}`); }
     s.device = device; s.name = device.name || 'Pulsómetro';
-    device.addEventListener('gattserverdisconnected', () => { s.status = 'libre'; s.device = null; s.hr = null; rerenderIf('vivo'); refreshLive(i); toast(`${s.name} se ha desconectado`); });
-    const server = await device.gatt.connect();
-    const svc = await server.getPrimaryService('heart_rate');
-    const ch = await svc.getCharacteristic('heart_rate_measurement');
-    await ch.startNotifications();
-    ch.addEventListener('characteristicvaluechanged', e => onHR(i, parseHR(e.target.value).hr));
+    await conectarGATT(s, i);
     s.status = 'conectado'; rerenderIf('vivo'); toast(`${s.name} conectado al sensor ${i + 1}`);
   } catch (err) {
-    s.status = 'libre'; s.device = null; rerenderIf('vivo');
-    toast(err && err.name === 'NotFoundError' ? 'No se eligió ningún pulsómetro' : 'No se pudo conectar. Comprueba que el sensor está húmedo y en contacto con la piel.');
+    s.manualOff = true; if (s.device && s.onDisc) { s.device.removeEventListener('gattserverdisconnected', s.onDisc); s.onDisc = null; }
+    try { s.device?.gatt?.disconnect(); } catch (e) {}
+    setTimeout(() => { s.manualOff = false; }, 1000);
+    s.status = 'libre'; s.device = null;
+    const e = errorBT(err); if (e) ui.btError[i] = e;
+    rerenderIf('vivo'); if (e) toast(e.titulo);
   }
+}
+async function conectarGATT(s, i) {
+  let ultimo;
+  for (let k = 0; k < 3; k++) {          // muchos sensores fallan el primer intento de conexión
+    try {
+      const server = await s.device.gatt.connect();
+      const svc = await server.getPrimaryService('heart_rate');
+      const ch = await svc.getCharacteristic('heart_rate_measurement');
+      await ch.startNotifications();
+      if (!s.listener) { s.listener = e => onHR(i, parseHR(e.target.value).hr); }
+      ch.removeEventListener('characteristicvaluechanged', s.listener); ch.addEventListener('characteristicvaluechanged', s.listener);
+      if (!s.onDisc) { s.onDisc = () => reconectar(s, i); s.device.addEventListener('gattserverdisconnected', s.onDisc); }
+      return;
+    } catch (e) { ultimo = e; await espera(600 + k * 600); }
+  }
+  throw ultimo;
+}
+async function reconectar(s, i) {
+  if (!s.device || s.manualOff) return;
+  s.status = 'conectando'; s.hr = null; rerenderIf('vivo'); refreshLive(i);
+  try { await conectarGATT(s, i); s.status = 'conectado'; toast(`${s.name} reconectado`); }
+  catch (e) { s.status = 'libre'; const d = s.device; s.device = null; if (d && s.onDisc) d.removeEventListener('gattserverdisconnected', s.onDisc); s.onDisc = null; toast(`${s.name} se ha desconectado`); }
+  rerenderIf('vivo'); refreshLive(i);
 }
 function startSim(i) {
   const s = live.slots[i]; s.status = 'simulado'; s.name = 'Simulador';
@@ -913,7 +983,8 @@ function startSim(i) {
   rerenderIf('vivo');
 }
 function stopSlot(i) {
-  const s = live.slots[i];
+  const s = live.slots[i]; s.manualOff = true; setTimeout(() => { s.manualOff = false; }, 1500);
+  if (s.device && s.onDisc) { s.device.removeEventListener('gattserverdisconnected', s.onDisc); s.onDisc = null; }
   if (s.sim) clearInterval(s.sim);
   if (s.device && s.device.gatt.connected) s.device.gatt.disconnect();
   s.sim = null; s.device = null; s.status = 'libre'; s.hr = null;
@@ -937,8 +1008,10 @@ function refreshLive(i) { updateFull(i); updateDock(); }
 function updateSlot(i) {
   const s = live.slots[i]; const el = document.getElementById('slot' + i); if (!el) return;
   const { max, z } = slotInfo(s);
-  const hrEl = el.querySelector('[data-f="hr"]'); hrEl.textContent = s.hr ?? '––'; hrEl.className = `num text-7xl font-bold leading-none ${z ? 'tz' + z : 'text-muted'}`;
-  el.querySelector('[data-f="zone"]').innerHTML = s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : '&nbsp;';
+  el.className = `zcard hz${s.hr ? z : 'x'} p-4 flex flex-col gap-3 min-w-0`;
+  el.querySelector('[data-f="pct"]').innerHTML = `${s.hr ? Math.round(s.hr / max * 100) : '––'}<span class="text-3xl">%</span>`;
+  el.querySelector('[data-f="hr"]').textContent = s.hr ?? '––';
+  el.querySelector('[data-f="zone"]').innerHTML = s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : '&nbsp;');
   const tot = s.z.reduce((t, x) => t + x, 0) || 1;
   el.querySelector('[data-f="zbar"]').innerHTML = s.z.map((m, k) => `<span class="z${k + 1}" style="width:${m / tot * 100}%"></span>`).join('');
   el.querySelector('[data-f="kcal"]').textContent = `${Math.round(s.kcal)} kcal`;
@@ -985,7 +1058,8 @@ function toggleLive() {
   updateFull(); updateDock();
   if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
   const n = nuevos.length;
-  tras(async () => { for (const r of nuevos) await P.fc(r); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}`);
+  const correos = ui.resumenEmail === false ? [] : nuevos.map(r => { const a = alumno(r.alumno); return a && a.email && a.salud !== false ? queueEmail(a, 'sesion', { registro: r }) : null; }).filter(Boolean);
+  tras(async () => { for (const r of nuevos) await P.fc(r); for (const m of correos) await P.email(m); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}${correos.length ? ` · ${correos.length} ${correos.length === 1 ? 'resumen' : 'resúmenes'} por email` : ''}`);
 }
 
 /* Pantalla completa: un panel por sensor, fondo del color de la zona */
@@ -1011,8 +1085,8 @@ function hfPanel(s) {
   const { max, z, nombre } = slotInfo(s);
   return `<section class="hf-panel hz${s.hr ? z : 'x'}" id="hf${s.i}" role="status" aria-atomic="true">
     <div class="hf-name">${esc(nombre)}</div>
-    <div class="hf-bpm num" data-f="bpm">${s.hr ?? '––'}</div>
-    <div class="hf-zone" data-f="zona">${s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : (s.device || s.sim ? 'Esperando señal…' : 'Sensor sin conectar')}</div>
+    <div class="hf-figs"><span class="hf-pct num" data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}<small>%</small></span><span class="hf-bpm num" data-f="bpm">${s.hr ?? '––'}<small>ppm</small></span></div>
+    <div class="hf-zone" data-f="zona">${s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : 'Sensor sin conectar')}</div>
     <div class="hf-meta tnum" data-f="meta">${live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : ''}</div>
   </section>`;
 }
@@ -1022,8 +1096,9 @@ function updateFull(i) {
   if (i == null || !document.getElementById('hf' + i) || el.querySelectorAll('.hf-panel').length !== list.length) { el.innerHTML = fullHTML(); return; }
   const s = live.slots[i]; const p = document.getElementById('hf' + i); const { max, z } = slotInfo(s);
   p.className = `hf-panel hz${s.hr ? z : 'x'}`;
-  p.querySelector('[data-f="bpm"]').textContent = s.hr ?? '––';
-  p.querySelector('[data-f="zona"]').textContent = s.hr ? `${ZONA_TXT[z]} · ${pct(s.hr / max)}` : 'Esperando señal…';
+  p.querySelector('[data-f="pct"]').innerHTML = `${s.hr ? Math.round(s.hr / max * 100) : '––'}<small>%</small>`;
+  p.querySelector('[data-f="bpm"]').innerHTML = `${s.hr ?? '––'}<small>ppm</small>`;
+  p.querySelector('[data-f="zona"]').textContent = s.hr ? ZONA_TXT[z] : 'Esperando señal…';
   p.querySelector('[data-f="meta"]').textContent = live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : '';
 }
 /* Barra flotante cuando la sesión sigue en otra pestaña */
@@ -1034,7 +1109,7 @@ function updateDock() {
   d.hidden = false;
   d.innerHTML = `<button class="dock-in" data-hrfull aria-label="Abrir pulsómetros en pantalla completa">
     <span class="hf-rec ${live.running ? 'on' : ''}"></span><span class="num font-bold text-lg">${live.running ? clockTxt() : 'FC'}</span>
-    ${conectados().map(s => { const { z, nombre } = slotInfo(s); return `<span class="dock-chip hz${s.hr ? z : 'x'}"><span class="truncate max-w-[6rem]">${esc(nombre)}</span><span class="num text-lg font-bold">${s.hr ?? '––'}</span></span>`; }).join('')}
+    ${conectados().map(s => { const { z, nombre, max } = slotInfo(s); return `<span class="dock-chip hz${s.hr ? z : 'x'}" title="${s.hr ? ZONA_TXT[z] : 'Sin señal'}"><span class="truncate max-w-[6rem]">${esc(nombre)}</span><span class="dpct num">${s.hr ? Math.round(s.hr / max * 100) + '%' : '––'}</span><span class="dppm tnum">${s.hr ?? '–'} ppm · Z${z || '–'}</span></span>`; }).join('')}
     ${I.expand}</button>`;
 }
 
@@ -1047,17 +1122,33 @@ const parDe = j => (j < 2 ? 0 : 1);
 const FORMATOS = { '3sets': 'Mejor de 3 sets', '1set': 'Un set', libre: 'Juegos libres (clase)' };
 
 /* Reproduce los puntos y devuelve marcador, servicio y el detalle de cada punto y juego. */
+const companero = j => j ^ 1;
+/* Orden de saque de un set: [1er sacador, 2º sacador (de la otra pareja), compañero del 1º, compañero del 2º] */
+function ordenSaque(m, set) { const sc = m.sacadores?.[set]; if (!sc || sc[0] == null) return null; const [a, b] = sc; return [a, b ?? null, companero(a), b == null ? null : companero(b)]; }
+/* Reproduce los puntos y devuelve marcador, servicio (pareja y jugador) y el detalle de cada punto y juego. */
 function motor(m) {
-  const st = { sets: [], games: [0, 0], pts: [0, 0], tb: false, tbN: 0, tbS0: null, server: m.saque || 0, setsWon: [0, 0], fin: false, ganador: null, puntos: [], juegos: [] };
+  const st = { sets: [], games: [0, 0], pts: [0, 0], tb: false, tbN: 0, tbS0: null, server: m.saque || 0, sj: null, setsWon: [0, 0], fin: false, ganador: null, puntos: [], juegos: [] };
   const setsToWin = m.formato === '1set' ? 1 : 2;
-  let gp = [0, 0];
+  let gp = [0, 0], gameSj = null;
+  const fijar = () => {
+    const gi = st.games[0] + st.games[1];
+    const sc = m.sacadores?.[st.sets.length];
+    if (sc && sc[0] != null && gi === 0 && !st.tb && st.pts[0] + st.pts[1] === 0) st.server = parDe(sc[0]);
+    if (st.tb) st.server = st.tbN === 0 ? st.tbS0 : (Math.floor((st.tbN - 1) / 2) % 2 === 0 ? 1 - st.tbS0 : st.tbS0);
+    const ord = ordenSaque(m, st.sets.length);
+    if (!ord) { st.sj = null; return; }
+    const base = gi % 4;
+    st.sj = st.tb ? ord[st.tbN === 0 ? base : (base + 1 + Math.floor((st.tbN - 1) / 2)) % 4] : ord[base];
+    if (st.sj != null && parDe(st.sj) !== st.server) st.sj = null;   // orden incompleto o incoherente: no se atribuye
+  };
   for (const ev of m.eventos) {
     if (st.fin) break;
+    fijar();
     const w = ev.par, o = 1 - w;
-    if (st.tb) st.server = st.tbN === 0 ? st.tbS0 : (Math.floor((st.tbN - 1) / 2) % 2 === 0 ? 1 - st.tbS0 : st.tbS0);
     const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
-    const info = { ev, par: w, set: st.sets.length, server: st.server, tb: st.tb, oro: false, bp: false };
+    const info = { ev, par: w, set: st.sets.length, server: st.server, sj: st.sj, tb: st.tb, oro: false, bp: false };
     if (!st.tb) { info.oro = !!m.oro && pr === 3 && ps === 3; info.bp = pr >= 3 && (m.oro ? true : pr > ps); }
+    if (gp[0] + gp[1] === 0) gameSj = st.sj;
     st.puntos.push(info); gp[w]++;
     st.pts[w]++;
     let ganaJuego = false;
@@ -1066,7 +1157,7 @@ function motor(m) {
     else { ganaJuego = st.pts[w] >= 4 && st.pts[w] - st.pts[o] >= 2; if (!ganaJuego && st.pts[w] >= 4 && st.pts[w] === st.pts[o]) st.pts = [3, 3]; }
     if (!ganaJuego) continue;
     const eraTb = st.tb;
-    st.juegos.push({ set: st.sets.length, server: eraTb ? st.tbS0 : st.server, winner: w, gp, tb: eraTb });
+    st.juegos.push({ set: st.sets.length, server: eraTb ? st.tbS0 : st.server, sj: eraTb ? null : gameSj, winner: w, gp, tb: eraTb });
     gp = [0, 0]; st.games[w]++; st.pts = [0, 0];
     st.server = eraTb ? 1 - st.tbS0 : 1 - st.server;
     if (m.formato === 'libre') continue;
@@ -1076,9 +1167,19 @@ function motor(m) {
       if (st.setsWon[w] >= setsToWin) { st.fin = true; st.ganador = w; }
     } else if (g[0] === 6 && g[1] === 6) { st.tb = true; st.tbN = 0; st.tbS0 = st.server; }
   }
-  if (st.tb && !st.fin) st.server = st.tbN === 0 ? st.tbS0 : (Math.floor((st.tbN - 1) / 2) % 2 === 0 ? 1 - st.tbS0 : st.tbS0);
+  if (!st.fin) fijar();
   return st;
 }
+/* ¿Falta elegir sacador? (solo en partidos creados con orden de saque) */
+function pendienteSaque(m, st) {
+  if (st.fin || !m.sacadores) return null;
+  const set = st.sets.length, gi = st.games[0] + st.games[1], sc = m.sacadores[set];
+  const sinPuntos = st.pts[0] + st.pts[1] === 0;
+  if (!sc || sc[0] == null) return gi === 0 && sinPuntos ? { tipo: set === 0 ? 'inicio' : 'set' } : null;
+  if (sc[1] == null && gi >= 1 && !st.tb) return { tipo: 'segundo', par: 1 - parDe(sc[0]) };
+  return null;
+}
+const oroEnJuego = (m, st) => !st.fin && !st.tb && m.oro && st.pts[0] === 3 && st.pts[1] === 3;
 function puntosTxt(st, m) {
   if (st.fin) return ['', ''];
   const [a, b] = st.pts;
@@ -1107,7 +1208,11 @@ function statsDe(m, set = null) {
     const js = [k * 2, k * 2 + 1];
     const enf = P.filter(p => p.ev.tipo === 'e' && js.includes(p.ev.j)).length, win = P.filter(p => p.ev.tipo === 'w' && js.includes(p.ev.j)).length;
     const pctOro = oroJ ? oroG / oroJ : null, pctBreak = bpO ? bpC / bpO : null;
-    return { won, lost, gw: J.filter(j => j.winner === k).length, jugados: J.length,
+    const svP = P.filter(p => p.server === k), rsP = P.filter(p => p.server !== k);
+    const svW = svP.filter(p => p.par === k).length, rsW = rsP.filter(p => p.par === k).length;
+    const svG = J.filter(j => !j.tb && j.server === k), held = svG.filter(j => j.winner === k).length;
+    return { svN: svP.length, svW, pctSv: svP.length ? svW / svP.length : null, rsN: rsP.length, rsW, pctRs: rsP.length ? rsW / rsP.length : null, svJ: svG.length, held,
+      won, lost, gw: J.filter(j => j.winner === k).length, jugados: J.length,
       ppj: J.length ? won / J.length : null, ppjS: sv.length ? media(sv.map(j => j.gp[k])) : null, ppjR: rs.length ? media(rs.map(j => j.gp[k])) : null,
       oroJ, oroG, pctOro, bpO, bpC, pctBreak, enf, win, pctEnf: lost ? enf / lost : null, pctWin: won ? win / won : null, dif: win - enf, indice: media([pctOro, pctBreak]) };
   });
@@ -1115,7 +1220,11 @@ function statsDe(m, set = null) {
     const k = parDe(j); const ge = {}, gw = {};
     P.forEach(p => { if (p.ev.j !== j || !p.ev.g) return; const t = p.ev.tipo === 'e' ? ge : p.ev.tipo === 'w' ? gw : null; if (t) t[p.ev.g] = (t[p.ev.g] || 0) + 1; });
     const enf = P.filter(p => p.ev.tipo === 'e' && p.ev.j === j).length, win = P.filter(p => p.ev.tipo === 'w' && p.ev.j === j).length;
-    return { j, k, enf, win, ge, gw, gEnf: topGolpe(ge), gWin: topGolpe(gw), pctEnf: pair[k].lost ? enf / pair[k].lost : null, pctWin: pair[k].won ? win / pair[k].won : null, pctOro: pair[k].pctOro, pctBreak: pair[k].pctBreak, ppj: pair[k].ppj, indice: pair[k].indice };
+    const srv = P.filter(p => p.sj === j), srvW = srv.filter(p => p.par === k).length;
+    const sg = J.filter(x => x.sj === j), sgW = sg.filter(x => x.winner === k).length;
+    const oroR = P.filter(p => p.oro && p.ev.or === j), oroRW = oroR.filter(p => p.par === k).length;
+    return { j, k, enf, win, ge, gw, gEnf: topGolpe(ge), gWin: topGolpe(gw),
+      srvN: srv.length, srvW, pctSrv: srv.length ? srvW / srv.length : null, sgN: sg.length, sgW, oroRN: oroR.length, oroRW, pctOroR: oroR.length ? oroRW / oroR.length : null, pctEnf: pair[k].lost ? enf / pair[k].lost : null, pctWin: pair[k].won ? win / pair[k].won : null, pctOro: pair[k].pctOro, pctBreak: pair[k].pctBreak, ppj: pair[k].ppj, indice: pair[k].indice };
   });
   return { st, pair, jug };
 }
@@ -1165,6 +1274,7 @@ function vPartidos() {
   ${lista.length ? `<div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Tipo</th><th>Pareja 1</th><th>Pareja 2</th><th>Resultado</th><th>Estado</th></tr></thead><tbody>
     ${lista.map(m => { const st = motor(m); return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${m.tipo === 'clase' ? 'Clase' : 'Partido'}</td><td class="${st.fin && st.ganador === 0 ? 'font-bold' : ''}">${esc(nombrePar(m, 0))}</td><td class="${st.fin && st.ganador === 1 ? 'font-bold' : ''}">${esc(nombrePar(m, 1))}</td><td class="num text-lg font-bold">${resultadoTxt(st)}</td><td>${m.estado === 'terminado' ? '<span class="chip chip-neutral">Terminado</span>' : '<span class="chip chip-ok">En juego</span>'}</td></tr>`; }).join('')}
   </tbody></table></div>` : `<div class="panel p-6"><h2 class="text-2xl font-bold">Aún no hay partidos</h2><p class="text-muted mt-1 max-w-xl">Elige las dos parejas y empieza a marcar. Puedes registrar tanto partidos como juegos dentro de una clase.</p><button class="btn btn-primary mt-3" data-open="partido">Nuevo partido</button></div>`}
+  ${vParejas()}
   ${M.nEscuela ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Medias por grupo</h2><p class="text-[13px] text-muted mb-3">Media de cada alumno en todos sus partidos, agrupada.</p>
     <div class="scroll-x"><table class="data min-w-[720px]"><thead><tr><th>Grupo</th><th class="text-right">Alumnos</th>${METRICAS_P.map(x => `<th class="text-right">${x[1]}</th>`).join('')}</tr></thead><tbody>
     ${state.grupos.filter(g => M.nGrupo(g.id)).map(g => { const v = M.grupo(g.id); return `<tr><td class="font-semibold">${esc(g.nombre)}</td><td class="text-right tnum">${M.nGrupo(g.id)}</td>${METRICAS_P.map(([k, , f]) => `<td class="text-right tnum">${v[k] == null ? '—' : f(v[k])}</td>`).join('')}</tr>`; }).join('')}
@@ -1178,38 +1288,78 @@ function vPartido(id) {
   if (ui.role === 'admin' && m.estado !== 'terminado' && ui.pmodo !== 'stats') return vMarcador(m);
   return vInformePartido(m);
 }
+const LADO = j => (j % 2 === 0 ? 'Derecha' : 'Revés');
 function vMarcador(m) {
   const st = motor(m); const [p0, p1] = puntosTxt(st, m);
   const S = statsDe(m); const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
   const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
-  const oro = !st.tb && m.oro && pr === 3 && ps === 3;
-  const bp = !st.tb && m.formato !== 'libre' ? pr >= 3 && (m.oro || pr > ps) : !st.tb && pr >= 3 && (m.oro || pr > ps);
+  const oro = oroEnJuego(m, st);
+  const bp = !st.tb && pr >= 3 && (m.oro || pr > ps);
+  const pend = pendienteSaque(m, st);
+  const pideOro = oro && m.oroSel === undefined && !pend;
+  const bloqueado = st.fin || !!pend || pideOro;
   const fila = k => `<div class="sb-row ${st.server === k ? 'srv' : ''}">
-      <div class="sb-name"><span class="sb-ball" aria-hidden="true"></span><span class="truncate">${esc(nombrePar(m, k))}</span><span class="sr-only">${st.server === k ? '(saca)' : ''}</span></div>
+      <div class="sb-name"><span class="sb-ball" aria-hidden="true"></span><span class="truncate">${esc(nombrePar(m, k))}</span>${st.server === k && st.sj != null ? `<span class="text-[12px] font-semibold opacity-75 truncate">saca ${esc(corto(nombreJ(m, st.sj)))}</span>` : ''}<span class="sr-only">${st.server === k ? '(saca)' : ''}</span></div>
       ${st.sets.map(x => `<div class="sb-set ${x[k] > x[1 - k] ? 'won' : ''}">${x[k]}</div>`).join('')}
       ${st.fin ? '' : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
     </div>`;
-  const jugador = j => { const x = S.jug[j]; return `<div class="pcard">
-      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
-      <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${st.fin ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${st.fin ? 'disabled' : ''}>Error</button></div>
+  const jugador = j => { const x = S.jug[j]; return `<div class="pcard ${st.sj === j ? 'ring-2 ring-ball' : ''}">
+      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="min-w-0"><div class="text-[11.5px] font-semibold text-muted">${LADO(j)}${st.sj === j ? ' · saca' : ''}</div><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div></div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
+      <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Error</button></div>
     </div>`; };
   const ult = st.puntos.slice(-6).reverse();
+  const izq = (st.sets.length % 2) ^ (m.ladoInv ? 1 : 0);   // en cada set las parejas cambian de lado en pantalla
+  const orden = izq ? [1, 0] : [0, 1];
   return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Partidos</button>
       <span class="chip chip-neutral">${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}${m.oro ? ' · punto de oro' : ''}</span>
-      <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : `<button class="btn btn-ghost !py-1.5 text-[13px]" data-psaque>Cambiar saque</button>`}<button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : 'Terminar partido'}</button></div></div>
+      <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-plado>Cambiar lados</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : 'Terminar partido'}</button></div></div>
     <section class="scoreboard" aria-live="polite" aria-atomic="true">
       <div class="sb-head"><span>${st.tb ? 'Tie-break' : st.fin ? 'Final' : `Set ${st.sets.length + 1}`}</span>${oro ? '<span class="sb-badge oro">Punto de oro</span>' : bp ? '<span class="sb-badge">Bola de break</span>' : ''}</div>
       ${fila(0)}${fila(1)}
       ${st.fin ? `<div class="sb-final">Gana ${esc(nombrePar(m, st.ganador))}</div>` : ''}
     </section>
+    ${pend ? vPideSaque(m, st, pend) : pideOro ? vPideOro(m, st) : ''}
     <section class="grid md:grid-cols-2 gap-4">
-      ${[0, 1].map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
-        <button class="btn btn-ghost w-full" data-ppunto="${k}" ${st.fin ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
+      ${orden.map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
+        <button class="btn btn-ghost w-full" data-ppunto="${k}" ${bloqueado ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
     </section>
     ${vLectura(m)}
     <section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-2">Últimos puntos</h2>
-      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span><span>${descPunto(m, p)}</span>${p.oro ? '<span class="chip chip-warn">Oro</span>' : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
+      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline flex-wrap"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span><span>${descPunto(m, p)}</span>${p.oro ? `<span class="chip chip-warn">Oro${p.ev.or != null && p.ev.or >= 0 ? ` · resta ${esc(corto(nombreJ(m, p.ev.or)))}` : ''}</span>` : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
     </section>`;
+}
+function vPideSaque(m, st, pend) {
+  const btn = (j, extra = '') => `<button class="gbtn !min-h-[64px]" data-sacador="${j}" ${extra}><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">Pareja ${parDe(j) + 1} · ${LADO(j)}</span></button>`;
+  let titulo, texto, botones;
+  if (pend.tipo === 'inicio') {
+    if (m.sorteo == null) return `<section class="panel p-5 flex flex-col sm:flex-row sm:items-center gap-4"><div class="flex-1"><h2 class="text-2xl font-bold">Sorteo de saque</h2><p class="text-muted text-[14px] mt-1">Lanza la moneda para decidir qué pareja elige. Después marca quién saca el primer juego.</p></div><div class="flex gap-2"><button class="btn btn-primary" data-moneda>Lanzar moneda</button><button class="btn btn-ghost" data-sorteo-manual>Ya está sorteado</button></div></section>`;
+    titulo = m.sorteo === -1 ? '¿Quién saca el primer juego?' : `Gana el sorteo la pareja ${m.sorteo + 1}`;
+    texto = m.sorteo === -1 ? 'Elige al primer sacador del partido.' : '¿Quién saca el primer juego? Si prefieren restar, elige a un jugador de la otra pareja.';
+    const pares = m.sorteo === -1 ? [0, 1] : [m.sorteo, 1 - m.sorteo];
+    botones = pares.flatMap(k => [k * 2, k * 2 + 1]).map((j, n) => btn(j, n > 1 && m.sorteo !== -1 ? 'style="opacity:.75"' : '')).join('');
+  } else if (pend.tipo === 'segundo') {
+    titulo = `¿Quién saca por la pareja ${pend.par + 1}?`; texto = 'A partir de aquí el orden de saque queda fijo para todo el set.';
+    botones = [pend.par * 2, pend.par * 2 + 1].map(j => btn(j)).join('');
+  } else {
+    const prev = ordenSaque(m, st.sets.length - 1);
+    titulo = `Empieza el set ${st.sets.length + 1}: ¿quién saca?`; texto = 'Al empezar un set las parejas pueden cambiar el orden de saque.';
+    botones = (prev && prev.every(x => x != null) ? `<button class="gbtn !min-h-[64px]" data-saque-sigue><span class="font-display text-xl font-bold">Mismo orden</span><span class="text-[12px]">Continúa la rotación</span></button>` : '') + [0, 1, 2, 3].map(j => btn(j)).join('');
+  }
+  return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">${titulo}</h2><p class="text-muted text-[14px] mt-1">${texto}</p></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-2">${botones}</div></section>`;
+}
+function vPideOro(m, st) {
+  const r = 1 - st.server;
+  return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">Punto de oro: ¿quién resta?</h2><p class="text-muted text-[14px] mt-1">La pareja ${r + 1} decide qué jugador recibe. Sirve para saber cuántos puntos de oro gana cada uno cuando le toca restar.</p></div>
+    <div class="grid grid-cols-3 gap-2">${[r * 2, r * 2 + 1].map(j => `<button class="gbtn !min-h-[64px]" data-oro-resta="${j}"><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">${LADO(j)}</span></button>`).join('')}<button class="gbtn !min-h-[64px]" data-oro-resta="-1"><span class="font-display text-xl font-bold">Sin indicar</span><span class="text-[12px]">Seguir</span></button></div></section>`;
+}
+function lanzarMoneda(m) {
+  const gana = Math.random() < .5 ? 0 : 1; const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  openModal(`<div class="flex flex-col items-center gap-4 py-2 text-center">${modalHead('Sorteo de saque')}
+    <div class="coin-stage" aria-hidden="true"><div class="coin ${reduce ? '' : 'spin'}" style="--fin:${gana ? 1980 : 1800}deg"><div class="coin-face c0">P1</div><div class="coin-face c1">P2</div></div></div>
+    <p class="text-[15px] font-semibold" id="coinRes" ${reduce ? '' : 'style="opacity:0"'} role="status">Gana la pareja ${gana + 1}: ${esc(nombrePar(m, gana))}</p>
+    <button class="btn btn-primary" data-close>Elegir sacador</button></div>`);
+  setTimeout(() => { const e = document.getElementById('coinRes'); if (e) { e.style.transition = 'opacity .3s'; e.style.opacity = 1; } }, reduce ? 0 : 1700);
+  m.sorteo = gana; guardarPartido(m); render();
 }
 function descPunto(m, p) {
   const e = p.ev;
@@ -1227,7 +1377,9 @@ function partidoActual() { const id = ui.view.startsWith('partido:') ? ui.view.s
 function anotar(m, ev) {
   const antes = motor(m);
   if (antes.fin) return;
-  m.eventos.push({ ...ev, t: Date.now() });
+  const extra = oroEnJuego(m, antes) && m.oroSel != null && m.oroSel >= 0 ? { or: m.oroSel } : {};
+  delete m.oroSel;
+  m.eventos.push({ ...ev, ...extra, t: Date.now() });
   const st = motor(m);
   if (st.fin && m.estado !== 'terminado') toast(`Partido terminado: gana ${nombrePar(m, st.ganador)}. Pulsa «Guardar y cerrar».`);
   else if (st.juegos.length > antes.juegos.length) { const jg = st.juegos[st.juegos.length - 1]; toast(`Juego para la pareja ${jg.winner + 1} · ${st.sets.length > antes.sets.length ? 'set ' + st.sets[st.sets.length - 1].join('-') : st.games.join('-')}`); }
@@ -1243,6 +1395,9 @@ function guardarPartido(m, ya) {
   guardarT = setTimeout(run, 1200);
 }
 
+/* Variedad de redacción: misma idea, distintas palabras según el partido o el alumno (estable mientras se mira) */
+function hashStr(t) { let h = 7; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
+const varia = (semilla, ops) => ops[hashStr(semilla) % ops.length];
 /* Lectura en directo: claves del partido calculadas en cada punto (sin IA, instantáneo) */
 function lecturaPartido(m) {
   const S = statsDe(m); const st = S.st; const P = st.puntos; const out = [];
@@ -1252,12 +1407,13 @@ function lecturaPartido(m) {
   // Racha y momento
   const last = P[P.length - 1].par; let racha = 0; for (let i = P.length - 1; i >= 0 && P[i].par === last; i--) racha++;
   const ult = P.slice(-10), u0 = ult.filter(p => p.par === 0).length;
-  if (racha >= 3) out.push({ tono: 'warn', prio: 2, t: `Racha de la pareja ${last + 1}`, d: `${racha} puntos seguidos. Últimos ${ult.length} puntos: ${u0}-${ult.length - u0}.` });
-  else if (ult.length >= 8 && Math.abs(2 * u0 - ult.length) >= 4) { const dom = u0 * 2 > ult.length ? 0 : 1; out.push({ tono: 'warn', prio: 2, t: `La pareja ${dom + 1} domina el momento`, d: `Se ha llevado ${dom ? ult.length - u0 : u0} de los últimos ${ult.length} puntos.` }); }
-  else out.push({ tono: 'neutral', prio: 6, t: 'Momento del partido', d: `Últimos ${ult.length} puntos: pareja 1 ${u0}, pareja 2 ${ult.length - u0}.` });
+  const sv = k => m.id + k;
+  if (racha >= 3) out.push({ tono: 'warn', prio: 2, t: varia(sv('racha') + racha, [`Racha de la pareja ${last + 1}`, `La pareja ${last + 1} encadena puntos`, `Tramo de la pareja ${last + 1}`, `La pareja ${last + 1} ha cogido carrerilla`]), d: `${racha} puntos seguidos. Últimos ${ult.length} puntos: ${u0}-${ult.length - u0}.` });
+  else if (ult.length >= 8 && Math.abs(2 * u0 - ult.length) >= 4) { const dom = u0 * 2 > ult.length ? 0 : 1; out.push({ tono: 'warn', prio: 2, t: varia(sv('dom'), [`La pareja ${dom + 1} manda en este tramo`, `Inercia a favor de la pareja ${dom + 1}`, `La pareja ${dom + 1} lleva la iniciativa`]), d: `Se ha llevado ${dom ? ult.length - u0 : u0} de los últimos ${ult.length} puntos.` }); }
+  else out.push({ tono: 'neutral', prio: 6, t: varia(sv('mom'), ['Momento del partido', 'Partido equilibrado', 'Sin dueño claro', 'Pulso igualado']), d: `Últimos ${ult.length} puntos: pareja 1 ${u0}, pareja 2 ${ult.length - u0}.` });
   // Cómo se deciden los puntos
   const nE = P.filter(p => p.ev.tipo === 'e').length, nW = P.filter(p => p.ev.tipo === 'w').length;
-  out.push({ tono: 'neutral', prio: 7, t: 'Cómo se deciden los puntos', d: `${pct(nE / P.length)} por error no forzado, ${pct(nW / P.length)} con winner y ${pct((P.length - nE - nW) / P.length)} de otra forma (errores forzados, etc.).` });
+  out.push({ tono: 'neutral', prio: 7, t: varia(sv('dec'), ['Cómo se deciden los puntos', 'De dónde salen los puntos', 'Radiografía de los puntos', 'Qué cierra los puntos']), d: `${pct(nE / P.length)} por error no forzado, ${pct(nW / P.length)} con winner y ${pct((P.length - nE - nW) / P.length)} de otra forma (errores forzados, etc.).` });
   // Quién regala puntos
   [0, 1].forEach(k => {
     const pr = S.pair[k]; if (pr.lost < 3) return;
@@ -1265,28 +1421,34 @@ function lecturaPartido(m) {
     if (x.enf < 2 || x.pctEnf < .3) return;
     const id = m.jugadores[x.j]?.id; const suyo = id ? Mh.alumno(id) : null; const gr = id && alumno(id) ? Mh.grupo(alumno(id).grupo) : null;
     const ref = suyo?.pctEnf != null ? ` Su media habitual es ${pct(suyo.pctEnf)}${gr?.pctEnf != null ? ` y la de su grupo ${pct(gr.pctEnf)}` : ''}.` : gr?.pctEnf != null ? ` La media de su grupo es ${pct(gr.pctEnf)}.` : '';
-    out.push({ tono: 'bad', prio: 1, t: `${nom(x.j)} concentra los errores`, d: `${x.enf} errores no forzados: el ${pct(x.pctEnf)} de los puntos que pierde su pareja${x.gEnf ? `, sobre todo de ${GOLPE_N[x.gEnf].toLowerCase()} (${x.ge[x.gEnf]})` : ''}.${ref}` });
+    out.push({ tono: 'bad', prio: 1, t: varia(sv('enf' + x.j), [`${nom(x.j)} concentra los errores`, `${nom(x.j)}, foco de errores`, `Los puntos regalados pasan por ${nom(x.j)}`, `${nom(x.j)} necesita más margen`]), d: `${x.enf} errores no forzados: el ${pct(x.pctEnf)} de los puntos que pierde su pareja${x.gEnf ? `, sobre todo de ${GOLPE_N[x.gEnf].toLowerCase()} (${x.ge[x.gEnf]})` : ''}.${ref}` });
   });
   // Armas
   S.jug.filter(x => x.win >= 2).sort((a, b) => b.win - a.win).slice(0, 2).forEach(x => {
-    out.push({ tono: 'ok', prio: 3, t: `El arma de ${nom(x.j)}`, d: `${x.win} winners (${pct(x.pctWin)} de los puntos de su pareja)${x.gWin ? `; ${x.gw[x.gWin]} de ${GOLPE_N[x.gWin].toLowerCase()}` : ''}.` });
+    out.push({ tono: 'ok', prio: 3, t: varia(sv('win' + x.j), [`El arma de ${nom(x.j)}`, `${nom(x.j)} define los puntos`, `${nom(x.j)} pone la puntería`, `Dónde hace daño ${nom(x.j)}`]), d: `${x.win} winners (${pct(x.pctWin)} de los puntos de su pareja)${x.gWin ? `; ${x.gw[x.gWin]} de ${GOLPE_N[x.gWin].toLowerCase()}` : ''}.` });
   });
   // Saque
   const J = st.juegos.filter(j => !j.tb);
   [0, 1].forEach(k => {
     const sv = J.filter(j => j.server === k); if (sv.length < 2) return;
     const held = sv.filter(j => j.winner === k).length;
-    if (held / sv.length < .5) out.push({ tono: 'warn', prio: 2, t: `La pareja ${k + 1} sufre con su saque`, d: `Ha ganado ${held} de ${sv.length} juegos sacando (${dec(S.pair[k].ppjS ?? 0, 1)} puntos por juego al saque, ${dec(S.pair[k].ppjR ?? 0, 1)} al resto).` });
+    if (held / sv.length < .5) out.push({ tono: 'warn', prio: 2, t: varia(m.id + 'sv' + k, [`La pareja ${k + 1} sufre con su saque`, `El saque no sostiene a la pareja ${k + 1}`, `La pareja ${k + 1} cede juegos sacando`]), d: `Ha ganado ${held} de ${sv.length} juegos sacando (${dec(S.pair[k].ppjS ?? 0, 1)} puntos por juego al saque, ${dec(S.pair[k].ppjR ?? 0, 1)} al resto).` });
   });
+  // Sacadores y restadores de oro
+  S.jug.filter(x => x.srvN >= 8).forEach(x => {
+    if (x.pctSrv >= .65) out.push({ tono: 'ok', prio: 4, t: varia(sv('srv+' + x.j), [`${nom(x.j)} manda con su saque`, `Saque sólido de ${nom(x.j)}`]), d: `Su pareja gana el ${pct(x.pctSrv)} de los puntos cuando saca ${nom(x.j)} (${x.srvW}/${x.srvN}); ${x.sgW} de ${x.sgN} juegos al saque.` });
+    else if (x.pctSrv <= .4) out.push({ tono: 'warn', prio: 3, t: varia(sv('srv-' + x.j), [`Al saque de ${nom(x.j)} se escapan puntos`, `${nom(x.j)} sufre sacando`]), d: `Con su saque su pareja solo gana el ${pct(x.pctSrv)} de los puntos (${x.srvW}/${x.srvN}).` });
+  });
+  S.jug.filter(x => x.oroRN >= 2).forEach(x => out.push({ tono: x.pctOroR >= .5 ? 'ok' : 'warn', prio: 4, t: varia(sv('oro' + x.j), [`${nom(x.j)} al resto del oro`, `Oros restados por ${nom(x.j)}`]), d: `Ha restado ${x.oroRN} puntos de oro y su pareja ha ganado ${x.oroRW} (${pct(x.pctOroR)}).` }));
   // Momentos clave
   const bp = [0, 1].filter(k => S.pair[k].bpO).map(k => `pareja ${k + 1} ${S.pair[k].bpC}/${S.pair[k].bpO}`);
   const oro = S.pair[0].oroJ ? `${bp.length ? 'Puntos' : 'Puntos'} de oro ganados: pareja 1 ${S.pair[0].oroG}/${S.pair[0].oroJ}, pareja 2 ${S.pair[1].oroG}/${S.pair[1].oroJ}` : '';
-  if (bp.length || oro) out.push({ tono: 'neutral', prio: 4, t: 'Momentos clave', d: [bp.length ? `Bolas de break convertidas: ${bp.join(', ')}` : '', oro].filter(Boolean).join('. ') + '.' });
+  if (bp.length || oro) out.push({ tono: 'neutral', prio: 4, t: varia(sv('clave'), ['Momentos clave', 'Puntos que pesan', 'Cuando el marcador aprieta', 'Los puntos grandes']), d: [bp.length ? `Bolas de break convertidas: ${bp.join(', ')}` : '', oro].filter(Boolean).join('. ') + '.' });
   // Rendimiento por encima o por debajo de lo habitual
   S.jug.forEach(x => {
     const id = m.jugadores[x.j]?.id; const suyo = id ? Mh.alumno(id) : null;
     if (!suyo || suyo.pctWin == null || x.pctWin == null || S.pair[x.k].won < 6) return;
-    if (x.pctWin - suyo.pctWin > .12) out.push({ tono: 'ok', prio: 5, t: `${nom(x.j)} está inspirado`, d: `Firma el ${pct(x.pctWin)} de los puntos de su pareja con winner; lo habitual en él es ${pct(suyo.pctWin)}.` });
+    if (x.pctWin - suyo.pctWin > .12) out.push({ tono: 'ok', prio: 5, t: varia(sv('insp' + x.j), [`${nom(x.j)} está inspirado`, `${nom(x.j)}, por encima de su nivel`, `Día grande de ${nom(x.j)}`]), d: `Firma el ${pct(x.pctWin)} de los puntos de su pareja con winner; lo habitual en él es ${pct(suyo.pctWin)}.` });
   });
   return out.sort((a, b) => a.prio - b.prio).slice(0, 6);
 }
@@ -1338,12 +1500,12 @@ function vInformePartido(m) {
   <div class="flex flex-wrap gap-2">${tabs.map(([k, l]) => `<button class="chip ${sel === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-pset="${k ?? ''}">${l}</button>`).join('')}</div>
   ${sel == null && m.eventos.length >= 4 ? `<section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-3">Claves del partido</h2><div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${lecturaPartido(m).map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${{ ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' }[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[14px] text-muted mt-1 leading-snug">${esc(x.d)}</p></article>`).join('')}</div></section>` : ''}
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Jugadores</h2></div>
-    <table class="data min-w-[720px]"><thead><tr><th>Jugador</th><th class="text-right">Nº ENF</th><th class="text-right">% ENF</th><th>Golpe + ENF</th><th class="text-right">Nº WIN</th><th class="text-right">% WIN</th><th>Golpe + WIN</th><th class="text-right">% oro</th><th class="text-right">% break</th><th class="text-right">Pts/juego</th><th class="text-right">Índice win</th></tr></thead><tbody>
-    ${S.jug.map(x => `<tr><td class="font-semibold"><span class="chip ${x.k ? 'chip-p1' : 'chip-p0'} mr-1">P${x.k + 1}</span>${esc(nombreJ(m, x.j))}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${f(x.pctEnf, pct)}</td><td>${x.gEnf ? `${x.gEnf} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gEnf]}</span>` : '—'}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${f(x.pctWin, pct)}</td><td>${x.gWin ? `${x.gWin} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gWin]}</span>` : '—'}</td><td class="text-right tnum">${f(x.pctOro, pct)}</td><td class="text-right tnum">${f(x.pctBreak, pct)}</td><td class="text-right tnum">${f(x.ppj, v => dec(v, 2))}</td><td class="text-right tnum">${f(x.indice, v => dec(v, 2))}</td></tr>`).join('')}
+    <table class="data min-w-[980px]"><thead><tr><th>Jugador</th><th class="text-right">Nº ENF</th><th class="text-right">% ENF</th><th>Golpe + ENF</th><th class="text-right">Nº WIN</th><th class="text-right">% WIN</th><th>Golpe + WIN</th><th class="text-right">Pts con su saque</th><th class="text-right">Juegos al saque</th><th class="text-right">Oro restando</th><th class="text-right">% oro pareja</th><th class="text-right">% break</th><th class="text-right">Pts/juego</th><th class="text-right">Índice win</th></tr></thead><tbody>
+    ${S.jug.map(x => `<tr><td class="font-semibold"><span class="chip ${x.k ? 'chip-p1' : 'chip-p0'} mr-1">P${x.k + 1}</span>${esc(nombreJ(m, x.j))}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${f(x.pctEnf, pct)}</td><td>${x.gEnf ? `${x.gEnf} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gEnf]}</span>` : '—'}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${f(x.pctWin, pct)}</td><td>${x.gWin ? `${x.gWin} <span class="text-muted text-[12.5px]">${GOLPE_N[x.gWin]}</span>` : '—'}</td><td class="text-right tnum">${x.srvN ? `${x.srvW}/${x.srvN} · ${pct(x.pctSrv)}` : '—'}</td><td class="text-right tnum">${x.sgN ? `${x.sgW}/${x.sgN}` : '—'}</td><td class="text-right tnum">${x.oroRN ? `${x.oroRW}/${x.oroRN} · ${pct(x.pctOroR)}` : '—'}</td><td class="text-right tnum">${f(x.pctOro, pct)}</td><td class="text-right tnum">${f(x.pctBreak, pct)}</td><td class="text-right tnum">${f(x.ppj, v => dec(v, 2))}</td><td class="text-right tnum">${f(x.indice, v => dec(v, 2))}</td></tr>`).join('')}
     </tbody></table></section>
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Parejas</h2></div>
     <table class="data min-w-[560px]"><thead><tr><th></th><th class="text-right">Pareja 1</th><th class="text-right">Pareja 2</th></tr></thead><tbody>
-    ${[['Juegos ganados', p => p.gw], ['Puntos ganados', p => p.won], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Al saque', p => f(p.ppjS, v => dec(v, 2))], ['Al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
+    ${[['Juegos ganados', p => p.gw], ['Puntos ganados', p => p.won], ['Puntos ganados al saque', p => `${p.svW}/${p.svN} · ${f(p.pctSv, pct)}`], ['Puntos ganados al resto', p => `${p.rsW}/${p.rsN} · ${f(p.pctRs, pct)}`], ['Juegos de saque ganados', p => `${p.held}/${p.svJ}`], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Puntos por juego al saque', p => f(p.ppjS, v => dec(v, 2))], ['Puntos por juego al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
       .map(([l, fn]) => `<tr><td>${l}</td><td class="text-right tnum">${fn(S.pair[0])}</td><td class="text-right tnum">${fn(S.pair[1])}</td></tr>`).join('')}
     </tbody></table></section>
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Golpes</h2><p class="text-[13px] text-muted">Errores no forzados / winners por golpe.</p></div>
@@ -1361,8 +1523,8 @@ function modalPartido() {
   openModal(`<form id="fPartido" class="flex flex-col gap-3">${modalHead('Nuevo partido')}
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mF">Fecha</label><input id="mF" type="date" class="field" value="${TODAY_ISO}"></div><div><label class="lbl" for="mT">Tipo</label><select id="mT" class="field"><option value="clase">Durante la clase</option><option value="partido">Partido</option></select></div></div>
     ${[0, 1].map(k => `<fieldset class="rounded-2xl border border-line p-3 flex flex-col gap-2"><legend class="px-1 text-[13px] font-semibold ${k ? 'text-warn' : 'text-court'}">Pareja ${k + 1}</legend>
-      ${[0, 1].map(n => { const j = k * 2 + n; return `<div class="grid grid-cols-[1fr_auto] gap-2"><select id="mJ${j}" class="field" aria-label="Jugador ${j + 1}" data-jsel="${j}">${opts(sug[j])}</select><input id="mN${j}" class="field w-36" placeholder="Nombre invitado" aria-label="Nombre del invitado ${j + 1}" hidden></div>`; }).join('')}</fieldset>`).join('')}
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mFo">Formato</label><select id="mFo" class="field">${Object.entries(FORMATOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><div><label class="lbl" for="mS">Empieza sacando</label><select id="mS" class="field"><option value="0">Pareja 1</option><option value="1">Pareja 2</option></select></div></div>
+      ${[0, 1].map(n => { const j = k * 2 + n; return `<div class="text-[12px] font-semibold text-muted -mb-1">${n ? 'Revés' : 'Derecha (drive)'}</div><div class="grid grid-cols-[1fr_auto] gap-2"><select id="mJ${j}" class="field" aria-label="Pareja ${k + 1}, jugador de ${n ? 'revés' : 'derecha'}" data-jsel="${j}">${opts(sug[j])}</select><input id="mN${j}" class="field w-36" placeholder="Nombre invitado" aria-label="Nombre del invitado ${j + 1}" hidden></div>`; }).join('')}</fieldset>`).join('')}
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mFo">Formato</label><select id="mFo" class="field">${Object.entries(FORMATOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><div class="text-[13px] text-muted self-end pb-2">El saque se sortea al empezar.</div></div>
     <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="mO" class="w-4 h-4" checked> Punto de oro en 40-40</label>
     <button class="btn btn-primary" type="submit">Empezar a marcar</button></form>`);
 }
@@ -1371,10 +1533,118 @@ function vPartidosAlumno() {
   const mios = (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length).sort((x, y) => y.fecha.localeCompare(x.fecha));
   const M = mediasPor(filasPartidos(), METRICAS_P);
   return pageHead('Mis partidos', 'Tus estadísticas en los partidos y juegos marcados por tu entrenador, comparadas con tu grupo y con toda la escuela.') + `
+  ${vPerfilGolpes(a.id, 'Tus golpes esta temporada')}
   <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Tu media frente al grupo y la escuela</h2>${M.alumno(a.id) ? cmpTabla(METRICAS_P, M.alumno(a.id), M.grupo(a.grupo), M.escuela) : '<p class="text-muted">Aún no hay partidos tuyos registrados.</p>'}</section>
   ${mios.length ? `<div class="panel scroll-x"><table class="data min-w-[620px]"><thead><tr><th>Fecha</th><th>Partido</th><th>Resultado</th><th class="text-right">ENF</th><th class="text-right">Winners</th><th class="text-right">Índice win</th></tr></thead><tbody>
     ${mios.map(m => { const j = m.jugadores.findIndex(x => x.id === a.id); const S = statsDe(m); const x = S.jug[j]; const gano = S.st.fin ? S.st.ganador === parDe(j) : null; return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${esc(nombrePar(m, 0))} vs ${esc(nombrePar(m, 1))}</td><td class="tnum">${resultadoTxt(S.st)} ${gano == null ? '' : gano ? '<span class="chip chip-ok">Ganado</span>' : '<span class="chip chip-neutral">Perdido</span>'}</td><td class="text-right tnum">${x.enf}</td><td class="text-right tnum">${x.win}</td><td class="text-right tnum">${x.indice == null ? '—' : dec(x.indice, 2)}</td></tr>`; }).join('')}
   </tbody></table></div>` : ''}`;
+}
+
+/* ==========================================================
+   RESUMEN DE SESIÓN POR EMAIL (HTML con tablas: se ve igual en Gmail, Outlook y móvil)
+   ========================================================== */
+const EC = { court: '#1A4EBA', ball: '#D6EA28', bg: '#ECF2FA', ink: '#0C1B38', muted: '#52637F', line: '#D0DBEC',
+  z: ['#94A3BE', '#3B82F6', '#16A36A', '#EE960A', '#E23C48'], zt: ['#D5DCE8', '#BFDBFE', '#BBF7D0', '#FED7AA', '#FECACA'], zd: ['#1E293B', '#1E3A8A', '#14532D', '#7C2D12', '#7F1D1D'] };
+const ZONA_CORTA = ['Recuperación', 'Aeróbica suave', 'Aeróbica', 'Umbral', 'Máxima'];
+function interpretacionSesion(a, r) {
+  const max = fcMaxTeo(a), med = r.fcMed / max, mx = r.fcMax / max, rec = mx - med, sem = a.id + r.fecha;
+  const tot = r.zonas.reduce((t, x) => t + x, 0) || 1, z45 = (r.zonas[3] + r.zonas[4]) / tot;
+  const mod = r.zonas[1] + r.zonas[2], vig = r.zonas[3] + r.zonas[4];
+  const otras = sesionesDe(a.id).filter(x => x.id !== r.id); const mio = k => media(otras.map(x => metrics(x, a)[k]));
+  const F = mediasPor(filasFC(), METRICAS_FC); const g = F.grupo(a.grupo);
+  const out = [];
+  const nivel = med < .64 ? varia(sem + 'n', ['ligera', 'suave', 'de baja exigencia']) : med < .77 ? varia(sem + 'n', ['moderada', 'de intensidad media', 'de esfuerzo moderado']) : varia(sem + 'n', ['vigorosa', 'de alta intensidad', 'exigente']);
+  out.push(`${varia(sem + 'a', ['Tu corazón trabajó', 'Durante la clase tu pulso se movió', 'Esta sesión te llevó'])} de media al ${pct(med)} de tu frecuencia cardíaca máxima teórica, lo que el Colegio Americano de Medicina del Deporte considera una actividad ${nivel} (moderada entre el 64 y el 76 %, vigorosa entre el 77 y el 95 %).${g.med != null ? ` La media de tu grupo está en el ${pct(g.med)}.` : ''}`);
+  out.push(`${varia(sem + 'b', ['Pasaste', 'Estuviste', 'Acumulaste'])} el ${pct(z45)} del tiempo en las fases 4 y 5, las más intensas. ${z45 > .35 ? varia(sem + 'c', ['Es un patrón muy parecido al de la competición: los estudios con jugadoras amateur sitúan la mayor parte del partido entre el 80 y el 90 % de la FC máxima.', 'Fue una sesión cercana a lo que exige un partido real, donde buena parte del tiempo transcurre entre el 80 y el 90 % de la FC máxima.']) : varia(sem + 'c', ['Encaja con lo que describen los estudios en pádel amateur: un esfuerzo sobre todo aeróbico, con picos cortos de alta intensidad.', 'Es el perfil típico del pádel recreativo: base aeróbica con arranques puntuales más intensos.'])}`);
+  out.push(`${varia(sem + 'd', ['Para tu salud cuenta', 'En clave de salud, esta clase suma', 'Pensando en tu semana, has sumado'])} unos ${mod} minutos de actividad moderada y ${vig} de vigorosa. La Organización Mundial de la Salud recomienda entre 150 y 300 minutos moderados a la semana, o entre 75 y 150 vigorosos.`);
+  if (mx > 1) out.push(`Tu pico (${pct(mx)}) superó tu FC máxima teórica. Es frecuente: la fórmula 220 − edad es solo una estimación y puede desviarse unas 10 pulsaciones en cualquier sentido. Si se repite, conviene ajustar tu máxima real con una prueba de esfuerzo.`);
+  if (mio('rec') != null) out.push(`Tu índice de recuperación (diferencia entre tu pico y tu media) fue del ${pct(rec)}, ${rec > mio('rec') + .02 ? varia(sem + 'e', ['por encima de tu media habitual: bajaste bien las pulsaciones entre puntos.', 'mejor que de costumbre, señal de buena recuperación entre esfuerzos.']) : rec < mio('rec') - .02 ? varia(sem + 'e', ['algo por debajo de lo habitual en ti: quizá llegaste con cansancio o la clase tuvo pocas pausas.', 'un poco menor que otros días; revisa descanso e hidratación.']) : varia(sem + 'e', ['en tu línea habitual.', 'parecido a tus otras sesiones.'])}`);
+  if (mio('trimp') != null) { const t = etrimp(r.zonas), tm = mio('trimp'); out.push(`La carga de entrenamiento (eTRIMP de Edwards) fue de ${t}, ${t > tm * 1.15 ? 'más alta que tu media' : t < tm * .85 ? 'más baja que tu media' : 'similar a tu media'} (${Math.round(tm)}).`); }
+  return out;
+}
+function emailSesion(a, r) {
+  const max = fcMaxTeo(a), zi = v => Math.max(0, zoneOf(v, max) - 1);
+  const nombre = a.nombre.split(' ')[0], fecha = fmtDate(r.fecha, { weekday: 'long', day: 'numeric', month: 'long' });
+  const tot = r.zonas.reduce((t, x) => t + x, 0) || 1;
+  const F = mediasPor(filasFC(), METRICAS_FC); const yo = F.alumno(a.id), g = F.grupo(a.grupo), esc_ = F.escuela;
+  const m = metrics(r, a);
+  const cel = (titulo, grande, peq, z) => `<td width="25%" style="padding:6px"><div style="background:${z == null ? EC.bg : EC.zt[z]};border-radius:14px;padding:12px 10px;text-align:center"><div style="font-size:12px;color:${EC.muted};font-weight:600">${titulo}</div><div style="font-size:30px;font-weight:800;color:${z == null ? EC.ink : EC.zd[z]};line-height:1.1">${grande}</div><div style="font-size:12px;color:${EC.muted}">${peq}</div></div></td>`;
+  const muestras = r.muestras?.fc || [];
+  const N = 40, cols = muestras.length >= 20 ? Array.from({ length: N }, (_, k) => { const sl = muestras.slice(Math.floor(k * muestras.length / N), Math.floor((k + 1) * muestras.length / N)); return sl.length ? sl.reduce((t, x) => t + x, 0) / sl.length : null; }) : [];
+  const curva = cols.length ? `<tr><td style="padding:18px 24px 4px"><div style="font-size:17px;font-weight:800;color:${EC.ink}">Así fue tu pulso</div><div style="font-size:12.5px;color:${EC.muted}">Media cada ${Math.max(1, Math.round(muestras.length / N / 60 * 10) / 10)} min, coloreada por fase</div></td></tr>
+    <tr><td style="padding:6px 24px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="height:110px"><tr>${cols.map(v => { const p = v == null ? 0 : Math.min(1, Math.max(.05, (v / max - .4) / .6)); return `<td valign="bottom" style="padding:0 1px;height:110px"><div style="height:${Math.round(p * 110)}px;background:${EC.z[v == null ? 0 : zi(v)]};border-radius:3px 3px 0 0"></div></td>`; }).join('')}</tr></table>
+    <div style="font-size:11px;color:${EC.muted};padding-top:4px">Inicio <span style="float:right">Final · ${r.duracion} min</span></div></td></tr>` : '';
+  const filaCmp = (l, k, f) => `<tr><td style="padding:8px 0;border-bottom:1px solid ${EC.line};font-size:14px">${l}</td><td align="right" style="padding:8px 0;border-bottom:1px solid ${EC.line};font-size:15px;font-weight:800">${f(k === 'esta' ? null : null)}</td></tr>`;
+  const val = (o, k, f) => o?.[k] == null ? '—' : f(o[k]);
+  const filas = [['FC media', 'med', v => pct(v)], ['FC máxima', 'mx', v => pct(v)], ['Recuperación', 'rec', v => pct(v)], ['Carga por minuto', 'tmin', v => dec(v, 2)]];
+  const estaS = { med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (r.duracion || 1) };
+  const parrafos = interpretacionSesion(a, r);
+  const html = `<!doctype html><html lang="es"><body style="margin:0;background:${EC.bg};font-family:Helvetica,Arial,sans-serif;color:${EC.ink}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${EC.bg};padding:20px 10px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:18px;overflow:hidden">
+    <tr><td style="background:${EC.court};padding:22px 24px;color:#fff"><div style="font-size:13px;opacity:.85">${esc(state.settings.escuela)}</div><div style="font-size:26px;font-weight:800;margin-top:4px;line-height:1.15">Hola, ${esc(nombre)}: así fue tu sesión</div><div style="font-size:14px;opacity:.9;margin-top:4px">${fecha} · ${esc(grupo(a.grupo).nombre)} · ${r.duracion} min</div></td></tr>
+    <tr><td style="height:6px;background:${EC.ball}"></td></tr>
+    <tr><td style="padding:14px 18px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${cel('FC media', pct(m.med), `${r.fcMed} ppm`, zi(r.fcMed))}${cel('FC máxima', pct(m.mx), `${r.fcMax} ppm`, zi(r.fcMax))}${cel('Calorías', r.kcal, 'kcal', null)}${cel('Carga', etrimp(r.zonas), 'eTRIMP', null)}
+    </tr></table></td></tr>
+    <tr><td style="padding:18px 24px 6px"><div style="font-size:17px;font-weight:800">Tiempo en cada fase</div></td></tr>
+    <tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden"><tr>${r.zonas.map((v, i) => v ? `<td width="${Math.max(1, Math.round(v / tot * 100))}%" style="height:16px;background:${EC.z[i]}"></td>` : '').join('')}</tr></table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px">${r.zonas.map((v, i) => `<tr><td style="padding:4px 0;font-size:13.5px;width:44%"><span style="display:inline-block;width:10px;height:10px;border-radius:5px;background:${EC.z[i]};margin-right:6px"></span>Fase ${i + 1} · ${ZONA_CORTA[i]}</td><td style="padding:4px 8px;width:42%"><div style="background:${EC.bg};border-radius:6px;height:10px"><div style="width:${Math.round(v / tot * 100)}%;height:10px;border-radius:6px;background:${EC.z[i]}"></div></div></td><td align="right" style="padding:4px 0;font-size:13.5px;font-weight:700;white-space:nowrap">${v} min</td></tr>`).join('')}</table></td></tr>
+    ${curva}
+    <tr><td style="padding:18px 24px 4px"><div style="font-size:17px;font-weight:800">Tú frente a tu media, tu grupo y la escuela</div></td></tr>
+    <tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13.5px">
+      <tr style="color:${EC.muted};font-size:12px"><td style="padding:6px 0">&nbsp;</td><td align="right">Hoy</td><td align="right">Tu media</td><td align="right">Grupo</td><td align="right">Escuela</td></tr>
+      ${filas.map(([l, k, f]) => `<tr><td style="padding:7px 0;border-top:1px solid ${EC.line}">${l}</td><td align="right" style="border-top:1px solid ${EC.line};font-weight:800">${val(estaS, k, f)}</td><td align="right" style="border-top:1px solid ${EC.line}">${val(yo, k, f)}</td><td align="right" style="border-top:1px solid ${EC.line}">${val(g, k, f)}</td><td align="right" style="border-top:1px solid ${EC.line}">${val(esc_, k, f)}</td></tr>`).join('')}
+    </table></td></tr>
+    <tr><td style="padding:18px 24px 4px"><div style="font-size:17px;font-weight:800">Qué nos dicen tus datos</div></td></tr>
+    <tr><td style="padding:0 24px;font-size:14.5px;line-height:1.55">${parrafos.map(x => `<p style="margin:0 0 12px">${esc(x)}</p>`).join('')}</td></tr>
+    <tr><td style="padding:4px 24px 18px"><a href="${APP_URL}" style="display:inline-block;background:${EC.court};color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:999px">Ver todo mi informe</a></td></tr>
+    <tr><td style="padding:14px 24px 20px;background:${EC.bg};font-size:11.5px;color:${EC.muted};line-height:1.5">Porcentajes sobre tu frecuencia cardíaca máxima teórica (220 − edad). Interpretación orientativa, no es un diagnóstico médico.<br>
+      Referencias: American College of Sports Medicine (2018), <i>ACSM's Guidelines for Exercise Testing and Prescription</i>, 10.ª ed. · OMS (2020), <i>Directrices sobre actividad física y hábitos sedentarios</i>. · Díaz García et al. (2017), <i>Apunts. Educación Física y Deportes</i>, 127, 75-81. · Carbonell Martínez et al. (2017), <i>Retos</i>, 32, 204-207. · Edwards (1993), <i>High Performance Training and Racing</i>.</td></tr>
+  </table></td></tr></table></body></html>`;
+  const body = `Hola ${nombre}:\n\nAsí fue tu sesión del ${fecha}: FC media ${pct(m.med)} (${r.fcMed} ppm), FC máxima ${pct(m.mx)} (${r.fcMax} ppm), ${r.kcal} kcal y una carga de ${etrimp(r.zonas)} (eTRIMP).\n\n${parrafos.join('\n\n')}\n\nVer todo tu informe: ${APP_URL}\n\n${state.settings.escuela}`;
+  return { subject: `Tu sesión del ${fmtDate(r.fecha, { day: 'numeric', month: 'long' })}: ${pct(m.med)} de FC media`, body, html };
+}
+
+/* Perfil de golpes de la temporada: winners frente a errores no forzados por golpe */
+function perfilGolpes(id) {
+  const ge = {}, gw = {}; let n = 0;
+  (state.partidos || []).forEach(m => { const j = m.jugadores.findIndex(x => x.id === id); if (j < 0 || !m.eventos.length) return; n++; const x = statsDe(m).jug[j]; Object.entries(x.ge).forEach(([k, v]) => { ge[k] = (ge[k] || 0) + v; }); Object.entries(x.gw).forEach(([k, v]) => { gw[k] = (gw[k] || 0) + v; }); });
+  const filas = GOLPES.map(([c, nom]) => ({ c, nom, e: ge[c] || 0, w: gw[c] || 0 })).filter(f => f.e || f.w);
+  return { n, filas };
+}
+function vPerfilGolpes(id, titulo = 'Perfil de golpes de la temporada') {
+  const { n, filas } = perfilGolpes(id); if (!filas.length) return '';
+  const mx = Math.max(...filas.map(f => Math.max(f.e, f.w)), 1);
+  const fuerte = [...filas].sort((a, b) => (b.w - b.e) - (a.w - a.e))[0], debil = [...filas].sort((a, b) => (b.e - b.w) - (a.e - a.w))[0];
+  return `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-1"><h2 class="text-2xl font-bold">${titulo}</h2><span class="text-[13px] text-muted">${n} ${n === 1 ? 'partido' : 'partidos'}</span></div>
+    <p class="text-[13.5px] text-muted mb-3">${fuerte.w > fuerte.e ? `Golpe más rentable: <strong class="text-ink">${fuerte.nom.toLowerCase()}</strong> (${fuerte.w} winners, ${fuerte.e} errores).` : ''} ${debil.e > debil.w ? `Golpe a trabajar: <strong class="text-ink">${debil.nom.toLowerCase()}</strong> (${debil.e} errores, ${debil.w} winners).` : ''}</p>
+    <div class="flex flex-col gap-1.5" role="table" aria-label="Errores y winners por golpe">
+      <div class="grid grid-cols-[1fr_7rem_1fr] gap-2 text-[12px] font-semibold text-muted" role="row"><span class="text-right" role="columnheader">Errores no forzados</span><span class="text-center" role="columnheader">Golpe</span><span role="columnheader">Winners</span></div>
+      ${filas.map(f => `<div class="grid grid-cols-[1fr_7rem_1fr] gap-2 items-center" role="row"><div class="flex justify-end items-center gap-2" role="cell"><span class="tnum text-[13px] text-bad font-semibold">${f.e || ''}</span><span class="h-3 rounded-l-full" style="width:${f.e / mx * 100}%;background:rgb(var(--bad))"></span></div><div class="text-center text-[13px] font-semibold" role="cell" title="${f.nom}">${f.nom}</div><div class="flex items-center gap-2" role="cell"><span class="h-3 rounded-r-full" style="width:${f.w / mx * 100}%;background:rgb(var(--ok))"></span><span class="tnum text-[13px] text-ok font-semibold">${f.w || ''}</span></div></div>`).join('')}
+    </div></section>`;
+}
+/* Qué parejas funcionan mejor juntas */
+function vParejas() {
+  const P = {};
+  (state.partidos || []).forEach(m => { if (!m.eventos.length) return; const S = statsDe(m); [0, 1].forEach(k => { const a = m.jugadores[k * 2]?.id, b = m.jugadores[k * 2 + 1]?.id; if (!a || !b || !alumno(a) || !alumno(b)) return; const key = [a, b].sort().join('+'); const x = P[key] = P[key] || { a, b, n: 0, g: 0, fin: 0, won: 0, tot: 0, dif: 0 }; x.n++; if (S.st.fin) { x.fin++; if (S.st.ganador === k) x.g++; } x.won += S.pair[k].won; x.tot += S.pair[k].won + S.pair[k].lost; x.dif += S.pair[k].dif; }); });
+  const L = Object.values(P).filter(x => x.tot >= 10).sort((x, y) => y.won / y.tot - x.won / x.tot).slice(0, 8);
+  if (!L.length) return '';
+  return `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Parejas que mejor funcionan</h2><p class="text-[13px] text-muted">Ordenadas por porcentaje de puntos ganados juntos.</p></div>
+    <table class="data min-w-[560px]"><thead><tr><th>Pareja</th><th class="text-right">Partidos</th><th class="text-right">Ganados</th><th class="text-right">% puntos</th><th class="text-right">Winners − ENF</th></tr></thead><tbody>
+    ${L.map(x => `<tr><td class="font-semibold">${esc(corto(alumno(x.a).nombre))} / ${esc(corto(alumno(x.b).nombre))}</td><td class="text-right tnum">${x.n}</td><td class="text-right tnum">${x.fin ? `${x.g}/${x.fin}` : '—'}</td><td class="text-right num text-lg font-bold">${pct(x.won / x.tot)}</td><td class="text-right tnum ${x.dif < 0 ? 'text-bad' : 'text-ok'}">${x.dif > 0 ? '+' : ''}${x.dif}</td></tr>`).join('')}
+    </tbody></table></section>`;
+}
+/* Fijos que llevan varias clases seguidas sin venir */
+function faltasSeguidas() {
+  const out = [];
+  reales().filter(a => !esRelevo(a) && grupo(a.grupo).id).forEach(a => {
+    const listas = Object.entries(state.asistencia).filter(([k, o]) => k.startsWith(a.grupo + '|') && o && Object.keys(o).length).sort((x, y) => y[0].localeCompare(x[0]));
+    let n = 0; for (const [, o] of listas) { const e = o[a.id]?.e; if (e === 'falta' || e === 'cubierta') n++; else break; }
+    const tot = listas.length, vino = listas.filter(([, o]) => o[a.id]?.e === 'presente').length;
+    if (n >= 2) out.push({ a, n, pctAsis: tot ? vino / tot : null });
+  });
+  return out.sort((x, y) => y.n - x.n);
 }
 
 /* ---------- Emails ---------- */
@@ -1393,10 +1663,10 @@ function vEmails() {
     </form>
     <div class="lg:col-span-2 flex flex-col gap-3 min-w-0">
       ${state.outbox.length ? state.outbox.map(e => `<article class="email-paper p-4 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 mb-2"><span class="chip ${e.tipo === 'aviso' ? 'chip-warn' : 'chip-ok'}">${{ confirmacion: 'Confirmación de pago', aviso: 'Aviso de pago', bienvenida: 'Bienvenida' }[e.tipo]}</span><span class="chip ${e.estado === 'En cola' ? 'chip-neutral' : e.estado === 'Error' ? 'chip-bad' : 'chip-ok'}" ${e.error ? `title="${esc(e.error)}"` : ''}>${e.estado}</span><span class="text-[12.5px] text-muted ml-auto">${new Date(e.fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
+        <div class="flex flex-wrap items-center gap-2 mb-2"><span class="chip ${e.tipo === 'aviso' ? 'chip-warn' : 'chip-ok'}">${{ confirmacion: 'Confirmación de pago', aviso: 'Aviso de pago', bienvenida: 'Bienvenida', sesion: 'Resumen de sesión' }[e.tipo]}</span><span class="chip ${e.estado === 'En cola' ? 'chip-neutral' : e.estado === 'Error' ? 'chip-bad' : 'chip-ok'}" ${e.error ? `title="${esc(e.error)}"` : ''}>${e.estado}</span><span class="text-[12.5px] text-muted ml-auto">${new Date(e.fecha).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
         <div class="text-[13px] text-muted">Para: ${esc(e.toName)} &lt;${esc(e.to)}&gt;</div>
         <h3 class="text-xl font-bold mt-1">${esc(e.subject)}</h3>
-        <details class="mt-1"><summary class="text-[13.5px] font-semibold text-court cursor-pointer">Ver mensaje</summary><pre class="whitespace-pre-wrap font-sans text-[14px] leading-relaxed mt-2">${esc(e.body)}</pre></details>
+        <details class="mt-1"><summary class="text-[13.5px] font-semibold text-court cursor-pointer">Ver mensaje</summary>${e.html ? `<iframe title="Vista previa del email" sandbox class="w-full mt-2 rounded-xl border border-line bg-white" style="height:900px" srcdoc="${esc(e.html)}"></iframe>` : `<pre class="whitespace-pre-wrap font-sans text-[14px] leading-relaxed mt-2">${esc(e.body)}</pre>`}</details>
       </article>`).join('') : `<div class="panel p-6 text-center"><h3 class="text-2xl font-bold">La bandeja está vacía</h3><p class="text-muted mt-1">Registra un pago o pasa lista en una clase y aquí aparecerá el email que recibiría el alumno.</p><div class="mt-3 flex justify-center gap-2"><button class="btn btn-primary" data-open="pago">Registrar pago</button><button class="btn btn-ghost" data-go="clases">Pasar lista</button></div></div>`}
     </div>
   </section>`;
@@ -1448,7 +1718,7 @@ function interpretacion(a) {
   const trend = (second.reduce((t, x) => t + x.med, 0) / second.length) - (first.reduce((t, x) => t + x.med, 0) / first.length);
   const z45 = ss.reduce((t, s) => t + s.zonas[3] + s.zonas[4], 0) / ss.reduce((t, s) => t + s.zonas.reduce((u, x) => u + x, 0), 0);
   const out = [];
-  out.push(`En tus ${ss.length} sesiones trabajas de media al ${pct(avg('med'))} de tu frecuencia máxima teórica (${fcMaxTeo(a)} ppm); la media de tu grupo es el ${pct(gavg('med'))} y la de la escuela el ${pct(eavg('med'))}. ${avg('med') > gavg('med') + .02 ? 'Es algo más que la media de tu grupo: estás poniendo mucha intensidad.' : avg('med') < gavg('med') - .02 ? 'Es algo menos que la media de tu grupo, así que tienes margen para apretar en los ejercicios de juego.' : 'Estás en línea con la media de tu grupo.'}`);
+  out.push(`${varia(a.id + 'i1', ['En tus', 'A lo largo de tus', 'Sumando tus'])} ${ss.length} sesiones ${varia(a.id + 'i2', ['trabajas de media al', 'tu pulso se mueve de media en el', 'te mantienes de media en el'])} ${pct(avg('med'))} de tu frecuencia máxima teórica (${fcMaxTeo(a)} ppm); la media de tu grupo es el ${pct(gavg('med'))} y la de la escuela el ${pct(eavg('med'))}. ${avg('med') > gavg('med') + .02 ? 'Es algo más que la media de tu grupo: estás poniendo mucha intensidad.' : avg('med') < gavg('med') - .02 ? 'Es algo menos que la media de tu grupo, así que tienes margen para apretar en los ejercicios de juego.' : 'Estás en línea con la media de tu grupo.'}`);
   out.push(`Pasas el ${pct(z45)} del tiempo en zonas 4 y 5, las de mayor esfuerzo. ${z45 > .3 ? 'Es un porcentaje alto; cuida el descanso entre clases e hidrátate bien.' : z45 < .12 ? 'Es un porcentaje bajo: los puntos largos y los ejercicios de red son buenos momentos para subir el ritmo.' : 'Es un reparto equilibrado para una clase técnica.'}`);
   out.push(`Tu índice de recuperación (diferencia entre la FC máxima y la media) es del ${pct(avg('rec'))}${avg('rec') > gavg('rec') ? ', por encima de tu grupo: tu corazón baja bien entre esfuerzos.' : ', algo por debajo de tu grupo; mejorará con trabajo aeróbico suave fuera de pista.'}`);
   const Pm = mediasPor(filasPartidos(), METRICAS_P); const yo = Pm.alumno(a.id);
@@ -1604,8 +1874,8 @@ async function loadAll(silencioso) {
     s.ajustesClases = ajc.map(x => ({ id: x.id, alumno: x.alumno_id, fecha: x.fecha, clases: x.clases, motivo: x.motivo }));
     s.gastos = ga.map(x => ({ id: x.id, fecha: x.fecha, concepto: x.concepto, categoria: x.categoria, importe: +x.importe, metodo: x.metodo, notas: x.notas }));
     s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor }));
-    s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
-    s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
+    s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, sacadores: x.extra?.sacadores || null, sorteo: x.extra?.sorteo ?? null, ladoInv: !!x.extra?.ladoInv, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
+    s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, html: m.html, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
     av.forEach(x => { s.warned[`${x.alumno_id}|${x.clases_recibidas}`] = true; });
     ia.forEach(x => { if (!s.informes[x.alumno_id]) s.informes[x.alumno_id] = { id: x.id, texto: x.texto, publicado: x.publicado, generado: x.generado }; });
     state = s;
@@ -1628,7 +1898,7 @@ async function loadAll(silencioso) {
 
 const P = {
   async pago(p) { const d = await need(sb.from('pagos').insert({ alumno_id: p.alumno, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: p.importe }).select('id').single()); p.id = d.id; },
-  async email(m) { const d = await need(sb.from('emails').insert({ alumno_id: m.alumno, destinatario: m.to, nombre_destinatario: m.toName, tipo: m.tipo, asunto: m.subject, cuerpo: m.body }).select('id, creado').single()); m.id = d.id; m.fecha = d.creado; },
+  async email(m) { const d = await need(sb.from('emails').insert({ alumno_id: m.alumno, destinatario: m.to, nombre_destinatario: m.toName, tipo: m.tipo, asunto: m.subject, cuerpo: m.body, html: m.html || null }).select('id, creado').single()); m.id = d.id; m.fecha = d.creado; },
   async sesion(key, extra = {}) {
     const [grupo_id, fecha] = key.split('|');
     const d = await need(sb.from('sesiones').upsert({ grupo_id, fecha, ...extra }, { onConflict: 'grupo_id,fecha' }).select('id').single());
@@ -1660,7 +1930,7 @@ const P = {
     g.id = d.id;
   },
   async partido(m) {
-    await need(sb.from('partidos').upsert({ id: m.id, fecha: m.fecha, tipo: m.tipo, grupo_id: m.grupo && grupo(m.grupo).id ? m.grupo : null, jugadores: m.jugadores, alumnos: m.jugadores.map(j => j.id).filter(Boolean), formato: m.formato, punto_oro: m.oro, saque_inicial: m.saque, eventos: m.eventos, estado: m.estado, resultado: m.resultado, actualizado: new Date().toISOString() }));
+    await need(sb.from('partidos').upsert({ id: m.id, fecha: m.fecha, tipo: m.tipo, grupo_id: m.grupo && grupo(m.grupo).id ? m.grupo : null, jugadores: m.jugadores, alumnos: m.jugadores.map(j => j.id).filter(Boolean), formato: m.formato, punto_oro: m.oro, saque_inicial: m.saque || 0, extra: { sacadores: m.sacadores || null, sorteo: m.sorteo ?? null, ladoInv: !!m.ladoInv }, eventos: m.eventos, estado: m.estado, resultado: m.resultado, actualizado: new Date().toISOString() }));
     if (m.estado !== 'terminado' && m.eventos.length % 10) return;   // estadísticas: al cerrar y cada 10 puntos
     const { st, jug } = statsDe(m);
     const filas = jug.filter(x => m.jugadores[x.j]?.id).map(x => ({ partido_id: m.id, alumno_id: m.jugadores[x.j].id, pareja: x.k, fecha: m.fecha, ganado: st.fin ? st.ganador === x.k : null, enf: x.enf, win: x.win, pct_enf: x.pctEnf, pct_win: x.pctWin, g_enf: x.gEnf, g_win: x.gWin, pct_oro: x.pctOro, pct_break: x.pctBreak, ppj: x.ppj, indice: x.indice, golpes_enf: x.ge, golpes_win: x.gw }));
@@ -1737,7 +2007,7 @@ function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -1770,10 +2040,17 @@ document.addEventListener('click', async e => {
   {
     const m = partidoActual();
     if (m && d.pick) return pickGolpe(m, +d.j, d.pick);
+    if (m && d.moneda !== undefined) return lanzarMoneda(m);
+    if (m && d.sorteoManual !== undefined) { m.sorteo = -1; guardarPartido(m); return render(); }
+    if (m && d.sacador !== undefined) { const st = motor(m); const set = st.sets.length; const j = +d.sacador; m.sacadores = m.sacadores || {}; const sc = m.sacadores[set]; if (!sc || sc[0] == null) m.sacadores[set] = [j, null]; else sc[1] = j; guardarPartido(m); return render(); }
+    if (m && d.saqueSigue !== undefined) { const st = motor(m); const set = st.sets.length; const prev = ordenSaque(m, set - 1); const n = st.sets[set - 1][0] + st.sets[set - 1][1]; m.sacadores[set] = [prev[n % 4], prev[(n + 1) % 4]]; guardarPartido(m); return render(); }
+    if (m && d.oroResta !== undefined) { m.oroSel = +d.oroResta; return render(); }
+    if (m && d.plado !== undefined) { m.ladoInv = !m.ladoInv; guardarPartido(m); return render(); }
     if (m && d.pia !== undefined) return pedirLecturaIA(m, t);
     if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? parDe(j) : 1 - parDe(j) }); }
     if (m && d.ppunto !== undefined) return anotar(m, { tipo: 'p', j: null, g: null, par: +d.ppunto });
-    if (m && d.undo !== undefined) { m.eventos.pop(); if (m.estado === 'terminado') m.estado = 'en_juego'; m.resultado = resultadoTxt(motor(m)); guardarPartido(m); toast('Último punto deshecho'); return render(); }
+    if (m && d.undo !== undefined) { m.eventos.pop(); delete m.oroSel; const st2 = motor(m);
+      if (m.sacadores) { Object.keys(m.sacadores).forEach(k => { if (+k > st2.sets.length) delete m.sacadores[k]; }); const sc = m.sacadores[st2.sets.length]; if (sc && sc[1] != null && st2.games[0] + st2.games[1] < 1) sc[1] = null; } if (m.estado === 'terminado') m.estado = 'en_juego'; m.resultado = resultadoTxt(motor(m)); guardarPartido(m); toast('Último punto deshecho'); return render(); }
     if (m && d.psaque !== undefined) { m.saque = 1 - (m.saque || 0); guardarPartido(m); return render(); }
     if (m && d.preabrir !== undefined) { m.estado = 'en_juego'; ui.pmodo = null; guardarPartido(m, true); return render(); }
     if (m && d.pfin !== undefined) {
@@ -1789,6 +2066,7 @@ document.addEventListener('click', async e => {
   if (d.clase) { ui.claseKey = d.clase; ui.asisDraft = null; return render(); }
   if (d.copy) { const v = d.copy; (navigator.clipboard?.writeText(v) || Promise.reject()).then(() => toast('Código copiado'), () => { const r = document.createRange(); const el = t.previousElementSibling; r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Código seleccionado'); }); return; }
   if (d.preview) { ui.role = 'alumno'; ui.studentLogged = d.preview; ui.view = 'inicio'; return render(); }
+  if (d.btAll) return connectBT(+d.btAll, true);
   if (d.bt) return connectBT(+d.bt);
   if (d.btOff) return stopSlot(+d.btOff);
   if (d.sim) return startSim(+d.sim);
@@ -1827,6 +2105,7 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset.resemail !== undefined) { ui.resumenEmail = e.target.checked; return; }
   if (e.target.dataset.jsel !== undefined) { const n = document.getElementById('mN' + e.target.dataset.jsel); if (n) { n.hidden = e.target.value !== 'inv'; if (!n.hidden) n.focus(); } }
   if (e.target.dataset.slotAlumno !== undefined) { live.slots[+e.target.dataset.slotAlumno].alumno = e.target.value || null; updateSlot(+e.target.dataset.slotAlumno); }
 });
@@ -1923,7 +2202,7 @@ async function onSubmit(f) {
     const ids = jugadores.map(j => j.id).filter(Boolean);
     if (new Set(ids).size !== ids.length) return toast('Hay un jugador repetido');
     const g = ids.length ? alumno(ids[0]).grupo : null;
-    const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: $('#mT').value, grupo: g, jugadores, formato: $('#mFo').value, oro: $('#mO').checked, saque: +$('#mS').value, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
+    const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: $('#mT').value, grupo: g, jugadores, formato: $('#mFo').value, oro: $('#mO').checked, saque: 0, sacadores: {}, sorteo: null, ladoInv: false, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
     state.partidos = state.partidos || []; state.partidos.push(m);
     closeModal(); guardarPartido(m, true); return go('partido:' + m.id);
   }

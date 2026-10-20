@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       secreto,
-      emails: cola.map((m) => ({ id: m.id, to: m.destinatario, subject: m.asunto, body: m.cuerpo, html: plantilla(m.asunto, m.cuerpo, escuela), fromName: escuela, replyTo: aj?.remitente }))
+      emails: cola.map((m) => ({ id: m.id, to: m.destinatario, subject: m.asunto, body: m.cuerpo, html: m.html || plantilla(m.asunto, m.cuerpo, escuela), fromName: escuela, replyTo: aj?.remitente }))
     }),
     redirect: 'follow'
   });
