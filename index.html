@@ -284,9 +284,9 @@ function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 
 
 /* ---------- Tarifas (de la hoja TARIFAS) ---------- */
 let TARIFAS = [
-  { id: 'T1', nombre: 'Grupo 4 · 1,5 h', alumnos: 4, horas: 1.5, mes: 40, trimestre: 95 },
-  { id: 'T2', nombre: 'Pareja · 1 h', alumnos: 2, horas: 1, mes: 60, trimestre: 140 },
-  { id: 'T3', nombre: 'Grupo 4 · 1 h', alumnos: 4, horas: 1, mes: 30, trimestre: 65 }
+  { id: 'T1', nombre: 'Grupo 4 · 1,5 h', alumnos: 4, horas: 1.5, mes: 40, trimestre: 95, suelta: 13 },
+  { id: 'T2', nombre: 'Pareja · 1 h', alumnos: 2, horas: 1, mes: 60, trimestre: 140, suelta: 18 },
+  { id: 'T3', nombre: 'Grupo 4 · 1 h', alumnos: 4, horas: 1, mes: 30, trimestre: 65, suelta: 11 }
 ];
 const CONCEPTOS = [
   { id: 'mes', nombre: 'Bono mensual (4 clases)', clases: 4 },
@@ -298,7 +298,7 @@ const precioDe = (tarifa, concepto) => {
   const t = TARIFAS.find(x => x.id === tarifa) || TARIFAS[0];
   if (concepto === 'mes') return t.mes;
   if (concepto === 'tri') return t.trimestre;
-  if (concepto === 'suelta') return Math.round(t.mes / 4 + 3);
+  if (concepto === 'suelta') return t.suelta ?? Math.round(t.mes / 4 + 3);
   return 0;
 };
 
@@ -462,6 +462,7 @@ const emptyState = () => ({ settings: { escuela: 'Escuela de Pádel', umbral: 1,
 let state = LIVE ? emptyState() : (S.get(KEY) || seed());
 state.informes = state.informes || {};
 state.statsAnon = state.statsAnon || [];
+if (!LIVE && Array.isArray(state.tarifas) && state.tarifas.length) TARIFAS = state.tarifas;
 const save = () => { if (!LIVE) S.set(KEY, state); };
 let ui = { role: 'admin', view: 'panel', alumnoId: null, studentLogged: null, filtroGrupo: 'todos', claseKey: null, pmodo: null, pset: null, auth: LIVE ? 'cargando' : 'ok', isAdmin: !LIVE };
 const alumno = id => state.alumnos.find(a => a.id === id);
@@ -647,7 +648,7 @@ function vPanel() {
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0"><div class="flex items-center justify-between mb-2"><h2 class="text-2xl font-bold">Carga de entrenamiento por grupo</h2><span class="text-[13px] text-muted">eTRIMP medio por sesión</span></div><div class="h-64"><canvas id="chLoad" aria-label="Carga media por sesión y grupo"></canvas></div></div>
     <div class="panel p-5 lg:col-span-2 min-w-0"><h2 class="text-2xl font-bold mb-3">Últimos cobros</h2>
-      <ul class="divide-y divide-line">${recientes.map(p => `<li class="py-2.5 flex items-center gap-3"><div class="min-w-0 flex-1"><div class="font-semibold truncate">${esc(alumno(p.alumno).nombre)}</div><div class="text-[13px] text-muted">${fmtDate(p.fecha)} · ${p.metodo}</div></div><div class="num text-xl font-bold">${fmtEur(p.importe)}</div></li>`).join('')}</ul>
+      <ul class="divide-y divide-line">${recientes.map(p => `<li class="py-2.5 flex items-center gap-3"><div class="min-w-0 flex-1"><div class="font-semibold truncate">${esc(nombreAl(p.alumno))}</div><div class="text-[13px] text-muted">${fmtDate(p.fecha)} · ${p.metodo}</div></div><div class="num text-xl font-bold">${fmtEur(p.importe)}</div></li>`).join('')}</ul>
     </div>
   </section>`;
 }
@@ -656,7 +657,7 @@ function afterPanel() {
   const weeks = []; dates.forEach(d => { const w = weekKey(d); if (!weeks.includes(w)) weeks.push(w); });
   const ds = state.grupos.map((g, i) => ({
     label: g.nombre,
-    data: weeks.map(w => { const ss = state.sesionesFC.filter(s => alumno(s.alumno).grupo === g.id && weekKey(s.fecha) === w); return ss.length ? Math.round(ss.reduce((t, s) => t + etrimp(s.zonas), 0) / ss.length) : null; }),
+    data: weeks.map(w => { const ss = state.sesionesFC.filter(s => alumno(s.alumno)?.grupo === g.id && weekKey(s.fecha) === w); return ss.length ? Math.round(ss.reduce((t, s) => t + etrimp(s.zonas), 0) / ss.length) : null; }),
     borderColor: [cv('--court'), cv('--z4'), cv('--heart')][i], backgroundColor: [cv('--court'), cv('--z4'), cv('--heart')][i], tension: .35, spanGaps: true, pointRadius: 3
   }));
   mkChart('chLoad', { type: 'line', data: { labels: weeks.map(w => 'Sem. ' + fmtDate(w, { day: 'numeric', month: 'short' })), datasets: ds }, options: baseOpts({ y: { title: 'eTRIMP' } }) });
@@ -676,8 +677,8 @@ function vAlumnos() {
   ${gSel && gSel.id ? `<span class="text-[13px] text-muted ml-1">${DAYS[gSel.dia]} ${gSel.hora}–${gSel.fin} · ${tarifaDe({ grupo: gSel.id }).nombre}</span><button class="text-[13px] font-semibold text-court" data-open="grupo" data-for="${gSel.id}">Editar grupo</button>` : ''}</div>
   ${!state.grupos.length ? `<div class="panel p-6"><h2 class="text-2xl font-bold">Empieza creando tus grupos</h2><p class="text-muted mt-1 max-w-xl">Cada grupo tiene su día, su horario y su tarifa. Después podrás dar de alta a los alumnos y asignarlos.</p><button class="btn btn-primary mt-3" data-open="grupo">Crear el primer grupo</button></div>` : !list.length ? `<div class="panel p-6"><h2 class="text-2xl font-bold">Todavía no hay alumnos${gSel ? ' en este grupo' : ''}</h2><p class="text-muted mt-1">Al darlos de alta puedes enviarles un email con su código para entrar en la app, o hacerlo después a todos a la vez.</p><button class="btn btn-primary mt-3" data-open="alta">Dar de alta</button></div>` : ''}
   ${list.length ? `<div class="panel px-4 py-3 flex flex-wrap items-center gap-2 text-[14px] ${nSel ? 'border-court' : ''}">
-    ${nSel ? `<strong>${nSel} ${nSel === 1 ? 'alumno seleccionado' : 'alumnos seleccionados'}</strong><button class="btn btn-primary !py-1.5 text-[13px]" data-bienvenida-sel>Enviar email de bienvenida</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-sel-none>Quitar selección</button>`
-      : `<span class="text-muted">Marca alumnos para enviarles el email de bienvenida con su código.</span>${sinBien.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-sel-sinbien>Seleccionar los ${sinBien.length} que aún no lo han recibido</button>` : ''}`}
+    ${nSel ? `<strong>${nSel} ${nSel === 1 ? 'alumno seleccionado' : 'alumnos seleccionados'}</strong><button class="btn btn-primary !py-1.5 text-[13px]" data-bienvenida-sel>Enviar email de bienvenida</button><button class="btn btn-ghost !py-1.5 text-[13px] text-bad" data-borrar-sel>Eliminar</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-sel-none>Quitar selección</button>`
+      : `<span class="text-muted">Marca alumnos para enviarles el email de bienvenida con su código.</span>${sinBien.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-sel-sinbien>${sinBien.length === 1 ? 'Seleccionar al único que aún no lo ha recibido' : `Seleccionar los ${sinBien.length} que aún no lo han recibido`}</button>` : ''}`}
   </div>` : ''}
   <div class="panel scroll-x" ${list.length ? '' : 'hidden'}><table class="data min-w-[820px]">
     <thead><tr><th class="w-10"><input type="checkbox" class="w-5 h-5 accent-[rgb(var(--court))]" data-selall aria-label="Seleccionar todos" ${todosSel ? 'checked' : ''}></th><th>Alumno</th><th>Grupo</th><th>Bono</th><th>Estado</th><th>Última FC media</th><th>Código</th></tr></thead>
@@ -696,7 +697,7 @@ function vAlumnoDetalle(id) {
   const avg = k => ss.length ? ss.reduce((s, x) => s + metrics(x, a)[k], 0) / ss.length : 0;
   return `<div><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="alumnos">${I.back}Alumnos</button></div>` +
     pageHead(esc(a.nombre), `${esc(g.nombre)} · ${DAYS[g.dia]} ${g.hora}–${g.fin} · ${tarifaDe(a).nombre} · ${a.edad} años`,
-      `<button class="btn btn-primary" data-open="pago" data-for="${a.id}">Registrar pago</button><button class="btn btn-ghost" data-aviso="${a.id}">Enviar aviso</button><button class="btn btn-ghost" data-open="alta" data-for="${a.id}">Editar ficha</button>${a.activado ? '' : `<button class="btn btn-ghost" data-bienvenida-uno="${a.id}">${bienvenidaDe(a) === 'no' ? 'Enviar bienvenida' : 'Reenviar bienvenida'}</button>`}<button class="btn btn-ghost" data-preview="${a.id}">Ver como alumno</button>`) + `
+      `<button class="btn btn-primary" data-open="pago" data-for="${a.id}">Registrar pago</button><button class="btn btn-ghost" data-aviso="${a.id}">Enviar aviso</button><button class="btn btn-ghost" data-open="alta" data-for="${a.id}">Editar ficha</button><button class="btn btn-ghost text-bad" data-borrar-alumno="${a.id}">Eliminar</button>${a.activado ? '' : `<button class="btn btn-ghost" data-bienvenida-uno="${a.id}">${bienvenidaDe(a) === 'no' ? 'Enviar bienvenida' : 'Reenviar bienvenida'}</button>`}<button class="btn btn-ghost" data-preview="${a.id}">Ver como alumno</button>`) + `
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Bono</h2>${estadoChip(a)}</div>${ballRow(a, 20)}
       <div class="grid grid-cols-4 gap-2 text-center mt-1">${[['Pagadas', compradas(a)], ['Ajustes', (ajusteDe(a) > 0 ? '+' : '') + ajusteDe(a)], ['Consumidas', asistidas(a)], ['Saldo', saldo(a)]].map(([l, v]) => `<div class="rounded-xl bg-surface2 py-2"><div class="num text-3xl font-bold ${l === 'Saldo' && v < 0 ? 'text-bad' : ''}">${v}</div><div class="text-[12px] text-muted">${l}</div></div>`).join('')}</div>
@@ -770,17 +771,27 @@ function fcChart(canvasId, id) {
 
 function vPagos() {
   const tab = ui.ptab || 'cobros';
-  const tabs = `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist">${[['cobros', 'Cobros'], ['gastos', 'Gastos'], ['balance', 'Balance mensual']].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full ${tab === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${tab === k}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
+  const tabs = `<div class="inline-flex max-w-full overflow-x-auto bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist">${[['cobros', 'Cobros'], ['gastos', 'Gastos'], ['balance', 'Balance'], ['tarifas', 'Precios']].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${tab === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${tab === k}" data-ptab="${k}">${l}</button>`).join('')}</div>`;
   const acciones = tab === 'gastos' ? `<button class="btn btn-primary" data-open="gasto">Registrar gasto</button>` : tab === 'cobros' ? `<button class="btn btn-primary" data-open="pago">Registrar pago</button>` : `<button class="btn btn-primary" data-open="pago">Registrar pago</button><button class="btn btn-ghost" data-open="gasto">Registrar gasto</button>`;
-  const sub = { cobros: 'Cada pago suma clases al bono del alumno y deja en cola un email de confirmación.', gastos: 'Alquiler de pista, material, seguros y el resto de gastos de la escuela.', balance: 'Ingresos, gastos y resultado de cada mes.' }[tab];
-  return pageHead('Pagos', sub, acciones) + tabs + (tab === 'gastos' ? vGastos() : tab === 'balance' ? vBalance() : vCobros());
+  const sub = { cobros: 'Cada pago suma clases al bono del alumno y deja en cola un email de confirmación.', gastos: 'Alquiler de pista, material, seguros y el resto de gastos de la escuela.', balance: 'Ingresos, gastos y resultado de cada mes.', tarifas: 'Precio de los bonos y de la clase suelta en cada tarifa. Se aplican a los pagos que registres a partir de ahora.' }[tab];
+  return pageHead('Pagos', sub, tab === 'tarifas' ? '' : acciones) + tabs + (tab === 'gastos' ? vGastos() : tab === 'balance' ? vBalance() : tab === 'tarifas' ? vTarifas() : vCobros());
+}
+function vTarifas() {
+  const campo = (t, k, l, v) => `<div><label class="lbl" for="t${k}${t.id}">${l}</label><div class="relative"><input id="t${k}${t.id}" name="${k}" type="number" min="0" step="0.5" inputmode="decimal" class="field tnum pr-8" required value="${v ?? ''}"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-[14px]">€</span></div></div>`;
+  return `<section class="grid md:grid-cols-2 xl:grid-cols-3 gap-3">${TARIFAS.map(t => { const gs = state.grupos.filter(g => g.tarifa === t.id); const n = reales().filter(a => gs.some(g => g.id === a.grupo)).length; return `
+    <form class="panel p-5 flex flex-col gap-3 min-w-0" data-tarifa="${t.id}">
+      <div><label class="lbl" for="tn${t.id}">Nombre de la tarifa</label><input id="tn${t.id}" name="nombre" class="field" required value="${esc(t.nombre)}"></div>
+      <div class="grid grid-cols-3 gap-2">${campo(t, 'mes', 'Bono 4', t.mes)}${campo(t, 'trimestre', 'Bono 10', t.trimestre)}${campo(t, 'suelta', 'Suelta', precioDe(t.id, 'suelta'))}</div>
+      <div class="text-[13px] text-muted">${gs.length ? `${gs.length} ${gs.length === 1 ? 'grupo' : 'grupos'}: ${gs.map(g => esc(g.nombre)).join(', ')} · ${n} ${n === 1 ? 'alumno' : 'alumnos'}` : 'Ningún grupo usa esta tarifa'}<br>Por clase: ${fmtEur(t.mes / 4)} con el bono de 4 · ${fmtEur(t.trimestre / 10)} con el de 10</div>
+      <button class="btn btn-primary self-start" type="submit">Guardar precios</button>
+    </form>`; }).join('')}</section>`;
 }
 function vCobros() {
   const list = [...state.pagos].sort((x, y) => y.fecha.localeCompare(x.fecha));
   const byMonth = {}; state.pagos.forEach(p => { const k = p.fecha.slice(0, 7); byMonth[k] = byMonth[k] || { total: 0, n: 0, m: {} }; byMonth[k].total += p.importe; byMonth[k].n++; byMonth[k].m[p.metodo] = (byMonth[k].m[p.metodo] || 0) + p.importe; });
   return `<section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${Object.entries(byMonth).sort().reverse().slice(0, 3).map(([k, v]) => `<div class="panel p-4"><div class="text-[13px] font-semibold text-muted">${mesTxt(k)}</div><div class="num text-4xl font-bold">${fmtEur(v.total)}</div><div class="text-[13px] text-muted">${v.n} cobros · ${Object.entries(v.m).map(([mm, x]) => `${mm} ${fmtEur(x)}`).join(' · ')}</div></div>`).join('')}</section>
   <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Alumno</th><th>Concepto</th><th>Clases</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-    ${list.map(p => `<tr class="click" data-alumno="${p.alumno}"><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(alumno(p.alumno)?.nombre || '—')}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
+    ${list.map(p => `<tr ${alumno(p.alumno) ? `class="click" data-alumno="${p.alumno}"` : ''}><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(nombreAl(p.alumno))}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
   </tbody></table></div>`;
 }
 const mesTxt = k => { const t = new Date(k + '-01T00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -1848,6 +1859,7 @@ function openModal(html) { const m = document.getElementById('modal'); m.innerHT
 function closeModal() { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; }
 const modalHead = t => `<div class="flex items-center justify-between"><h2 class="text-3xl font-bold">${t}</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>`;
 const reales = () => state.alumnos.filter(a => !a.anon);
+const nombreAl = id => alumno(id)?.nombre || (state.bajas?.[id] ? state.bajas[id] + ' (baja)' : 'Alumno eliminado');
 function modalPago(forId) {
   if (!reales().length) return toast('Da de alta a un alumno antes de registrar pagos');
   const a0 = forId ? alumno(forId) : reales()[0];
@@ -1902,7 +1914,36 @@ function modalGrupo(id) {
     <div><label class="lbl" for="gN">Nombre</label><input id="gN" class="field" required value="${esc(g.nombre)}" placeholder="Iniciación adultos"></div>
     <div class="grid grid-cols-3 gap-3"><div><label class="lbl" for="gD">Día</label><select id="gD" class="field">${[1, 2, 3, 4, 5, 6, 0].map(d => `<option value="${d}" ${g.dia === d ? 'selected' : ''}>${DAYS[d]}</option>`).join('')}</select></div><div><label class="lbl" for="gH">Empieza</label><input id="gH" type="time" class="field" value="${g.hora}"></div><div><label class="lbl" for="gF">Termina</label><input id="gF" type="time" class="field" value="${g.fin}"></div></div>
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="gT">Tarifa</label><select id="gT" class="field">${TARIFAS.map(t => `<option value="${t.id}" ${g.tarifa === t.id ? 'selected' : ''}>${t.nombre} · ${fmtEur(t.mes)}/mes</option>`).join('')}</select></div><div><label class="lbl" for="gNv">Nivel</label><input id="gNv" class="field" value="${esc(g.nivel || '')}" placeholder="Iniciación"></div></div>
-    <button class="btn btn-primary" type="submit">${id ? 'Guardar grupo' : 'Crear grupo'}</button></form>`);
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">${id ? 'Guardar grupo' : 'Crear grupo'}</button>${id ? `<button type="button" class="btn btn-ghost text-bad" data-borrar-grupo="${id}">Eliminar grupo</button>` : ''}</div></form>`);
+}
+const conHistorialGrupo = gid => Object.keys(state.asistencia).some(k => k.startsWith(gid + '|')) || Object.keys(state.contenidos || {}).some(k => k.startsWith(gid + '|')) || Object.keys(state.sesionIds || {}).some(k => k.startsWith(gid + '|'));
+function modalBorrarGrupo(gid) {
+  const g = grupo(gid); const als = reales().filter(a => a.grupo === gid); const hist = conHistorialGrupo(gid);
+  openModal(`<div class="flex flex-col gap-3">${modalHead('Eliminar grupo')}
+    <p class="text-[15px]">Vas a eliminar <strong>${esc(g.nombre)}</strong> (${DAYS[g.dia].toLowerCase()} ${g.hora}).</p>
+    <ul class="text-[14px] text-muted list-disc pl-5 flex flex-col gap-1">
+      <li>${als.length ? `${als.length === 1 ? 'Su alumno pasa' : `Sus ${als.length} alumnos pasan`} a «Sin grupo»: no se borra ninguno y puedes asignarles otro grupo desde su ficha.` : 'No tiene alumnos.'}</li>
+      ${hist ? '<li>Las clases ya pasadas se conservan, así que los bonos no cambian.</li>' : ''}
+    </ul>
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary !bg-bad !border-bad" data-borrar-grupo-ok="${gid}">Eliminar grupo</button><button class="btn btn-ghost" data-close>Cancelar</button></div></div>`);
+}
+function modalBorrarAlumnos(ids) {
+  ids = ids.filter(id => alumno(id)); if (!ids.length) return;
+  ui.borrarIds = ids;
+  const nombres = ids.map(id => alumno(id).nombre); const n = ids.length;
+  const lista = nombres.slice(0, 5).map(esc).join(', ') + (n > 5 ? ` y ${n - 5} más` : '');
+  const pagos = state.pagos.filter(p => ids.includes(p.alumno)).length;
+  openModal(`<div class="flex flex-col gap-3">${modalHead(n === 1 ? 'Eliminar alumno' : `Eliminar ${n} alumnos`)}
+    <p class="text-[15px]">${n === 1 ? 'Alumno' : 'Alumnos'}: <strong>${lista}</strong>.</p>
+    <div class="rounded-2xl bg-surface2 p-4 flex flex-col gap-2">
+      <button class="btn btn-primary self-start" data-borrar-ok="baja">Dar de baja</button>
+      <p class="text-[13.5px] text-muted">Desaparece${n === 1 ? '' : 'n'} de las listas y ya no ${n === 1 ? 'puede' : 'pueden'} entrar en la app. ${pagos ? `Sus pagos (${pagos}) siguen contando en el balance.` : ''} Recomendado si ha${n === 1 ? '' : 'n'} pagado alguna vez.</p>
+    </div>
+    <div class="rounded-2xl border border-line p-4 flex flex-col gap-2">
+      <button class="btn btn-ghost text-bad self-start" data-borrar-ok="total">Eliminar con todos sus datos</button>
+      <p class="text-[13.5px] text-muted">Borra también sus pagos, asistencia, pulsaciones y estadísticas. Los ingresos de esos pagos salen del balance. No se puede deshacer.</p>
+    </div>
+    <button class="btn btn-ghost self-start" data-close>Cancelar</button></div>`);
 }
 
 /* ---------- Charts ---------- */
@@ -1952,8 +1993,9 @@ async function loadAll(silencioso) {
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
     if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico }; SEASON_START = aj.inicio_temporada; }
-    if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre }));
+    if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre, suelta: t.precio_suelta == null ? null : +t.precio_suelta }));
     s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
+    s.bajas = Object.fromEntries(al.filter(a => !a.activo).map(a => [a.id, a.nombre]));
     s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
     const porId = {};
@@ -2007,6 +2049,12 @@ const P = {
   async borrarGasto(id) { await need(sb.from('gastos').delete().eq('id', id)); },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
   async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null }).select('id').single()); r.id = d.id; },
+  async tarifa(t) { await need(sb.from('tarifas').update({ nombre: t.nombre, precio_mes: t.mes, precio_trimestre: t.trimestre, precio_suelta: t.suelta }).eq('id', t.id)); },
+  async bajaAlumnos(ids, definitivo) { if (definitivo) await need(sb.from('alumnos').delete().in('id', ids)); else await need(sb.from('alumnos').update({ activo: false }).in('id', ids)); },
+  async borrarGrupo(id, conHistorial) {
+    await need(sb.from('alumnos').update({ grupo_id: null }).eq('grupo_id', id));
+    if (conHistorial) await need(sb.from('grupos').update({ activo: false }).eq('id', id)); else await need(sb.from('grupos').delete().eq('id', id));
+  },
   async alumno(a, nuevo) {
     const row = { modalidad: a.modalidad || 'fijo', nombre: a.nombre, email: a.email, telefono: a.tlf || null, grupo_id: a.grupo, fecha_nacimiento: a.fnac || null, sexo: a.sexo, peso_kg: a.peso || null, clases_iniciales: a.inicial || 0, tutor_nombre: a.tutor || null, consentimiento_salud: !!a.salud, consentimiento_imagen: !!a.imagen };
     const d = nuevo ? await need(sb.from('alumnos').insert(row).select('id, codigo_acceso').single()) : await need(sb.from('alumnos').update(row).eq('id', a.id).select('id, codigo_acceso').single());
@@ -2098,6 +2146,28 @@ document.addEventListener('click', async e => {
   if (e.target.closest('[data-nonav]') && !e.target.matches('input')) { const cb = e.target.closest('[data-nonav]').querySelector('input[data-sel]'); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } return; }
   if (e.target.matches('input[data-sel], input[data-selall]')) return;
   if (e.target.closest('[data-sel-none]')) { ui.sel = new Set(); return render(); }
+  if (e.target.closest('[data-borrar-sel]')) return modalBorrarAlumnos([...(ui.sel || [])]);
+  const bA = e.target.closest('[data-borrar-alumno]'); if (bA) return modalBorrarAlumnos([bA.dataset.borrarAlumno]);
+  const bG = e.target.closest('[data-borrar-grupo]'); if (bG) return modalBorrarGrupo(bG.dataset.borrarGrupo);
+  const bGo = e.target.closest('[data-borrar-grupo-ok]'); if (bGo) {
+    const gid = bGo.dataset.borrarGrupoOk, nombre = grupo(gid).nombre, hist = conHistorialGrupo(gid);
+    state.grupos = state.grupos.filter(g => g.id !== gid); state.alumnos.forEach(a => { if (a.grupo === gid) a.grupo = null; });
+    if (ui.filtroGrupo === gid) ui.filtroGrupo = 'todos'; if (ui.claseKey?.startsWith(gid + '|')) ui.claseKey = null;
+    closeModal(); return tras(() => P.borrarGrupo(gid, hist), `Grupo «${nombre}» eliminado`);
+  }
+  const bOk = e.target.closest('[data-borrar-ok]'); if (bOk) {
+    const ids = ui.borrarIds || []; const total = bOk.dataset.borrarOk === 'total'; if (!ids.length) return closeModal();
+    const set = new Set(ids); state.bajas = state.bajas || {};
+    if (total) {
+      state.pagos = state.pagos.filter(p => !set.has(p.alumno)); state.sesionesFC = state.sesionesFC.filter(x => !set.has(x.alumno));
+      state.ajustesClases = (state.ajustesClases || []).filter(x => !set.has(x.alumno)); state.outbox = state.outbox.filter(x => !set.has(x.alumno));
+      Object.values(state.asistencia).forEach(o => { if (o) ids.forEach(id => delete o[id]); }); ids.forEach(id => delete state.informes[id]);
+    } else ids.forEach(id => { state.bajas[id] = alumno(id).nombre; });
+    state.alumnos = state.alumnos.filter(a => !set.has(a.id)); ids.forEach(id => ui.sel?.delete(id)); ui.borrarIds = null;
+    if (ui.view.startsWith('alumno:') && set.has(ui.view.split(':')[1])) ui.view = 'alumnos';
+    closeModal(); const n = ids.length;
+    return tras(() => P.bajaAlumnos(ids, total), total ? `${n === 1 ? 'Alumno eliminado' : `${n} alumnos eliminados`} con todos sus datos` : `${n === 1 ? 'Alumno dado de baja' : `${n} alumnos dados de baja`}`);
+  }
   if (e.target.closest('[data-sel-sinbien]')) { ui.sel = new Set(reales().filter(a => (ui.filtroGrupo === 'todos' || a.grupo === ui.filtroGrupo) && ['no', 'error'].includes(bienvenidaDe(a))).map(a => a.id)); return render(); }
   if (e.target.closest('[data-bienvenida-sel]')) {
     const ids = [...ui.sel].filter(id => alumno(id)?.email); if (!ids.length) return toast('Los alumnos seleccionados no tienen email');
@@ -2213,6 +2283,13 @@ document.addEventListener('change', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('modal').hidden) closeModal(); });
 document.addEventListener('submit', async e => {
   e.preventDefault(); const f = e.target;
+  if (f.dataset.tarifa) {
+    const t = TARIFAS.find(x => x.id === f.dataset.tarifa); const v = k => Math.round(parseFloat(String(f.elements[k].value).replace(',', '.')) * 100) / 100;
+    const nuevo = { nombre: f.elements.nombre.value.trim() || t.nombre, mes: v('mes'), trimestre: v('trimestre'), suelta: v('suelta') };
+    if ([nuevo.mes, nuevo.trimestre, nuevo.suelta].some(x => !(x >= 0))) return toast('Revisa los precios');
+    Object.assign(t, nuevo); if (!LIVE) state.tarifas = TARIFAS;
+    return tras(() => P.tarifa(t), `Precios de «${t.nombre}» guardados`);
+  }
   const btn = f.querySelector('button[type=submit]'); if (btn) btn.disabled = true;
   try { await onSubmit(f); } finally { if (btn && document.body.contains(btn)) btn.disabled = false; }
 });

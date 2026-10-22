@@ -46,7 +46,13 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 
 ## Gastos y balance
 
-En *Pagos* hay tres pestañas: cobros, gastos (por categoría) y balance mensual con ingresos, gastos, resultado, margen y clases impartidas.
+En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensual con ingresos, gastos, resultado, margen y clases impartidas, y *Precios*, donde se cambian el nombre de cada tarifa y el precio del bono de 4 clases, el de 10 y la clase suelta. Los precios nuevos se aplican a los pagos que se registren después; los pagos ya hechos no cambian.
+
+## Bajas de alumnos y grupos
+
+- **Dar de baja** (desde la ficha o seleccionando varios en *Alumnos*): el alumno desaparece de las listas y no puede entrar en la app, pero sus pagos siguen en el balance.
+- **Eliminar con todos sus datos:** borra también pagos, asistencia, pulsaciones y estadísticas. No se puede deshacer.
+- **Eliminar grupo** (en *Alumnos* → filtro del grupo → *Editar grupo*): sus alumnos pasan a «Sin grupo» y las clases ya pasadas se conservan, así que los bonos no cambian.
 
 ## Partidos (hoja ANÁLISIS ESTADÍSTICO)
 
