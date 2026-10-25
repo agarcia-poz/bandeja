@@ -563,7 +563,7 @@ const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos
 
 function shell(content) {
   const nav = ui.role === 'admin' ? ADMIN_NAV : ALUMNO_NAV;
-  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view === 'grabar' ? 'informe' : ui.view;
+  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view;
   const pendientes = state.outbox.filter(e => e.estado === 'En cola').length;
   const who = ui.role === 'admin' ? (LIVE ? esc(ui.email || 'Administrador') : 'Andrés · administrador') : esc(alumno(ui.studentLogged).nombre);
   const canSwitch = !LIVE || ui.isAdmin; const canLogout = LIVE || ui.role === 'alumno';
@@ -612,25 +612,62 @@ function stat(label, value, note = '', tone = '') {
 /* ==========================================================
    VISTAS · ESCUELA
    ========================================================== */
-/* Recordatorio de clase para el grupo de WhatsApp: texto listo y un toque para compartirlo */
-function recordatorioWA() {
-  const dias = [...new Set(state.grupos.flatMap(g => proximas(g, 1)))].sort(); const dia = dias[0]; if (!dia) return null;
-  const gs = state.grupos.filter(g => proximas(g, 1)[0] === dia).sort((x, y) => x.hora.localeCompare(y.hora));
-  const hoy = dia === TODAY_ISO; const cuando = hoy ? (gs[0].hora >= '14:00' ? 'esta tarde' : 'hoy') : `el ${fmtDate(dia, { weekday: 'long', day: 'numeric' })}`;
-  const lineas = gs.map(g => { const c = contenido(g.id, dia); return `• ${g.nombre}: de ${g.hora} a ${g.fin}${c.titulo && c.titulo !== 'Contenido por definir' ? ` · ${c.titulo}` : ''}`; });
-  const texto = `¡Buenos días! 🎾 Os recuerdo que ${cuando} tenemos clase de pádel:\n${lineas.join('\n')}\n\nSi no podéis venir, avisad por aquí. ¡Nos vemos en pista! 💪`;
-  return { dia, hoy, texto };
+/* Mensajes para el grupo de WhatsApp: plantillas editables con datos que se rellenan solos */
+const WA_DEF = { id: 'recordatorio', nombre: 'Recordatorio de entrenamiento', texto: '{saludo}, equipo! 🎾\n\nOs recuerdo que {cuando} tenemos entrenamiento de pádel de {hora} a {hora_fin}.\n\nSi alguien no puede venir, que avise por aquí.\n¡Nos vemos en pista! 💪' };
+const WA_VARS = [['saludo', 'Saludo según la hora'], ['cuando', 'hoy / esta tarde / mañana / el lunes 26'], ['dia', 'Fecha de la clase'], ['hora', 'Hora de inicio'], ['hora_fin', 'Hora de fin'], ['grupo', 'Nombre del grupo'], ['contenido', 'Título de la sesión'], ['escuela', 'Nombre de la escuela']];
+const WA_EMOJI = ['🎾', '💪', '⏰', '📍', '✅', '❗', '☀️', '🌧️', '🔥', '👏'];
+function waConf() {
+  const w = state.settings.wa || {}; const pl = (Array.isArray(w.plantillas) && w.plantillas.length ? w.plantillas : [WA_DEF]).map(x => ({ ...x }));
+  if (!pl.some(x => x.id === WA_DEF.id)) pl.unshift({ ...WA_DEF });
+  return { plantillas: pl, sel: pl.some(x => x.id === w.sel) ? w.sel : WA_DEF.id };
 }
+function waGrupoPorDefecto() {
+  const conDia = state.grupos.map(g => ({ g, d: proximas(g, 1)[0] })).filter(x => x.d).sort((x, y) => (x.d + x.g.hora).localeCompare(y.d + y.g.hora));
+  return conDia[0]?.g.id || state.grupos[0]?.id || null;
+}
+function waDatos(gid) {
+  const h = new Date().getHours(); const saludo = h < 14 ? '¡Buenos días' : h < 21 ? '¡Buenas tardes' : '¡Buenas noches';
+  const g = gid ? state.grupos.find(x => x.id === gid) : null; const d = g ? proximas(g, 1)[0] : null;
+  const man = iso(new Date(TODAY.getTime() + 86400000));
+  const cuando = !d ? '' : d === TODAY_ISO ? (g.hora >= '14:00' ? 'esta tarde' : 'hoy') : d === man ? 'mañana' : `el ${fmtDate(d, { weekday: 'long', day: 'numeric' })}`;
+  const c = g && d ? contenido(g.id, d) : null;
+  return { saludo, cuando, dia: d ? fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' }) : '', hora: g?.hora || '', hora_fin: g?.fin || '', grupo: g?.nombre || '', contenido: c && c.titulo !== 'Contenido por definir' ? c.titulo : '', escuela: state.settings.escuela || '' };
+}
+const waRellenar = (t, gid) => { const D = waDatos(gid); return t.replace(/\{(\w+)\}/g, (m, k) => (k in D ? D[k] : m)); };
 function vRecordatorioWA() {
-  const r = recordatorioWA(); if (!r) return '';
-  if (ui.waTxt?.dia !== r.dia) ui.waTxt = { dia: r.dia, texto: r.texto };
-  return `<section class="panel p-5 grid lg:grid-cols-5 gap-4 min-w-0">
-    <div class="lg:col-span-2 flex flex-col gap-2"><h2 class="text-2xl font-bold">Recordatorio para WhatsApp</h2>
-      <p class="text-[13.5px] text-muted">${r.hoy ? 'Hoy hay clase.' : `Próxima clase: ${fmtDate(r.dia, { weekday: 'long', day: 'numeric', month: 'long' })}.`} El texto se prepara con los grupos, el horario y el contenido de la sesión. Pulsa «Enviar por WhatsApp» y elige el grupo.</p>
-      <div class="flex flex-wrap gap-2 mt-1"><button class="btn btn-primary" data-wa>Enviar por WhatsApp</button><button class="btn btn-ghost" data-wa-copiar>Copiar texto</button></div></div>
-    <textarea id="waTxt" class="field lg:col-span-3 text-[14px] leading-relaxed" rows="6" aria-label="Texto del recordatorio">${esc(ui.waTxt.texto)}</textarea>
+  if (!state.grupos.length) return '';
+  const C = waConf();
+  if (!ui.wa) ui.wa = { sel: C.sel, gid: waGrupoPorDefecto() };
+  const pl = C.plantillas.find(x => x.id === ui.wa.sel) || C.plantillas[0];
+  if (ui.wa.edId !== pl.id) { ui.wa.edId = pl.id; ui.wa.texto = pl.texto; ui.wa.nombre = pl.nombre; }
+  const d = proximas(state.grupos.find(g => g.id === ui.wa.gid) || state.grupos[0], 1)[0];
+  const cambios = ui.wa.texto !== pl.texto || ui.wa.nombre !== pl.nombre;
+  return `<section class="panel p-5 flex flex-col gap-4 min-w-0">
+    <div class="flex flex-wrap items-baseline justify-between gap-2"><h2 class="text-2xl font-bold">Mensaje de WhatsApp</h2><span class="text-[13px] text-muted">${d ? `Próxima clase del grupo: ${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })}${d === TODAY_ISO ? ' (hoy)' : ''}` : ''}</span></div>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <div><label class="lbl" for="waSel">Mensaje</label><select id="waSel" class="field" data-wa-sel>${C.plantillas.map(x => `<option value="${x.id}" ${x.id === pl.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}<option value="__nueva">+ Nuevo mensaje…</option></select></div>
+      <div><label class="lbl" for="waGrp">Grupo</label><select id="waGrp" class="field" data-wa-grp>${state.grupos.map(g => `<option value="${g.id}" ${g.id === ui.wa.gid ? 'selected' : ''}>${esc(g.nombre)} · ${DAYS[g.dia].toLowerCase()} ${g.hora}</option>`).join('')}</select></div>
+      <div><label class="lbl" for="waNom">Nombre del mensaje</label><input id="waNom" class="field" value="${esc(ui.wa.nombre)}"></div>
+    </div>
+    <div class="grid lg:grid-cols-2 gap-4 min-w-0">
+      <div class="flex flex-col gap-2 min-w-0">
+        <label class="lbl !mb-0" for="waTxt">Texto (los datos entre llaves se rellenan solos)</label>
+        <textarea id="waTxt" class="field text-[14.5px] leading-relaxed font-mono" rows="9">${esc(ui.wa.texto)}</textarea>
+        <div class="flex flex-wrap gap-1.5" aria-label="Insertar dato">${WA_VARS.map(([k, t]) => `<button type="button" class="chip chip-neutral !py-1 !px-2.5 !text-[12.5px]" data-wa-ins="{${k}}" title="${t}">{${k}}</button>`).join('')}</div>
+        <div class="flex flex-wrap gap-1" aria-label="Insertar emoji">${WA_EMOJI.map(e => `<button type="button" class="w-9 h-9 rounded-lg hover:bg-surface2 text-lg" data-wa-ins="${e}" aria-label="Insertar ${e}">${e}</button>`).join('')}</div>
+      </div>
+      <div class="flex flex-col gap-2 min-w-0"><div class="lbl !mb-0">Así se verá</div>
+        <div class="rounded-2xl p-4 bg-[#E6DDD4] dark:bg-[#0B141A] flex-1"><div id="waPrev" class="max-w-[95%] ml-auto rounded-xl rounded-tr-sm bg-[#D9FDD3] dark:bg-[#005C4B] text-[#111B21] dark:text-[#E9EDEF] px-3 py-2 text-[14.5px] leading-relaxed whitespace-pre-wrap break-words shadow-sm">${esc(waRellenar(ui.wa.texto, ui.wa.gid))}</div></div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn btn-primary" data-wa>Enviar por WhatsApp</button><button class="btn btn-ghost" data-wa-copiar>Copiar texto</button>
+      <button class="btn btn-ghost" data-wa-guardar ${cambios ? '' : 'disabled style="opacity:.5"'} id="waGuardar">Guardar mensaje</button>
+      ${pl.id === WA_DEF.id ? (pl.texto !== WA_DEF.texto ? '<button class="btn btn-ghost" data-wa-reset>Volver al texto original</button>' : '') : '<button class="btn btn-ghost text-bad" data-wa-borrar>Eliminar este mensaje</button>'}
+    </div>
   </section>`;
 }
+function waGuardarConf(C, okMsg) { state.settings.wa = C; return tras(() => P.ajustesWA(C), okMsg); }
 function vPanel() {
   const activos = reales().length;
   const mes = TODAY_ISO.slice(0, 7);
@@ -1061,7 +1098,7 @@ function onHR(i, hr) {
     s.rec.push(hr);
   }
   const cutoff = now - 180000; while (s.samples.length && s.samples[0].t < cutoff) s.samples.shift();
-  if (ui.view === 'vivo' || ui.view === 'grabar') { updateSlot(i); drawLive(); }
+  if (ui.view === 'vivo') { updateSlot(i); drawLive(); }
   refreshLive(i);
 }
 function refreshLive(i) { updateFull(i); updateDock(); }
@@ -1107,19 +1144,17 @@ function toggleLive() {
     live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
     mantenerPantalla(); rerenderIf('vivo'); updateFull(); return;
   }
-  const delAlumno = ui.role === 'alumno';
   live.running = false; clearInterval(live.timer);
   const nuevos = [];
   live.slots.forEach(s => {
     if (!s.alumno || !s.rec || s.rec.length < 10) return;
     const a = alumno(s.alumno);
-    const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec }, tipo: delAlumno ? 'partido' : 'entrenamiento' };
+    const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec }, tipo: 'entrenamiento' };
     state.sesionesFC.push(r); nuevos.push(r);
   });
   updateFull(); updateDock();
   if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
   const n = nuevos.length;
-  if (delAlumno) { ui.fcTipo = 'partido'; ui.view = 'informe'; return tras(async () => { for (const r of nuevos) await P.fc(r); }, `Partido guardado: ${nuevos[0].duracion} min, FC media ${nuevos[0].fcMed} ppm`); }
   const correos = ui.resumenEmail === false ? [] : nuevos.map(r => { const a = alumno(r.alumno); return a && a.email && a.salud !== false ? queueEmail(a, 'sesion', { registro: r }) : null; }).filter(Boolean);
   tras(async () => { for (const r of nuevos) await P.fc(r); for (const m of correos) await P.email(m); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}${correos.length ? ` · ${correos.length} ${correos.length === 1 ? 'resumen' : 'resúmenes'} por email` : ''}`);
 }
@@ -1166,7 +1201,7 @@ function updateFull(i) {
 /* Barra flotante cuando la sesión sigue en otra pestaña */
 function updateDock() {
   const d = document.getElementById('hrdock'); if (!d) return;
-  const vis = conectados().length && ui.view !== 'vivo' && ui.view !== 'grabar' && document.getElementById('hrfull').hidden && (!LIVE || ui.auth === 'ok');
+  const vis = conectados().length && ui.view !== 'vivo' && document.getElementById('hrfull').hidden && ui.role === 'admin' && (!LIVE || ui.auth === 'ok');
   if (!vis) { d.hidden = true; return; }
   d.hidden = false;
   d.innerHTML = `<button class="dock-in" data-hrfull aria-label="Abrir pulsómetros en pantalla completa">
@@ -1183,7 +1218,7 @@ const GOLPE_N = Object.fromEntries(GOLPES);
 const parDe = j => (j < 2 ? 0 : 1);
 const FORMATOS = { '3sets': 'Mejor de 3 sets', '1set': 'Un set', libre: 'Juegos libres (clase)', tactico: 'Juego táctico' };
 const esTactico = m => m.formato === 'tactico';
-const tacDe = m => ({ meta: m.tactico?.meta || 7, rondas: m.tactico?.rondas || 2, dif2: !!m.tactico?.dif2 });
+const tacDe = m => ({ meta: m.tactico?.meta || 15, rondas: m.tactico?.rondas || 2, dif2: !!m.tactico?.dif2 });
 /* Juego táctico: cada ronda saca siempre la misma pareja hasta que alguien llega a la meta;
    en la siguiente ronda saca la otra. Gana quien tenga mejor balance de puntos al final. */
 function motorTactico(m) {
@@ -1328,7 +1363,7 @@ function statsDe(m, set = null) {
     const sg = J.filter(x => x.sj === j), sgW = sg.filter(x => x.winner === k).length;
     const oroR = P.filter(p => p.oro && p.ev.or === j), oroRW = oroR.filter(p => p.par === k).length;
     return { j, k, enf, win, ge, gw, gEnf: topGolpe(ge), gWin: topGolpe(gw),
-      srvN: srv.length, srvW, pctSrv: srv.length ? srvW / srv.length : null, sgN: sg.length, sgW, oroRN: oroR.length, oroRW, pctOroR: oroR.length ? oroRW / oroR.length : null, pctEnf: pair[k].lost ? enf / pair[k].lost : null, pctWin: pair[k].won ? win / pair[k].won : null, pctOro: pair[k].pctOro, pctBreak: pair[k].pctBreak, ppj: pair[k].ppj, indice: pair[k].indice,
+      srvN: srv.length, srvW, pctSrv: srv.length ? srvW / srv.length : null, sgN: sg.length, sgW, oroRN: oroR.length, oroRW, oroRL: oroR.length - oroRW, pctOroR: oroR.length ? oroRW / oroR.length : null, pctEnf: pair[k].lost ? enf / pair[k].lost : null, pctWin: pair[k].won ? win / pair[k].won : null, pctOro: pair[k].pctOro, pctBreak: pair[k].pctBreak, ppj: pair[k].ppj, indice: pair[k].indice,
       dif: win - enf, pctPts: pair[k].won + pair[k].lost ? pair[k].won / (pair[k].won + pair[k].lost) : null, pctSvPar: pair[k].pctSv, pctRsPar: pair[k].pctRs, pctHold: pair[k].svJ ? pair[k].held / pair[k].svJ : null };
   });
   return { st, pair, jug };
@@ -1412,7 +1447,7 @@ function vMarcador(m) {
       ${st.fin ? (tac ? `<div class="sb-games" title="Balance">${st.balance[k] > 0 ? '+' : ''}${st.balance[k]}</div>` : '') : tac ? `<div class="sb-pts">${k ? p1 : p0}</div>` : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
     </div>`;
   const jugador = j => { const x = S.jug[j]; return `<div class="pcard ${st.sj === j ? 'ring-2 ring-ball' : ''}">
-      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="min-w-0"><div class="text-[11.5px] font-semibold text-muted">${LADO(j)}${st.sj === j ? ' · saca' : ''}</div><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div></div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
+      <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="min-w-0"><div class="text-[11.5px] font-semibold text-muted">${LADO(j)}${st.sj === j ? ' · saca' : ''}</div><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div></div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.oroRN ? `<br>Oro restando ${x.oroRW}/${x.oroRN}` : ''}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
       <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Error</button></div>
     </div>`; };
   const ult = st.puntos.slice(-6).reverse();
@@ -1435,16 +1470,15 @@ function vMarcador(m) {
     </section>
     ${vLectura(m)}
     <section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-2">Últimos puntos</h2>
-      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline flex-wrap"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span>${p.dbl ? '<span class="chip chip-warn">×2</span>' : ''}<span>${descPunto(m, p)}</span>${p.oro ? `<span class="chip chip-warn">Oro${p.ev.or != null && p.ev.or >= 0 ? ` · resta ${esc(corto(nombreJ(m, p.ev.or)))}` : ''}</span>` : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
+      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline flex-wrap"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span>${p.dbl ? '<span class="chip chip-warn">×2</span>' : ''}<span>${descPunto(m, p)}</span>${p.oro ? `<button class="chip chip-warn" data-oro-edit="${st.puntos.indexOf(p)}" title="Cambiar quién restó">Oro · ${p.ev.or != null && p.ev.or >= 0 ? `restó ${esc(corto(nombreJ(m, p.ev.or)))}` : 'indicar quién restó'} ✎</button>` : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
     </section>`;
 }
 function vPideSaque(m, st, pend) {
   const btn = (j, extra = '') => `<button class="gbtn !min-h-[64px]" data-sacador="${j}" ${extra}><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">Pareja ${parDe(j) + 1} · ${LADO(j)}</span></button>`;
   let titulo, texto, botones;
   if (pend.tipo === 'tactico') {
-    if (m.sorteo == null) return `<section class="panel p-5 flex flex-col sm:flex-row sm:items-center gap-4"><div class="flex-1"><h2 class="text-2xl font-bold">Sorteo de saque</h2><p class="text-muted text-[14px] mt-1">Lanza la moneda para decidir qué pareja saca la primera ronda.</p></div><div class="flex gap-2"><button class="btn btn-primary" data-moneda>Lanzar moneda</button><button class="btn btn-ghost" data-sorteo-manual>Ya está sorteado</button></div></section>`;
     const pb = k => `<button class="gbtn !min-h-[64px]" data-saque-par="${k}"><span class="font-display text-xl font-bold">${esc(nombrePar(m, k))}</span><span class="text-[12px]">Pareja ${k + 1} saca la ronda 1</span></button>`;
-    return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">${m.sorteo === -1 ? '¿Qué pareja saca primero?' : `Gana el sorteo la pareja ${m.sorteo + 1}`}</h2><p class="text-muted text-[14px] mt-1">Una pareja saca toda la primera ronda; en la siguiente saca la otra.</p></div><div class="grid grid-cols-2 gap-2">${pb(m.sorteo === 1 ? 1 : 0)}${pb(m.sorteo === 1 ? 0 : 1)}</div></section>`;
+    return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">¿Qué pareja saca primero?</h2><p class="text-muted text-[14px] mt-1">Una pareja saca toda la primera ronda; en la siguiente saca la otra.</p></div><div class="grid grid-cols-2 gap-2">${pb(0)}${pb(1)}</div></section>`;
   }
   if (pend.tipo === 'inicio') {
     if (m.sorteo == null) return `<section class="panel p-5 flex flex-col sm:flex-row sm:items-center gap-4"><div class="flex-1"><h2 class="text-2xl font-bold">Sorteo de saque</h2><p class="text-muted text-[14px] mt-1">Lanza la moneda para decidir qué pareja elige. Después marca quién saca el primer juego.</p></div><div class="flex gap-2"><button class="btn btn-primary" data-moneda>Lanzar moneda</button><button class="btn btn-ghost" data-sorteo-manual>Ya está sorteado</button></div></section>`;
@@ -1628,6 +1662,11 @@ function vInformePartido(m) {
     ${[...(tac ? [['Puntos en el marcador', p => p.marcador], ['Balance', p => (p.marcador - p.marcadorRival > 0 ? '+' : '') + (p.marcador - p.marcadorRival)]] : [['Juegos ganados', p => p.gw]]), ['Puntos jugados ganados', p => p.won], ...(S.pair[0].dblN + S.pair[1].dblN ? [['Puntos dobles ganados', p => p.dblN]] : []), ['Puntos ganados al saque', p => `${p.svW}/${p.svN} · ${f(p.pctSv, pct)}`], ['Puntos ganados al resto', p => `${p.rsW}/${p.rsN} · ${f(p.pctRs, pct)}`], ['Juegos de saque ganados', p => `${p.held}/${p.svJ}`], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Puntos por juego al saque', p => f(p.ppjS, v => dec(v, 2))], ['Puntos por juego al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
       .map(([l, fn]) => `<tr><td>${l}</td><td class="text-right tnum">${fn(S.pair[0])}</td><td class="text-right tnum">${fn(S.pair[1])}</td></tr>`).join('')}
     </tbody></table></section>
+  ${!tac && S.pair[0].oroJ ? (() => { const P = S.st.puntos.filter(p => p.oro && (sel == null || p.set === sel)); const sinInd = P.filter(p => p.ev.or == null || p.ev.or < 0).length; return `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Puntos de oro al resto</h2><p class="text-[13px] text-muted">Quién eligió restar cada punto de oro y cómo le fue.${sinInd ? ` ${sinInd} sin indicar: puedes completarlos desde «Últimos puntos» en el marcador.` : ''}</p></div>
+    <table class="data min-w-[560px]"><thead><tr><th>Jugador</th><th class="text-right">Restados</th><th class="text-right">Ganados</th><th class="text-right">Perdidos</th><th class="text-right">% ganados</th></tr></thead><tbody>
+    ${S.jug.map(x => `<tr><td class="font-semibold"><span class="chip ${x.k ? 'chip-p1' : 'chip-p0'} mr-1">P${x.k + 1}</span>${esc(nombreJ(m, x.j))}</td><td class="text-right tnum">${x.oroRN}</td><td class="text-right tnum text-ok">${x.oroRW}</td><td class="text-right tnum text-bad">${x.oroRL}</td><td class="text-right num text-lg font-bold">${f(x.pctOroR, pct)}</td></tr>`).join('')}
+    <tr><td class="text-muted">Total puntos de oro</td><td class="text-right tnum">${P.length}</td><td colspan="3" class="text-right text-[13px] text-muted">Pareja 1 ganó ${S.pair[0].oroG} · pareja 2 ganó ${S.pair[1].oroG}</td></tr>
+    </tbody></table></section>`; })() : ''}
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Golpes</h2><p class="text-[13px] text-muted">Errores no forzados / winners por golpe.</p></div>
     <table class="data min-w-[760px]"><thead><tr><th>Jugador</th>${GOLPES.map(([c, n]) => `<th class="text-center" title="${n}">${c}</th>`).join('')}</tr></thead><tbody>
     ${S.jug.map(x => `<tr><td class="font-semibold whitespace-nowrap">${esc(corto(nombreJ(m, x.j)))}</td>${GOLPES.map(([c]) => { const e = x.ge[c] || 0, w = x.gw[c] || 0; return `<td class="text-center tnum">${e || w ? `<span class="text-bad">${e}</span>/<span class="text-ok">${w}</span>` : '<span class="text-muted">·</span>'}</td>`; }).join('')}</tr>`).join('')}
@@ -1650,7 +1689,7 @@ function modalPartido(modo0) {
     ${alu ? '<input type="hidden" id="mModo" value="partido">' : `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="radiogroup" aria-label="Qué vas a marcar">${[['partido', 'Partido'], ['tactico', 'Juego táctico']].map(([k, l]) => `<label class="px-4 py-1.5 rounded-full cursor-pointer has-[:checked]:bg-court has-[:checked]:text-courtink"><input type="radio" name="mModoR" value="${k}" class="sr-only" ${modo === k ? 'checked' : ''}>${l}</label>`).join('')}</div><input type="hidden" id="mModo" value="${modo}">`}
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mF">Fecha</label><input id="mF" type="date" class="field" value="${TODAY_ISO}"></div>
       <div data-solo="partido" ${modo === 'tactico' ? 'hidden' : ''}><label class="lbl" for="mT">Tipo</label><select id="mT" class="field">${alu ? '<option value="partido">Partido</option>' : '<option value="clase">Durante la clase</option><option value="partido">Partido</option>'}</select></div>
-      <div data-solo="tactico" ${modo === 'tactico' ? '' : 'hidden'}><label class="lbl" for="tMeta">Puntos para ganar la ronda</label><input id="tMeta" type="number" min="3" max="30" class="field tnum" value="${state.settings.metaTactico || 7}"></div></div>
+      <div data-solo="tactico" ${modo === 'tactico' ? '' : 'hidden'}><label class="lbl" for="tMeta">Puntos para ganar la ronda</label><input id="tMeta" type="number" min="3" max="30" class="field tnum" value="15"></div></div>
     ${alu ? '<p class="text-[13px] text-muted -mt-1">Lo puede marcar quien esté viendo el partido con tu móvil. Las estadísticas se suman a las tuyas y a las de los compañeros de la escuela que elijas.</p>' : ''}
     ${[0, 1].map(k => `<fieldset class="rounded-2xl border border-line p-3 flex flex-col gap-2"><legend class="px-1 text-[13px] font-semibold ${k ? 'text-warn' : 'text-court'}">Pareja ${k + 1}</legend>
       ${[0, 1].map(n => { const j = k * 2 + n; return `<div class="text-[12px] font-semibold text-muted -mb-1">${n ? 'Revés' : 'Derecha (drive)'}</div><div class="grid grid-cols-[1fr_auto] gap-2"><select id="mJ${j}" class="field" aria-label="Pareja ${k + 1}, jugador de ${n ? 'revés' : 'derecha'}" data-jsel="${j}">${opts(sug[j])}</select><input id="mN${j}" class="field w-36" placeholder="Nombre invitado" aria-label="Nombre del invitado ${j + 1}" hidden></div>`; }).join('')}</fieldset>`).join('')}
@@ -1659,7 +1698,7 @@ function modalPartido(modo0) {
       <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="mO" class="w-4 h-4" checked> Punto de oro en 40-40</label>
     </div>
     <div data-solo="tactico" class="flex flex-col gap-3" ${modo === 'tactico' ? '' : 'hidden'}>
-      <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="tRon">Rondas</label><select id="tRon" class="field">${[2, 4, 6].map(n => `<option value="${n}" ${n === (state.settings.rondasTactico || 2) ? 'selected' : ''}>${n} (${n / 2} de saque y ${n / 2} de resto)</option>`).join('')}</select></div>
+      <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="tRon">Rondas</label><select id="tRon" class="field">${[2, 4, 6].map(n => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n} (${n / 2} de saque y ${n / 2} de resto)</option>`).join('')}</select></div>
         <label class="flex items-center gap-2 text-[14px] self-end pb-2"><input type="checkbox" id="tDif" class="w-4 h-4"> Ganar la ronda por 2 de diferencia</label></div>
       <p class="text-[13px] text-muted">En cada ronda saca siempre la misma pareja hasta que alguien llega a la meta; en la siguiente saca la otra. Gana quien tenga mejor balance de puntos (ganados − perdidos) al terminar todas las rondas.</p>
     </div>
@@ -1717,6 +1756,7 @@ function vPartidosAlumno() {
   </section>
   <section class="grid lg:grid-cols-2 gap-4">
     ${CAT_P.map(c => `<article class="panel p-5 min-w-0"><h2 class="text-2xl font-bold">${c.t}</h2><p class="text-[13px] text-muted mb-1">${c.d}</p>${c.m.map(x => vMetrica(x, yo, g, e)).join('')}
+      ${c.id === 'clave' ? (() => { let n = 0, w = 0; mios.forEach(m => { const j = m.jugadores.findIndex(x => x.id === a.id); const x = statsDe(m).jug[j]; n += x.oroRN; w += x.oroRW; }); return n ? `<div class="pt-2.5 text-[14px]">Puntos de oro que has restado tú: <strong>${n}</strong> · ganados <strong class="text-ok">${w}</strong> · perdidos <strong class="text-bad">${n - w}</strong></div>` : ''; })() : ''}
       ${c.id === 'ataque' || c.id === 'errores' ? (() => { const { filas } = perfilGolpes(a.id); const f = [...filas].sort((p, q) => c.id === 'ataque' ? q.w - p.w : q.e - p.e)[0]; return f && (c.id === 'ataque' ? f.w : f.e) ? `<div class="pt-2.5 text-[14px]">${c.id === 'ataque' ? 'Golpe con más winners' : 'Golpe con más errores'}: <strong>${f.nom.toLowerCase()}</strong> (${c.id === 'ataque' ? f.w : f.e})</div>` : ''; })() : ''}</article>`).join('')}
   </section>
   ${vPerfilGolpes(a.id, 'Tus golpes esta temporada')}
@@ -1942,7 +1982,6 @@ function conclusionesAlumno(a) {
   const fz = fortalezas(a);
   if (fz?.mejor) out.push({ tono: 'ok', t: `Tu punto fuerte: ${fz.mejor.l.toLowerCase()}`, d: `${fz.mejor.f(fz.mejor.v)} frente al ${fz.mejor.f(fz.mejor.gv)} de media en tu grupo.` });
   if (fz?.peor) out.push({ tono: 'warn', t: `A trabajar: ${fz.peor.l.toLowerCase()}`, d: `${fz.peor.f(fz.peor.v)} frente al ${fz.peor.f(fz.peor.gv)} de media en tu grupo.` });
-  if (!sesionesDe(a.id).some(x => x.tipo === 'partido')) out.push({ tono: 'neutral', t: '¿Juegas partidos fuera de clase?', d: 'Si tienes pulsómetro, registra tu pulso desde «Mi corazón» y lo sumaremos a tus datos.' });
   return out;
 }
 function vInicio() {
@@ -1997,20 +2036,17 @@ function interpretacion(a) {
 /* ---------- Mi corazón: evolución con series a elegir, carga y registros propios ---------- */
 const SERIES_FC = [['med', 'FC media', '--court'], ['max', 'FC máxima', '--heart'], ['carga', 'Carga (eTRIMP)', '--z4'], ['kcal', 'Calorías', '--z3'], ['dur', 'Minutos', '--muted'], ['grupo', 'Media del grupo', '--z2']];
 function vInforme() {
-  const a = alumno(ui.studentLogged); const tipo = ui.fcTipo || 'todo';
+  const a = alumno(ui.studentLogged); const tipo = 'todo';
   const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
   const totK = ss.reduce((t, s) => t + (s.kcal || 0), 0); const totMin = ss.reduce((t, s) => t + s.duracion, 0);
   const C = cargaDe(a.id); const ac = acwrTxt(C.acwr);
   ui.fcSeries = ui.fcSeries || new Set(['med', 'max', 'carga']);
-  const nPar = sesionesDe(a.id).filter(s => s.tipo === 'partido').length;
-  const mias = sesionesDe(a.id).filter(s => s.tipo === 'partido').reverse();
-  return pageHead('Mi corazón en pista', `Frecuencia cardíaca registrada con pulsómetro. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`, `<button class="btn btn-primary" data-go="grabar">${I.vivo.replace('<svg', '<svg width="18" height="18"')}Registrar mi pulso en un partido</button>`) + `
-  <div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist" aria-label="Qué registros ver">${[['todo', 'Todo'], ['entrenamiento', 'Clases'], ['partido', `Partidos${nPar ? ` (${nPar})` : ''}`]].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${tipo === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${tipo === k}" data-fctipo="${k}">${l}</button>`).join('')}</div>
+  return pageHead('Mi corazón en pista', `Frecuencia cardíaca registrada con pulsómetro. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`) + `
   ${ss.length ? `<section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Sesiones', ss.length, `${totMin} min registrados`)}${stat('Calorías', totK.toLocaleString('es-ES'), 'kcal acumuladas')}${stat('FC media', pct(ss.reduce((t, s) => t + s.fcMed / fcMaxTeo(a), 0) / ss.length), 'promedio')}${stat('Carga total', Math.round(ss.reduce((t, s) => t + etrimp(s.zonas), 0)).toLocaleString('es-ES'), 'eTRIMP acumulado')}</section>
   <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Tu evolución</h2><span class="text-[13px] text-muted">Elige qué datos ver</span></div>
     <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Datos del gráfico">${SERIES_FC.map(([k, l, c]) => `<button class="chip !py-1.5 !px-3 !text-[13px] border ${ui.fcSeries.has(k) ? 'bg-surface2 border-line font-semibold' : 'border-line text-muted'}" aria-pressed="${ui.fcSeries.has(k)}" data-fcserie="${k}"><span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background:rgb(var(${c}))${ui.fcSeries.has(k) ? '' : ';opacity:.35'}"></span>${l}</button>`).join('')}</div>
     <div class="h-72"><canvas id="chFCs" aria-label="Evolución de tu frecuencia cardíaca y tu carga"></canvas></div>
-    <p class="text-[12.5px] text-muted mt-2">FC en % de tu máxima (eje izquierdo). Carga, calorías y minutos, en el eje derecho. Los puntos con forma de rombo son partidos.</p></section>` : `<section class="panel p-6"><h2 class="text-2xl font-bold">${tipo === 'partido' ? 'Aún no has registrado partidos' : 'Todavía no hay registros'}</h2><p class="text-muted mt-1">${tipo === 'partido' ? 'Si juegas con pulsómetro, pulsa «Registrar mi pulso en un partido» y tus datos aparecerán aquí.' : 'En cuanto llevemos pulsómetro en clase aparecerán aquí tus datos.'}</p></section>`}
+    <p class="text-[12.5px] text-muted mt-2">FC en % de tu máxima (eje izquierdo). Carga, calorías y minutos, en el eje derecho.</p></section>` : `<section class="panel p-6"><h2 class="text-2xl font-bold">Todavía no hay registros</h2><p class="text-muted mt-1">En cuanto llevemos pulsómetro en clase aparecerán aquí tus datos.</p></section>`}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-1">Carga de entrenamiento</h2><p class="text-[13px] text-muted mb-2">Suma semanal del eTRIMP de Edwards (minutos en cada zona × número de la zona). Clases y partidos, últimas 8 semanas.</p><div class="h-60"><canvas id="chCarga" aria-label="Carga semanal"></canvas></div></div>
     <div class="panel p-5 lg:col-span-2 min-w-0 flex flex-col gap-3">
@@ -2029,14 +2065,10 @@ function vInforme() {
         ? `<span class="chip chip-ok self-start">Revisado por tu entrenador</span>${inf.texto.split(/\n{2,}/).map(p => `<p class="text-[14.5px] leading-relaxed">${esc(p)}</p>`).join('')}`
         : `<span class="chip chip-neutral self-start">Resumen automático</span>${interpretacion(a).map(p => `<p class="text-[14.5px] leading-relaxed">${p}</p>`).join('')}`; })()}
     </div>
-  </section>` : ''}
-  ${mias.length ? `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Tus registros en partidos</h2><p class="text-[13px] text-muted">Los has grabado tú. Puedes borrar los que estén mal.</p></div>
-    <table class="data min-w-[600px]"><thead><tr><th>Fecha</th><th class="text-right">Minutos</th><th class="text-right">FC media</th><th class="text-right">FC máx.</th><th class="text-right">Carga</th><th class="text-right">kcal</th><th></th></tr></thead><tbody>
-    ${mias.map(s => `<tr><td>${fmtDate(s.fecha)}</td><td class="text-right tnum">${s.duracion}</td><td class="text-right tnum">${s.fcMed} ppm · ${pct(s.fcMed / fcMaxTeo(a))}</td><td class="text-right tnum">${s.fcMax}</td><td class="text-right tnum">${etrimp(s.zonas)}</td><td class="text-right tnum">${s.kcal}</td><td class="text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-[12.5px] text-bad" data-fcborrar="${s.id}">Borrar</button></td></tr>`).join('')}
-    </tbody></table></section>` : ''}`;
+  </section>` : ''}`;
 }
 function afterInforme() {
-  const a = alumno(ui.studentLogged); const tipo = ui.fcTipo || 'todo';
+  const a = alumno(ui.studentLogged); const tipo = 'todo';
   const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
   const max = fcMaxTeo(a); const S = ui.fcSeries || new Set(); const F = mediasPor(filasFC(), METRICAS_FC); const gm = F.grupo(a.grupo)?.med;
   const forma = ss.map(s => s.tipo === 'partido' ? 'rectRot' : 'circle');
@@ -2058,32 +2090,6 @@ function afterInforme() {
     { label: 'Partidos', data: C.semanas.map(w => Math.round(C.porSem[w].par)), backgroundColor: cv('--z4'), stack: 'c', maxBarThickness: 38, borderRadius: 4 }
   ] }, options: baseOpts({ stacked: true, y: { title: 'eTRIMP' } }) });
   if (ss.length) mkChart('chZ', { type: 'bar', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: [0, 1, 2, 3, 4].map(z => ({ label: `Zona ${z + 1}`, data: ss.map(s => s.zonas[z]), backgroundColor: cv(`--z${z + 1}`), stack: 'z', maxBarThickness: 38 })) }, options: baseOpts({ stacked: true, y: { title: 'minutos' } }) });
-}
-
-/* ---------- Grabar el pulso en un partido (lo hace el propio alumno) ---------- */
-function vGrabar() {
-  const a = alumno(ui.studentLogged); const s = live.slots[0];
-  if (!live.running && !(s.device || s.sim)) { live.slots = [live.slots[0]]; }
-  s.alumno = a.id;
-  const conectado = !!(s.device || s.sim);
-  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="informe">${I.back}Mi corazón</button></div>` +
-  pageHead('Pulso en partido', 'Graba tu frecuencia cardíaca mientras juegas. Se guardará como partido, aparte de las clases.', conectado ? `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Terminar y guardar' : 'Empezar a grabar'}</button>` : '') + `
-  ${BT_OK ? '' : `<section class="panel p-5 flex flex-col gap-2"><h2 class="text-2xl font-bold">Este navegador no puede usar el pulsómetro</h2>
-    <ul class="list-disc pl-5 text-[14.5px] flex flex-col gap-1"><li><strong>Android:</strong> abre la app en Google Chrome.</li><li><strong>iPhone o iPad:</strong> Safari no permite conectar pulsómetros, tampoco si añades la app a la pantalla de inicio. Instala el navegador gratuito <strong>Bluefy</strong> y abre la app desde él.</li><li><strong>Ordenador:</strong> Chrome o Edge.</li></ul>
-    ${LIVE ? '' : '<button class="btn btn-ghost self-start" data-sim="0">Probar con el simulador</button>'}</section>`}
-  <section class="grid lg:grid-cols-5 gap-4">
-    <div class="lg:col-span-3 min-w-0">${slotCard(s, '')}</div>
-    <div class="lg:col-span-2 panel p-5 flex flex-col gap-2 text-[14px]"><h2 class="text-xl font-bold">Antes de empezar</h2>
-      <ol class="list-decimal pl-5 flex flex-col gap-1.5">
-        <li>Ponte la banda (humedece los electrodos) o activa en tu reloj la opción de <em>emitir frecuencia cardíaca</em> (en Garmin, «Transmitir FC»; en Polar, «Compartir FC con otros dispositivos»). El Apple Watch no la emite.</li>
-        <li>Cierra otras apps que usen el pulsómetro y pulsa «Conectar pulsómetro».</li>
-        <li>Pulsa «Empezar a grabar» al empezar el partido y «Terminar y guardar» al acabar.</li>
-        <li>Deja la pantalla encendida y la app abierta: si bloqueas el móvil, el navegador deja de recibir el pulso.</li>
-      </ol>
-      <div class="num text-4xl font-bold mt-2" id="liveClock">${clockTxt()}</div><div class="text-[13px] text-muted -mt-1">${live.running ? 'Grabando' : 'Sin grabar'}</div>
-    </div>
-  </section>
-  <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Últimos 3 minutos</h2><canvas id="liveCanvas" class="w-full" height="180" aria-label="Frecuencia cardíaca en directo"></canvas></section>`;
 }
 
 /* ---------- Avisos: emails recibidos y actividad ---------- */
@@ -2271,7 +2277,7 @@ async function loadAll(silencioso) {
       q('ajustes_clases').order('fecha'), ui.isAdmin ? q('gastos').order('fecha') : vacio
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
-    if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico }; SEASON_START = aj.inicio_temporada; }
+    if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico, wa: aj.whatsapp || null }; SEASON_START = aj.inicio_temporada; }
     if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre, suelta: t.precio_suelta == null ? null : +t.precio_suelta }));
     s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
     s.bajas = Object.fromEntries(al.filter(a => !a.activo).map(a => [a.id, a.nombre]));
@@ -2297,7 +2303,7 @@ async function loadAll(silencioso) {
       try { state.companeros = (await need(sb.rpc('companeros'))).map(x => ({ id: x.id, nombre: x.nombre, grupo: x.grupo_id })); } catch (e) { state.companeros = []; }
       const num = v => v == null ? null : +v;
       state.statsAnon = (comp?.partidos || []).map(x => ({ modo: x.modo || 'partido', alumno: x.k, grupo: x.grupo, partido: x.p, fecha: x.fecha, enf: x.enf, win: x.win, dif: x.win - x.enf, pctEnf: num(x.pct_enf), pctWin: num(x.pct_win), pctOro: num(x.pct_oro), pctBreak: num(x.pct_break), ppj: num(x.ppj), indice: num(x.indice), ganado: x.ganado, gan: x.ganado == null ? null : x.ganado ? 1 : 0, pctPts: num(x.pct_puntos), pctSrv: num(x.pct_saque), pctSvPar: num(x.pct_saque_pareja), pctRsPar: num(x.pct_resto_pareja), pctHold: num(x.pct_juegos_saque), pctOroR: num(x.pct_oro_resto) }));
-      ui.role = 'alumno'; ui.studentLogged = me.id; if (!ALUMNO_NAV.some(([k]) => k === ui.view) && ui.view !== 'grabar' && !ui.view.startsWith('partido:')) ui.view = 'inicio';
+      ui.role = 'alumno'; ui.studentLogged = me.id; if (!ALUMNO_NAV.some(([k]) => k === ui.view) && !ui.view.startsWith('partido:')) ui.view = 'inicio';
     } else if (!silencioso) { ui.role = 'admin'; ui.view = 'panel'; }
     ui.auth = 'ok';
   } catch (err) {
@@ -2355,6 +2361,7 @@ const P = {
     await need(sb.from('stats_jugador').delete().eq('partido_id', m.id));
     if (filas.length) await need(sb.from('stats_jugador').insert(filas));
   },
+  async ajustesWA(w) { await need(sb.from('ajustes').update({ whatsapp: w }).eq('id', 1)); },
   async ajustes(s) { await need(sb.from('ajustes').update({ escuela: s.escuela, remitente: s.remitente, umbral_aviso: s.umbral }).eq('id', 1)); },
   async enviar(manual) {
     const pend = state.outbox.filter(m => m.estado === 'En cola').length;
@@ -2414,25 +2421,26 @@ function render() {
     else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
-    else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); }, grabar: () => { html = vGrabar(); after = drawLive; } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
+    else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
   }
   app.innerHTML = shell(html);
   if (after) after();
   updateDock();
 }
-function rerenderIf(v) { if (ui.view === v || (v === 'vivo' && ui.view === 'grabar')) render(); }
+function rerenderIf(v) { if (ui.view === v) render(); }
 function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
   if (e.target.closest('[data-nonav]') && !e.target.matches('input')) { const cb = e.target.closest('[data-nonav]').querySelector('input[data-sel]'); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } return; }
   if (e.target.matches('input[data-sel], input[data-selall]')) return;
-  if (e.target.closest('[data-wa]')) { const t = $('#waTxt')?.value || ''; window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener'); return; }
-  if (e.target.closest('[data-wa-copiar]')) { const t = $('#waTxt')?.value || ''; (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => toast('Texto copiado'), () => { $('#waTxt').select(); toast('Selecciona y copia el texto'); }); return; }
-  const fct = e.target.closest('[data-fctipo]'); if (fct) { ui.fcTipo = fct.dataset.fctipo; return render(); }
+  if (e.target.closest('[data-wa]')) { const t = waRellenar($('#waTxt')?.value || '', ui.wa?.gid); window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener'); return; }
+  if (e.target.closest('[data-wa-copiar]')) { const t = waRellenar($('#waTxt')?.value || '', ui.wa?.gid); (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => toast('Texto copiado'), () => toast('No se pudo copiar: copia el texto de la vista previa')); return; }
+  const wi = e.target.closest('[data-wa-ins]'); if (wi) { const ta = $('#waTxt'); const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a; ta.value = ta.value.slice(0, a) + wi.dataset.waIns + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + wi.dataset.waIns.length; ta.dispatchEvent(new Event('input', { bubbles: true })); return; }
+  if (e.target.closest('[data-wa-guardar]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === ui.wa.edId); if (!pl) return; pl.texto = ui.wa.texto; pl.nombre = (ui.wa.nombre || '').trim() || 'Mensaje'; C.sel = pl.id; ui.wa.nombre = pl.nombre; return waGuardarConf(C, 'Mensaje guardado'); }
+  if (e.target.closest('[data-wa-reset]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === WA_DEF.id); Object.assign(pl, WA_DEF); ui.wa.edId = null; return waGuardarConf(C, 'Texto original restaurado'); }
+  if (e.target.closest('[data-wa-borrar]')) { const C = waConf(); C.plantillas = C.plantillas.filter(x => x.id !== ui.wa.edId); C.sel = WA_DEF.id; ui.wa.sel = WA_DEF.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje eliminado'); }
   const fcs = e.target.closest('[data-fcserie]'); if (fcs) { const k = fcs.dataset.fcserie; ui.fcSeries = ui.fcSeries || new Set(); ui.fcSeries.has(k) ? ui.fcSeries.delete(k) : ui.fcSeries.add(k); return render(); }
-  const fcb = e.target.closest('[data-fcborrar]'); if (fcb) return openModal(`<div class="flex flex-col gap-3">${modalHead('Borrar registro')}<p class="text-[15px]">Se borrará este registro de pulso. No se puede deshacer.</p><div class="flex gap-2"><button class="btn btn-primary !bg-bad !border-bad" data-fcborrar-ok="${fcb.dataset.fcborrar}">Borrar</button><button class="btn btn-ghost" data-close>Cancelar</button></div></div>`);
-  const fcbo = e.target.closest('[data-fcborrar-ok]'); if (fcbo) { const id = fcbo.dataset.fcborrarOk; state.sesionesFC = state.sesionesFC.filter(x => x.id !== id); closeModal(); return tras(() => P.borrarFC(id), 'Registro borrado'); }
   const avc = e.target.closest('[data-avcat]'); if (avc) { ui.avCat = avc.dataset.avcat; return render(); }
   const ve = e.target.closest('[data-veremail]'); if (ve) return verEmail(ve.dataset.veremail);
   const pm = e.target.closest('[data-amodo]'); if (pm) { ui.amodo = pm.dataset.amodo; return render(); }
@@ -2467,7 +2475,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -2510,6 +2518,9 @@ document.addEventListener('click', async e => {
     if (m && d.sacador !== undefined) { const st = motor(m); const set = st.sets.length; const j = +d.sacador; m.sacadores = m.sacadores || {}; const sc = m.sacadores[set]; if (!sc || sc[0] == null) m.sacadores[set] = [j, null]; else sc[1] = j; guardarPartido(m); return render(); }
     if (m && d.saqueSigue !== undefined) { const st = motor(m); const set = st.sets.length; const prev = ordenSaque(m, set - 1); const n = st.sets[set - 1][0] + st.sets[set - 1][1]; m.sacadores[set] = [prev[n % 4], prev[(n + 1) % 4]]; guardarPartido(m); return render(); }
     if (m && d.oroResta !== undefined) { m.oroSel = +d.oroResta; return render(); }
+    if (m && d.oroEdit !== undefined) { const st = motor(m); const p = st.puntos[+d.oroEdit]; if (!p) return; const r = 1 - p.server;
+      return openModal(`<div class="flex flex-col gap-3">${modalHead('¿Quién restó el punto de oro?')}<p class="text-[14px] text-muted -mt-1">Lo ganó la pareja ${p.par + 1}. Elige quién de la pareja ${r + 1} restó.</p><div class="grid grid-cols-3 gap-2">${[r * 2, r * 2 + 1].map(j => `<button class="gbtn !min-h-[64px] ${p.ev.or === j ? 'ring-2 ring-court' : ''}" data-oro-fix="${d.oroEdit}:${j}"><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">${LADO(j)}</span></button>`).join('')}<button class="gbtn !min-h-[64px]" data-oro-fix="${d.oroEdit}:-1"><span class="font-display text-xl font-bold">Sin indicar</span></button></div></div>`); }
+    if (m && d.oroFix) { const [i, j] = d.oroFix.split(':').map(Number); const p = motor(m).puntos[i]; if (p) { if (j >= 0) p.ev.or = j; else delete p.ev.or; } closeModal(); guardarPartido(m, true); return render(); }
     if (m && d.plado !== undefined) { m.ladoInv = !m.ladoInv; guardarPartido(m); return render(); }
     if (m && d.pia !== undefined) return pedirLecturaIA(m, t);
     if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? parDe(j) : 1 - parDe(j) }); }
@@ -2570,6 +2581,11 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target.id === 'waGrp') { ui.wa.gid = e.target.value; const pv = $('#waPrev'); if (pv) pv.textContent = waRellenar(ui.wa.texto, ui.wa.gid); return; }
+  if (e.target.id === 'waSel') {
+    if (e.target.value === '__nueva') { const C = waConf(); const n = { id: 'm' + Date.now(), nombre: 'Mensaje nuevo', texto: '{saludo}, equipo! 🎾\n\n' }; C.plantillas.push(n); C.sel = n.id; ui.wa.sel = n.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje nuevo creado: escríbelo y guárdalo'); }
+    ui.wa.sel = e.target.value; ui.wa.edId = null; const C = waConf(); C.sel = ui.wa.sel; state.settings.wa = C; return render();
+  }
   if (e.target.dataset.sel !== undefined) { ui.sel = ui.sel || new Set(); e.target.checked ? ui.sel.add(e.target.dataset.sel) : ui.sel.delete(e.target.dataset.sel); return render(); }
   if (e.target.dataset.selall !== undefined) { const list = reales().filter(a => ui.filtroGrupo === 'todos' || a.grupo === ui.filtroGrupo); ui.sel = e.target.checked ? new Set(list.map(a => a.id)) : new Set(); return render(); }
   if (e.target.dataset.resemail !== undefined) { ui.resumenEmail = e.target.checked; return; }
@@ -2684,7 +2700,7 @@ async function onSubmit(f) {
     const g = ids.length && alumno(ids[0]) ? alumno(ids[0]).grupo : (alu ? alumno(ui.studentLogged).grupo : null);
     const tac = $('#mModo').value === 'tactico';
     const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: tac ? 'clase' : $('#mT').value, grupo: g, jugadores, formato: tac ? 'tactico' : $('#mFo').value, oro: tac ? false : $('#mO').checked, saque: 0, sacadores: tac ? null : {}, sorteo: null, ladoInv: false, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
-    if (tac) { m.tactico = { meta: Math.max(3, Math.min(30, +$('#tMeta').value || 7)), rondas: +$('#tRon').value || 2, dif2: $('#tDif').checked }; state.settings.metaTactico = m.tactico.meta; state.settings.rondasTactico = m.tactico.rondas; }
+    if (tac) { m.tactico = { meta: Math.max(3, Math.min(30, +$('#tMeta').value || 7)), rondas: +$('#tRon').value || 2, dif2: $('#tDif').checked }; }
     if (alu) { m.porAlumno = ui.studentLogged; m.creadoPor = ui.uid || null; }
     state.partidos = state.partidos || []; state.partidos.push(m);
     closeModal(); guardarPartido(m, true); return go('partido:' + m.id);
@@ -2694,7 +2710,11 @@ async function onSubmit(f) {
     return tras(() => P.ajustes(state.settings), 'Reglas guardadas');
   }
 }
-document.addEventListener('input', e => { if (e.target.id === 'waTxt' && ui.waTxt) ui.waTxt.texto = e.target.value; });
+document.addEventListener('input', e => {
+  if (!ui.wa || !['waTxt', 'waNom'].includes(e.target.id)) return;
+  if (e.target.id === 'waTxt') { ui.wa.texto = e.target.value; const pv = $('#waPrev'); if (pv) pv.textContent = waRellenar(ui.wa.texto, ui.wa.gid); } else ui.wa.nombre = e.target.value;
+  const C = waConf(); const pl = C.plantillas.find(x => x.id === ui.wa.edId); const b = $('#waGuardar'); if (b && pl) { const on = ui.wa.texto !== pl.texto || ui.wa.nombre !== pl.nombre; b.disabled = !on; b.style.opacity = on ? '' : '.5'; }
+});
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('resize', () => { if (ui.view === 'vivo') drawLive(); });

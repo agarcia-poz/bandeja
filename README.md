@@ -25,13 +25,12 @@ La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMI
 ## Portal del alumno
 
 - **Inicio:** bono, asistencia, carga de la semana, partidos ganados y conclusiones automáticas (bono, asistencia, intensidad, carga, punto fuerte y aspecto a mejorar frente al grupo).
-- **Mi corazón:** gráfico con los datos a elegir (FC media, FC máxima, carga, calorías, minutos, media del grupo), filtro clases/partidos, carga semanal de las últimas 8 semanas y relación carga semanal / media del mes (Gabbett, 2016).
-- **Pulso en partido:** el alumno conecta su pulsómetro y graba un partido. Se guarda como «partido», aparte de las clases, y no entra en las comparativas de clase.
+- **Mi corazón:** gráfico con los datos a elegir (FC media, FC máxima, carga, calorías, minutos, media del grupo), carga semanal de las últimas 8 semanas y relación carga semanal / media del mes (Gabbett, 2016).
 - **Avisos:** emails recibidos y todo lo registrado (pagos, clases, pulso y partidos).
 
 ## Recordatorio de WhatsApp
 
-En el panel aparece el texto del recordatorio de la próxima clase (grupos, horario y contenido). «Enviar por WhatsApp» abre WhatsApp con el texto para elegir el grupo. WhatsApp no ofrece una forma gratuita de enviar mensajes automáticos a grupos: su API oficial para grupos es de pago, requiere cuenta de empresa verificada y admite como mucho 8 participantes.
+En el panel hay un editor de mensajes de WhatsApp. El mensaje predeterminado saluda según la hora y recuerda la hora del entrenamiento del grupo elegido. Se pueden crear y guardar otros mensajes; los datos entre llaves ({saludo}, {cuando}, {hora}, {hora_fin}, {grupo}, {contenido}…) se rellenan solos. «Enviar por WhatsApp» abre WhatsApp con el texto para elegir el grupo. WhatsApp no ofrece una forma gratuita de enviar mensajes automáticos a grupos: su API oficial para grupos es de pago, requiere cuenta de empresa verificada y admite como mucho 8 participantes.
 
 ## Pulsómetros
 
@@ -67,14 +66,14 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 
 ## Marcador: partidos y juegos tácticos (hoja ANÁLISIS ESTADÍSTICO)
 
-- **Juego táctico:** se elige a cuántos puntos se gana cada ronda (y si hay que ganar por 2). En cada ronda saca siempre la misma pareja; en la siguiente, la otra (2, 4 o 6 rondas). Gana la pareja con mejor balance de puntos (ganados − perdidos) al terminar todas las rondas; si el balance es igual, empate. Sus estadísticas se guardan aparte de las de los partidos.
+- **Juego táctico:** por defecto, 2 rondas a 15 puntos (se puede cambiar, y elegir si hay que ganar por 2). No hay sorteo: se elige qué pareja saca la primera ronda. En cada ronda saca siempre la misma pareja; en la siguiente, la otra (2, 4 o 6 rondas). Gana la pareja con mejor balance de puntos (ganados − perdidos) al terminar todas las rondas; si el balance es igual, empate. Sus estadísticas se guardan aparte de las de los partidos.
 - **Punto doble:** antes de anotar el punto se pulsa «×2». En partido cuenta como dos puntos; si la pareja que lo gana iba 30-40, pasa a ventaja/40, y si pierde esa ventaja se vuelve a 40-40 con punto de oro. En juego táctico suma 2 al marcador.
 - El alumnado también puede registrar partidos desde su portal (por ejemplo, un familiar con su móvil). Aparecen en el marcador con «Registrado por».
 
 - Cada punto se registra como winner o error no forzado de un jugador con su golpe (S, D, R, PD, PR, CP, VD, VR, B, RMP, RML), o como punto sin winner ni error.
 - El marcador lleva sets, juegos, tie-break a 6-6, punto de oro o ventajas, saque y bolas de break.
 - Sorteo con moneda, primer sacador y sacador de la otra pareja; el orden queda fijo en el set y se puede cambiar al empezar cada set. Las parejas cambian de lado en pantalla en cada set.
-- En cada punto de oro se indica quién resta, para saber el % de oros ganados por cada jugador al resto.
+- En cada punto de oro la app pregunta qué jugador de la pareja que resta ha elegido restar. Si no se indicó, se puede completar o corregir después tocando el punto en «Últimos puntos». El informe del partido tiene una tabla «Puntos de oro al resto» (restados, ganados, perdidos y % por jugador) y el alumno ve sus totales en «Momentos clave».
 - Estadística de saque y resto por pareja y por jugador.
 - % ENF = errores del jugador / puntos perdidos por su pareja. % WIN = winners del jugador / puntos ganados por su pareja.
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
