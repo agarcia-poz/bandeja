@@ -294,6 +294,7 @@ const CONCEPTOS = [
   { id: 'suelta', nombre: 'Clase suelta', clases: 1 },
   { id: 'material', nombre: 'Material (sin clases)', clases: 0 }
 ];
+const conceptoTxt = p => { const c = CONCEPTOS.find(x => x.id === p.concepto) || { nombre: p.concepto, clases: 0 }; const n = c.clases && p.clases && p.clases !== c.clases ? p.clases / c.clases : 1; return n > 1 && Number.isInteger(n) ? (c.id === 'suelta' ? `${n} clases sueltas` : `${n} × ${c.nombre}`) : c.nombre; };
 const precioDe = (tarifa, concepto) => {
   const t = TARIFAS.find(x => x.id === tarifa) || TARIFAS[0];
   if (concepto === 'mes') return t.mes;
@@ -510,7 +511,7 @@ function queueEmail(a, tipo, extra = {}) {
   let subject, body;
   if (tipo === 'confirmacion') {
     subject = varia(a.id + extra.fecha, [`¡Gracias por tu pago, ${nombre}!`, `Pago recibido: ¡gracias, ${nombre}!`, `${nombre}, gracias por confiar en nosotros`]);
-    body = `Hola ${nombre}:\n\n${varia(a.id + extra.fecha + 'g', ['¡Muchas gracias por tu pago y por seguir entrenando con nosotros!', 'Gracias por tu pago: nos encanta seguir compartiendo pista contigo.', 'Te damos las gracias por tu pago y por tu confianza en la escuela.'])}\n\nHemos registrado tu pago de ${fmtEur(extra.importe)} (${extra.concepto}) del ${fmtDate(extra.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}, por ${extra.metodo.toLowerCase()}.\n\nTe quedan ${saldo(a)} clases disponibles.\nTu próxima clase es el ${nextClassOf(a)}.\n\nPuedes consultar tu historial, tus datos de frecuencia cardíaca y los contenidos de las próximas sesiones en ${APP_URL}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
+    body = `Hola ${nombre}:\n\n${varia(a.id + extra.fecha + 'g', ['¡Muchas gracias por tu pago y por seguir entrenando con nosotros!', 'Gracias por tu pago: nos encanta seguir compartiendo pista contigo.', 'Te damos las gracias por tu pago y por tu confianza en la escuela.'])}\n\nHemos registrado tu pago de ${fmtEur(extra.importe)} (${extra.concepto}) del ${fmtDate(extra.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}, por ${extra.metodo.toLowerCase()}.\n\n${saldo(a) === 1 ? 'Te queda 1 clase disponible.' : saldo(a) < 0 ? `Tienes ${-saldo(a)} ${saldo(a) === -1 ? 'clase pendiente' : 'clases pendientes'} de pago.` : `Te quedan ${saldo(a)} clases disponibles.`}\nTu próxima clase es el ${nextClassOf(a)}.\n\nPuedes consultar tu historial, tus datos de frecuencia cardíaca y los contenidos de las próximas sesiones en ${APP_URL}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
   } else if (tipo === 'bienvenida') {
     subject = `Bienvenido a ${state.settings.escuela}`;
     body = `Hola ${nombre}:\n\n¡Bienvenido a la escuela! Ya tienes plaza en el grupo ${grupo(a.grupo).nombre}, los ${diaPl(grupo(a.grupo).dia).toLowerCase()} de ${grupo(a.grupo).hora} a ${grupo(a.grupo).fin}.\n\nEn nuestra app puedes ver tu bono, los contenidos de las próximas clases y tu informe de frecuencia cardíaca:\n${APP_URL}\n\nPara entrar la primera vez, pulsa «Activar mi acceso» y usa:\n· Tu código: ${a.codigo}\n· Este mismo email: ${a.email}\n\n¡Nos vemos en pista!\n${state.settings.escuela}`;
@@ -543,6 +544,7 @@ const I = {
   clases: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M8 14l2.5 2.5L16 12"/></svg>',
   vivo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2.5-6 4 12 2.5-6H22"/></svg>',
   fisica: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8.5 6.2-3.2 10H6.7L3.5 9.2z"/><path d="M12 8l4 2.9-1.5 4.6h-5L8 10.9z"/></svg>',
+  avisos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
   emails: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M3 6.5l9 6.5 9-6.5"/></svg>',
   inicio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5L12 3.5l8.5 7V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1z"/></svg>',
   informe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-8-4.7-8-10.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.9c0 5.9-8 10.6-8 10.6z"/></svg>',
@@ -556,12 +558,12 @@ const I = {
 const LOGO = `<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="rgb(var(--ball))"/><path d="M9 26c6-1 13-6 18-15" stroke="rgb(var(--ball-ink))" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="29" cy="27" r="4" fill="rgb(var(--ball-ink))"/></svg>`;
 
 /* ---------- Shell ---------- */
-const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Pulsómetros'], ['partidos', 'Partidos'], ['emails', 'Emails']];
-const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos', 'Mis partidos'], ['pagos', 'Mis pagos']];
+const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Pulsómetros'], ['partidos', 'Marcador'], ['emails', 'Emails']];
+const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos', 'Mis partidos'], ['pagos', 'Mis pagos'], ['avisos', 'Avisos']];
 
 function shell(content) {
   const nav = ui.role === 'admin' ? ADMIN_NAV : ALUMNO_NAV;
-  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view;
+  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view === 'grabar' ? 'informe' : ui.view;
   const pendientes = state.outbox.filter(e => e.estado === 'En cola').length;
   const who = ui.role === 'admin' ? (LIVE ? esc(ui.email || 'Administrador') : 'Andrés · administrador') : esc(alumno(ui.studentLogged).nombre);
   const canSwitch = !LIVE || ui.isAdmin; const canLogout = LIVE || ui.role === 'alumno';
@@ -610,6 +612,25 @@ function stat(label, value, note = '', tone = '') {
 /* ==========================================================
    VISTAS · ESCUELA
    ========================================================== */
+/* Recordatorio de clase para el grupo de WhatsApp: texto listo y un toque para compartirlo */
+function recordatorioWA() {
+  const dias = [...new Set(state.grupos.flatMap(g => proximas(g, 1)))].sort(); const dia = dias[0]; if (!dia) return null;
+  const gs = state.grupos.filter(g => proximas(g, 1)[0] === dia).sort((x, y) => x.hora.localeCompare(y.hora));
+  const hoy = dia === TODAY_ISO; const cuando = hoy ? (gs[0].hora >= '14:00' ? 'esta tarde' : 'hoy') : `el ${fmtDate(dia, { weekday: 'long', day: 'numeric' })}`;
+  const lineas = gs.map(g => { const c = contenido(g.id, dia); return `• ${g.nombre}: de ${g.hora} a ${g.fin}${c.titulo && c.titulo !== 'Contenido por definir' ? ` · ${c.titulo}` : ''}`; });
+  const texto = `¡Buenos días! 🎾 Os recuerdo que ${cuando} tenemos clase de pádel:\n${lineas.join('\n')}\n\nSi no podéis venir, avisad por aquí. ¡Nos vemos en pista! 💪`;
+  return { dia, hoy, texto };
+}
+function vRecordatorioWA() {
+  const r = recordatorioWA(); if (!r) return '';
+  if (ui.waTxt?.dia !== r.dia) ui.waTxt = { dia: r.dia, texto: r.texto };
+  return `<section class="panel p-5 grid lg:grid-cols-5 gap-4 min-w-0">
+    <div class="lg:col-span-2 flex flex-col gap-2"><h2 class="text-2xl font-bold">Recordatorio para WhatsApp</h2>
+      <p class="text-[13.5px] text-muted">${r.hoy ? 'Hoy hay clase.' : `Próxima clase: ${fmtDate(r.dia, { weekday: 'long', day: 'numeric', month: 'long' })}.`} El texto se prepara con los grupos, el horario y el contenido de la sesión. Pulsa «Enviar por WhatsApp» y elige el grupo.</p>
+      <div class="flex flex-wrap gap-2 mt-1"><button class="btn btn-primary" data-wa>Enviar por WhatsApp</button><button class="btn btn-ghost" data-wa-copiar>Copiar texto</button></div></div>
+    <textarea id="waTxt" class="field lg:col-span-3 text-[14px] leading-relaxed" rows="6" aria-label="Texto del recordatorio">${esc(ui.waTxt.texto)}</textarea>
+  </section>`;
+}
 function vPanel() {
   const activos = reales().length;
   const mes = TODAY_ISO.slice(0, 7);
@@ -626,6 +647,7 @@ function vPanel() {
     ${stat('Avisos de pago', atencion.length, deuda ? `${fmtEur(Math.round(deuda))} en clases sin pagar` : 'Todo al día', atencion.length ? 'text-warn' : 'text-ok')}
     ${stat('Sesiones con sensor', state.sesionesFC.length, 'registros de frecuencia cardíaca')}
   </section>
+  ${vRecordatorioWA()}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0">
       <div class="flex items-center justify-between gap-3 mb-3"><h2 class="text-2xl font-bold">Requieren atención</h2><span class="text-[13px] text-muted">Aviso cuando quedan ${state.settings.umbral} o menos clases</span></div>
@@ -724,7 +746,7 @@ function vAlumnoDetalle(id) {
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2></div><table class="data min-w-[520px]"><thead><tr><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th></tr></thead><tbody>
       ${[...ss].reverse().map(s => `<tr><td>${fmtDate(s.fecha)}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td></tr>`).join('') || '<tr><td colspan="5" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
+      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${conceptoTxt(p)}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
   ${vPerfilGolpes(a.id)}
   ${iaPanel(a)}`;
@@ -791,7 +813,7 @@ function vCobros() {
   const byMonth = {}; state.pagos.forEach(p => { const k = p.fecha.slice(0, 7); byMonth[k] = byMonth[k] || { total: 0, n: 0, m: {} }; byMonth[k].total += p.importe; byMonth[k].n++; byMonth[k].m[p.metodo] = (byMonth[k].m[p.metodo] || 0) + p.importe; });
   return `<section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${Object.entries(byMonth).sort().reverse().slice(0, 3).map(([k, v]) => `<div class="panel p-4"><div class="text-[13px] font-semibold text-muted">${mesTxt(k)}</div><div class="num text-4xl font-bold">${fmtEur(v.total)}</div><div class="text-[13px] text-muted">${v.n} cobros · ${Object.entries(v.m).map(([mm, x]) => `${mm} ${fmtEur(x)}`).join(' · ')}</div></div>`).join('')}</section>
   <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Alumno</th><th>Concepto</th><th>Clases</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-    ${list.map(p => `<tr ${alumno(p.alumno) ? `class="click" data-alumno="${p.alumno}"` : ''}><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(nombreAl(p.alumno))}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
+    ${list.map(p => `<tr ${alumno(p.alumno) ? `class="click" data-alumno="${p.alumno}"` : ''}><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(nombreAl(p.alumno))}</td><td>${conceptoTxt(p)}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
   </tbody></table></div>`;
 }
 const mesTxt = k => { const t = new Date(k + '-01T00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -1039,7 +1061,7 @@ function onHR(i, hr) {
     s.rec.push(hr);
   }
   const cutoff = now - 180000; while (s.samples.length && s.samples[0].t < cutoff) s.samples.shift();
-  if (ui.view === 'vivo') { updateSlot(i); drawLive(); }
+  if (ui.view === 'vivo' || ui.view === 'grabar') { updateSlot(i); drawLive(); }
   refreshLive(i);
 }
 function refreshLive(i) { updateFull(i); updateDock(); }
@@ -1085,17 +1107,19 @@ function toggleLive() {
     live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
     mantenerPantalla(); rerenderIf('vivo'); updateFull(); return;
   }
+  const delAlumno = ui.role === 'alumno';
   live.running = false; clearInterval(live.timer);
   const nuevos = [];
   live.slots.forEach(s => {
     if (!s.alumno || !s.rec || s.rec.length < 10) return;
     const a = alumno(s.alumno);
-    const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec } };
+    const r = { id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, fc: s.rec }, tipo: delAlumno ? 'partido' : 'entrenamiento' };
     state.sesionesFC.push(r); nuevos.push(r);
   });
   updateFull(); updateDock();
   if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
   const n = nuevos.length;
+  if (delAlumno) { ui.fcTipo = 'partido'; ui.view = 'informe'; return tras(async () => { for (const r of nuevos) await P.fc(r); }, `Partido guardado: ${nuevos[0].duracion} min, FC media ${nuevos[0].fcMed} ppm`); }
   const correos = ui.resumenEmail === false ? [] : nuevos.map(r => { const a = alumno(r.alumno); return a && a.email && a.salud !== false ? queueEmail(a, 'sesion', { registro: r }) : null; }).filter(Boolean);
   tras(async () => { for (const r of nuevos) await P.fc(r); for (const m of correos) await P.email(m); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}${correos.length ? ` · ${correos.length} ${correos.length === 1 ? 'resumen' : 'resúmenes'} por email` : ''}`);
 }
@@ -1142,7 +1166,7 @@ function updateFull(i) {
 /* Barra flotante cuando la sesión sigue en otra pestaña */
 function updateDock() {
   const d = document.getElementById('hrdock'); if (!d) return;
-  const vis = conectados().length && ui.view !== 'vivo' && document.getElementById('hrfull').hidden && ui.role === 'admin' && (!LIVE || ui.auth === 'ok');
+  const vis = conectados().length && ui.view !== 'vivo' && ui.view !== 'grabar' && document.getElementById('hrfull').hidden && (!LIVE || ui.auth === 'ok');
   if (!vis) { d.hidden = true; return; }
   d.hidden = false;
   d.innerHTML = `<button class="dock-in" data-hrfull aria-label="Abrir pulsómetros en pantalla completa">
@@ -1157,7 +1181,32 @@ function updateDock() {
 const GOLPES = [['S', 'Saque'], ['D', 'Derecha'], ['R', 'Revés'], ['PD', 'Pared derecha'], ['PR', 'Pared revés'], ['CP', 'Contrapared'], ['VD', 'Volea derecha'], ['VR', 'Volea revés'], ['B', 'Bandeja'], ['RMP', 'Remate plano'], ['RML', 'Remate liftado']];
 const GOLPE_N = Object.fromEntries(GOLPES);
 const parDe = j => (j < 2 ? 0 : 1);
-const FORMATOS = { '3sets': 'Mejor de 3 sets', '1set': 'Un set', libre: 'Juegos libres (clase)' };
+const FORMATOS = { '3sets': 'Mejor de 3 sets', '1set': 'Un set', libre: 'Juegos libres (clase)', tactico: 'Juego táctico' };
+const esTactico = m => m.formato === 'tactico';
+const tacDe = m => ({ meta: m.tactico?.meta || 7, rondas: m.tactico?.rondas || 2, dif2: !!m.tactico?.dif2 });
+/* Juego táctico: cada ronda saca siempre la misma pareja hasta que alguien llega a la meta;
+   en la siguiente ronda saca la otra. Gana quien tenga mejor balance de puntos al final. */
+function motorTactico(m) {
+  const T = tacDe(m);
+  const st = { tactico: true, sets: [], games: [0, 0], pts: [0, 0], tb: false, server: m.saque || 0, sj: null, setsWon: [0, 0], fin: false, ganador: null, empate: false, puntos: [], juegos: [], rondas: [], meta: T.meta, nRondas: T.rondas, balance: [0, 0] };
+  const srvRonda = r => ((m.saque || 0) + r) % 2;
+  for (const ev of m.eventos) {
+    if (st.fin) break;
+    const w = ev.par, o = 1 - w, r = st.rondas.length;
+    st.server = srvRonda(r);
+    st.puntos.push({ ev, par: w, set: r, server: st.server, sj: null, tb: false, oro: false, bp: false, dbl: !!ev.d });
+    st.pts[w] += ev.d ? 2 : 1;
+    if (st.pts[w] >= T.meta && (!T.dif2 || st.pts[w] - st.pts[o] >= 2)) {
+      st.rondas.push({ pts: [...st.pts], server: st.server, winner: w });
+      st.sets.push([...st.pts]); st.setsWon[w]++; st.pts = [0, 0];
+      if (st.rondas.length >= T.rondas) st.fin = true;
+    }
+  }
+  st.rondas.forEach(x => { st.balance[0] += x.pts[0] - x.pts[1]; st.balance[1] += x.pts[1] - x.pts[0]; });
+  if (!st.fin) st.server = srvRonda(st.rondas.length);
+  else { st.ganador = st.balance[0] > 0 ? 0 : st.balance[0] < 0 ? 1 : null; st.empate = st.ganador == null; }
+  return st;
+}
 
 /* Reproduce los puntos y devuelve marcador, servicio y el detalle de cada punto y juego. */
 const companero = j => j ^ 1;
@@ -1165,7 +1214,8 @@ const companero = j => j ^ 1;
 function ordenSaque(m, set) { const sc = m.sacadores?.[set]; if (!sc || sc[0] == null) return null; const [a, b] = sc; return [a, b ?? null, companero(a), b == null ? null : companero(b)]; }
 /* Reproduce los puntos y devuelve marcador, servicio (pareja y jugador) y el detalle de cada punto y juego. */
 function motor(m) {
-  const st = { sets: [], games: [0, 0], pts: [0, 0], tb: false, tbN: 0, tbS0: null, server: m.saque || 0, sj: null, setsWon: [0, 0], fin: false, ganador: null, puntos: [], juegos: [] };
+  if (esTactico(m)) return motorTactico(m);
+  const st = { sets: [], games: [0, 0], pts: [0, 0], adv: null, tb: false, tbN: 0, tbS0: null, server: m.saque || 0, sj: null, setsWon: [0, 0], fin: false, ganador: null, puntos: [], juegos: [] };
   const setsToWin = m.formato === '1set' ? 1 : 2;
   let gp = [0, 0], gameSj = null;
   const fijar = () => {
@@ -1184,19 +1234,30 @@ function motor(m) {
     fijar();
     const w = ev.par, o = 1 - w;
     const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
-    const info = { ev, par: w, set: st.sets.length, server: st.server, sj: st.sj, tb: st.tb, oro: false, bp: false };
-    if (!st.tb) { info.oro = !!m.oro && pr === 3 && ps === 3; info.bp = pr >= 3 && (m.oro ? true : pr > ps); }
+    const dbl = !!ev.d;
+    const info = { ev, par: w, set: st.sets.length, server: st.server, sj: st.sj, tb: st.tb, oro: false, bp: false, dbl };
+    if (!st.tb) {
+      if (st.adv != null) info.bp = st.adv === r;
+      else { info.oro = !!m.oro && pr === 3 && ps === 3; info.bp = pr >= 3 && (m.oro ? true : pr > ps); }
+    }
     if (gp[0] + gp[1] === 0) gameSj = st.sj;
     st.puntos.push(info); gp[w]++;
-    st.pts[w]++;
     let ganaJuego = false;
-    if (st.tb) { st.tbN++; ganaJuego = st.pts[w] >= 7 && st.pts[w] - st.pts[o] >= 2; }
-    else if (m.oro) ganaJuego = st.pts[w] >= 4;
-    else { ganaJuego = st.pts[w] >= 4 && st.pts[w] - st.pts[o] >= 2; if (!ganaJuego && st.pts[w] >= 4 && st.pts[w] === st.pts[o]) st.pts = [3, 3]; }
+    if (st.tb) { st.tbN++; st.pts[w] += dbl ? 2 : 1; ganaJuego = st.pts[w] >= 7 && st.pts[w] - st.pts[o] >= 2; }
+    else if (m.oro) {
+      if (st.adv != null) { if (st.adv === w) { st.pts[w] = 4; ganaJuego = true; } else st.pts = [3, 3]; st.adv = null; }   // ventaja tras punto doble: si la pierde, vuelve a 40-40 y se juega punto de oro
+      else if (dbl && st.pts[w] === 2 && st.pts[o] === 3) { st.pts = [3, 3]; st.adv = w; }   // punto doble con 30-40 en contra: ventaja / 40
+      else { st.pts[w] += dbl ? 2 : 1; ganaJuego = st.pts[w] >= 4; }
+    } else {
+      for (let n = dbl ? 2 : 1; n > 0 && !ganaJuego; n--) {
+        st.pts[w]++; ganaJuego = st.pts[w] >= 4 && st.pts[w] - st.pts[o] >= 2;
+        if (!ganaJuego && st.pts[w] >= 4 && st.pts[w] === st.pts[o]) st.pts = [3, 3];
+      }
+    }
     if (!ganaJuego) continue;
     const eraTb = st.tb;
     st.juegos.push({ set: st.sets.length, server: eraTb ? st.tbS0 : st.server, sj: eraTb ? null : gameSj, winner: w, gp, tb: eraTb });
-    gp = [0, 0]; st.games[w]++; st.pts = [0, 0];
+    gp = [0, 0]; st.games[w]++; st.pts = [0, 0]; st.adv = null;
     st.server = eraTb ? 1 - st.tbS0 : 1 - st.server;
     if (m.formato === 'libre') continue;
     const g = st.games;
@@ -1210,6 +1271,7 @@ function motor(m) {
 }
 /* ¿Falta elegir sacador? (solo en partidos creados con orden de saque) */
 function pendienteSaque(m, st) {
+  if (esTactico(m)) return st.fin || m.saqueOk || m.eventos.length ? null : { tipo: 'tactico' };
   if (st.fin || !m.sacadores) return null;
   const set = st.sets.length, gi = st.games[0] + st.games[1], sc = m.sacadores[set];
   const sinPuntos = st.pts[0] + st.pts[1] === 0;
@@ -1217,16 +1279,19 @@ function pendienteSaque(m, st) {
   if (sc[1] == null && gi >= 1 && !st.tb) return { tipo: 'segundo', par: 1 - parDe(sc[0]) };
   return null;
 }
-const oroEnJuego = (m, st) => !st.fin && !st.tb && m.oro && st.pts[0] === 3 && st.pts[1] === 3;
+const oroEnJuego = (m, st) => !st.tactico && !st.fin && !st.tb && m.oro && st.adv == null && st.pts[0] === 3 && st.pts[1] === 3;
 function puntosTxt(st, m) {
   if (st.fin) return ['', ''];
   const [a, b] = st.pts;
-  if (st.tb) return [String(a), String(b)];
+  if (st.tb || st.tactico) return [String(a), String(b)];
+  if (st.adv != null) return st.adv === 0 ? ['AD', '40'] : ['40', 'AD'];
   if (!m.oro && a >= 3 && b >= 3) return a === b ? ['40', '40'] : a > b ? ['AD', '40'] : ['40', 'AD'];
   const L = ['0', '15', '30', '40'];
   return [L[Math.min(a, 3)], L[Math.min(b, 3)]];
 }
-function resultadoTxt(st) { const s = st.sets.map(x => x.join('-')); if (!st.fin && (st.games[0] || st.games[1])) s.push(st.games.join('-')); return s.join(' · ') || '0-0'; }
+function resultadoTxt(st) {
+  if (st.tactico) { const s = st.rondas.map(x => x.pts.join('-')); if (!st.fin && (st.pts[0] || st.pts[1])) s.push(st.pts.join('-')); return (s.join(' · ') || '0-0') + (st.fin ? ` (balance ${st.balance[0] > 0 ? '+' : ''}${st.balance[0]})` : ''); }
+  const s = st.sets.map(x => x.join('-')); if (!st.fin && (st.games[0] || st.games[1])) s.push(st.games.join('-')); return s.join(' · ') || '0-0'; }
 const nombreJ = (m, j) => m.jugadores[j]?.nombre || `Jugador ${j + 1}`;
 const nombrePar = (m, k) => `${corto(nombreJ(m, k * 2))} / ${corto(nombreJ(m, k * 2 + 1))}`;
 const corto = n => { const p = String(n).trim().split(/\s+/); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
@@ -1249,7 +1314,8 @@ function statsDe(m, set = null) {
     const svP = P.filter(p => p.server === k), rsP = P.filter(p => p.server !== k);
     const svW = svP.filter(p => p.par === k).length, rsW = rsP.filter(p => p.par === k).length;
     const svG = J.filter(j => !j.tb && j.server === k), held = svG.filter(j => j.winner === k).length;
-    return { svN: svP.length, svW, pctSv: svP.length ? svW / svP.length : null, rsN: rsP.length, rsW, pctRs: rsP.length ? rsW / rsP.length : null, svJ: svG.length, held,
+    const pesoDe = p => (p.dbl ? 2 : 1);
+    return { dblN: P.filter(p => p.dbl && p.par === k).length, marcador: P.filter(p => p.par === k).reduce((t, p) => t + pesoDe(p), 0), marcadorRival: P.filter(p => p.par !== k).reduce((t, p) => t + pesoDe(p), 0), svN: svP.length, svW, pctSv: svP.length ? svW / svP.length : null, rsN: rsP.length, rsW, pctRs: rsP.length ? rsW / rsP.length : null, svJ: svG.length, held,
       won, lost, gw: J.filter(j => j.winner === k).length, jugados: J.length,
       ppj: J.length ? won / J.length : null, ppjS: sv.length ? media(sv.map(j => j.gp[k])) : null, ppjR: rs.length ? media(rs.map(j => j.gp[k])) : null,
       oroJ, oroG, pctOro, bpO, bpC, pctBreak, enf, win, pctEnf: lost ? enf / lost : null, pctWin: won ? win / won : null, dif: win - enf, indice: media([pctOro, pctBreak]) };
@@ -1269,14 +1335,15 @@ function statsDe(m, set = null) {
 }
 
 /* Filas por alumno y partido, para medias y comparativas */
-function filasPartidos() {
+function filasPartidos(modo = 'partido') {
   const out = [];
   (state.partidos || []).forEach(m => {
     if (!m.eventos.length) return;
+    if (modo !== 'todo' && (esTactico(m) ? 'tactico' : 'partido') !== modo) return;
     const { st, jug } = statsDe(m);
     jug.forEach(x => { const id = m.jugadores[x.j]?.id; if (!id || !alumno(id)) return; out.push({ alumno: id, grupo: alumno(id).grupo, partido: m.id, fecha: m.fecha, ...x, ganado: st.fin ? st.ganador === x.k : null, gan: st.fin ? (st.ganador === x.k ? 1 : 0) : null }); });
   });
-  return out.concat(state.statsAnon || []);
+  return out.concat((state.statsAnon || []).filter(x => modo === 'todo' || (x.modo || 'partido') === modo));
 }
 const METRICAS_P = [
   ['pctEnf', '% errores no forzados', v => pct(v), true], ['pctWin', '% winners', v => pct(v), false],
@@ -1289,7 +1356,7 @@ const METRICAS_FC = [
   ['rec', 'Índice de recuperación', v => pct(v), false], ['tmin', 'Carga por minuto (eTRIMP)', v => dec(v, 2), null], ['kmin', 'kcal por minuto', v => dec(v, 1), null]
 ];
 function filasFC() {
-  return state.sesionesFC.map(s => { const a = alumno(s.alumno); if (!a) return null; const m = metrics(s, a); return { alumno: a.id, grupo: a.grupo, med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (s.duracion || 1), kmin: s.kcal / (s.duracion || 1) }; }).filter(Boolean);
+  return state.sesionesFC.filter(s => s.tipo !== 'partido').map(s => { const a = alumno(s.alumno); if (!a) return null; const m = metrics(s, a); return { alumno: a.id, grupo: a.grupo, med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (s.duracion || 1), kmin: s.kcal / (s.duracion || 1) }; }).filter(Boolean);
 }
 /* Media por alumno primero (para que nadie pese más por jugar más), luego por grupo y escuela */
 function mediasPor(filas, metricas) {
@@ -1309,10 +1376,10 @@ function cmpTabla(metricas, yo, grp, esc, etiquetaYo = 'Tú') {
 function vPartidos() {
   const lista = [...(state.partidos || [])].sort((a, b) => (b.fecha + b.creado).localeCompare(a.fecha + a.creado));
   const M = mediasPor(filasPartidos(), METRICAS_P);
-  return pageHead('Partidos', 'Marca el partido punto a punto: cada winner o error no forzado suma el punto a la pareja que corresponde y alimenta las estadísticas de cada jugador.', `<button class="btn btn-primary" data-open="partido">Nuevo partido</button>`) + `
+  return pageHead('Marcador', 'Partidos y juegos tácticos punto a punto: cada winner o error no forzado suma el punto a la pareja que corresponde y alimenta las estadísticas de cada jugador.', `<button class="btn btn-primary" data-open="partido" data-modo="partido">Nuevo partido</button><button class="btn btn-ghost" data-open="partido" data-modo="tactico">Nuevo juego táctico</button>`) + `
   ${lista.length ? `<div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Tipo</th><th>Pareja 1</th><th>Pareja 2</th><th>Resultado</th><th>Estado</th></tr></thead><tbody>
-    ${lista.map(m => { const st = motor(m); return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${m.tipo === 'clase' ? 'Clase' : 'Partido'}</td><td class="${st.fin && st.ganador === 0 ? 'font-bold' : ''}">${esc(nombrePar(m, 0))}</td><td class="${st.fin && st.ganador === 1 ? 'font-bold' : ''}">${esc(nombrePar(m, 1))}</td><td class="num text-lg font-bold">${resultadoTxt(st)}</td><td>${m.estado === 'terminado' ? '<span class="chip chip-neutral">Terminado</span>' : '<span class="chip chip-ok">En juego</span>'}</td></tr>`; }).join('')}
-  </tbody></table></div>` : `<div class="panel p-6"><h2 class="text-2xl font-bold">Aún no hay partidos</h2><p class="text-muted mt-1 max-w-xl">Elige las dos parejas y empieza a marcar. Puedes registrar tanto partidos como juegos dentro de una clase.</p><button class="btn btn-primary mt-3" data-open="partido">Nuevo partido</button></div>`}
+    ${lista.map(m => { const st = motor(m); const rp = registradoPor(m); return `<tr class="click" data-partido="${m.id}"><td>${fmtDate(m.fecha)}</td><td>${esTactico(m) ? 'Juego táctico' : m.tipo === 'clase' ? 'Clase' : 'Partido'}${rp ? `<div class="text-[12px] text-muted">Registrado por ${esc(rp)}</div>` : ''}</td><td class="${st.fin && st.ganador === 0 ? 'font-bold' : ''}">${esc(nombrePar(m, 0))}</td><td class="${st.fin && st.ganador === 1 ? 'font-bold' : ''}">${esc(nombrePar(m, 1))}</td><td class="num text-lg font-bold">${resultadoTxt(st)}</td><td>${m.estado === 'terminado' ? '<span class="chip chip-neutral">Terminado</span>' : '<span class="chip chip-ok">En juego</span>'}</td></tr>`; }).join('')}
+  </tbody></table></div>` : `<div class="panel p-6"><h2 class="text-2xl font-bold">Aún no hay nada marcado</h2><p class="text-muted mt-1 max-w-xl">Elige las dos parejas y empieza a marcar. Puedes registrar partidos y juegos tácticos de clase.</p><div class="flex flex-wrap gap-2 mt-3"><button class="btn btn-primary" data-open="partido" data-modo="partido">Nuevo partido</button><button class="btn btn-ghost" data-open="partido" data-modo="tactico">Nuevo juego táctico</button></div></div>`}
   ${vParejas()}
   ${M.nEscuela ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Medias por grupo</h2><p class="text-[13px] text-muted mb-3">Media de cada alumno en todos sus partidos, agrupada.</p>
     <div class="scroll-x"><table class="data min-w-[720px]"><thead><tr><th>Grupo</th><th class="text-right">Alumnos</th>${METRICAS_P.map(x => `<th class="text-right">${x[1]}</th>`).join('')}</tr></thead><tbody>
@@ -1321,55 +1388,64 @@ function vPartidos() {
     </tbody></table></div></section>` : ''}`;
 }
 
+const puedeMarcar = m => ui.role === 'admin' || (ui.role === 'alumno' && (m.porAlumno === ui.studentLogged || (LIVE && !!m.creadoPor && m.creadoPor === ui.uid)));
+const registradoPor = m => { if (m.porAlumno) return alumno(m.porAlumno)?.nombre || null; if (m.creadoPor) { const a = state.alumnos.find(x => x.uid === m.creadoPor); return a ? a.nombre : null; } return null; };
 function vPartido(id) {
   const m = (state.partidos || []).find(x => x.id === id);
   if (!m) return `<p class="text-muted">Partido no encontrado.</p>`;
-  if (ui.role === 'admin' && m.estado !== 'terminado' && ui.pmodo !== 'stats') return vMarcador(m);
+  if (puedeMarcar(m) && m.estado !== 'terminado' && ui.pmodo !== 'stats') return vMarcador(m);
   return vInformePartido(m);
 }
 const LADO = j => (j % 2 === 0 ? 'Derecha' : 'Revés');
 function vMarcador(m) {
   const st = motor(m); const [p0, p1] = puntosTxt(st, m);
-  const S = statsDe(m); const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
+  const S = statsDe(m); const Mh = mediasPor(filasPartidos(esTactico(m) ? 'tactico' : 'partido').filter(f => f.partido !== m.id), METRICAS_P);
   const r = 1 - st.server, pr = st.pts[r], ps = st.pts[st.server];
-  const oro = oroEnJuego(m, st);
-  const bp = !st.tb && pr >= 3 && (m.oro || pr > ps);
+  const oro = oroEnJuego(m, st); const tac = st.tactico; const T = tacDe(m);
+  const bp = !tac && !st.tb && (st.adv != null ? st.adv === r : pr >= 3 && (m.oro || pr > ps));
   const pend = pendienteSaque(m, st);
   const pideOro = oro && m.oroSel === undefined && !pend;
   const bloqueado = st.fin || !!pend || pideOro;
   const fila = k => `<div class="sb-row ${st.server === k ? 'srv' : ''}">
       <div class="sb-name"><span class="sb-ball" aria-hidden="true"></span><span class="truncate">${esc(nombrePar(m, k))}</span>${st.server === k && st.sj != null ? `<span class="text-[12px] font-semibold opacity-75 truncate">saca ${esc(corto(nombreJ(m, st.sj)))}</span>` : ''}<span class="sr-only">${st.server === k ? '(saca)' : ''}</span></div>
       ${st.sets.map(x => `<div class="sb-set ${x[k] > x[1 - k] ? 'won' : ''}">${x[k]}</div>`).join('')}
-      ${st.fin ? '' : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
+      ${st.fin ? (tac ? `<div class="sb-games" title="Balance">${st.balance[k] > 0 ? '+' : ''}${st.balance[k]}</div>` : '') : tac ? `<div class="sb-pts">${k ? p1 : p0}</div>` : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
     </div>`;
   const jugador = j => { const x = S.jug[j]; return `<div class="pcard ${st.sj === j ? 'ring-2 ring-ball' : ''}">
       <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="min-w-0"><div class="text-[11.5px] font-semibold text-muted">${LADO(j)}${st.sj === j ? ' · saca' : ''}</div><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div></div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
       <div class="grid grid-cols-2 gap-2"><button class="pbtn pbtn-w" data-pick="w" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Winner</button><button class="pbtn pbtn-e" data-pick="e" data-j="${j}" ${bloqueado ? 'disabled' : ''}>Error</button></div>
     </div>`; };
   const ult = st.puntos.slice(-6).reverse();
-  const izq = (st.sets.length % 2) ^ (m.ladoInv ? 1 : 0);   // en cada set las parejas cambian de lado en pantalla
+  const izq = (tac ? 0 : st.sets.length % 2) ^ (m.ladoInv ? 1 : 0);   // en cada set las parejas cambian de lado en pantalla
   const orden = izq ? [1, 0] : [0, 1];
-  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Partidos</button>
-      <span class="chip chip-neutral">${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}${m.oro ? ' · punto de oro' : ''}</span>
-      <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-plado>Cambiar lados</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : 'Terminar partido'}</button></div></div>
+  const dobleBtn = st.fin || bloqueado ? '' : `<button class="btn ${m.dobleSel ? 'btn-primary' : 'btn-ghost'} w-full sm:w-auto" data-doble aria-pressed="${!!m.dobleSel}"><span class="num font-bold">×2</span>${m.dobleSel ? 'El próximo punto vale doble (toca para anular)' : 'Punto doble'}</button>`;
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Marcador</button>
+      <span class="chip chip-neutral">${tac ? `Juego táctico · a ${T.meta} puntos · ${T.rondas} rondas${T.dif2 ? ' · por 2' : ''}` : `${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}${m.oro ? ' · punto de oro' : ''}`}</span>
+      <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-plado>Cambiar lados</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : tac ? 'Terminar juego' : 'Terminar partido'}</button></div></div>
     <section class="scoreboard" aria-live="polite" aria-atomic="true">
-      <div class="sb-head"><span>${st.tb ? 'Tie-break' : st.fin ? 'Final' : `Set ${st.sets.length + 1}`}</span>${oro ? '<span class="sb-badge oro">Punto de oro</span>' : bp ? '<span class="sb-badge">Bola de break</span>' : ''}</div>
+      <div class="sb-head"><span>${st.fin ? 'Final' : tac ? `Ronda ${st.rondas.length + 1} de ${T.rondas} · saca la pareja ${st.server + 1}` : st.tb ? 'Tie-break' : `Set ${st.sets.length + 1}`}</span>${m.dobleSel && !st.fin ? '<span class="sb-badge oro">Punto doble ×2</span>' : oro ? '<span class="sb-badge oro">Punto de oro</span>' : st.adv != null ? '<span class="sb-badge">Ventaja por punto doble</span>' : bp ? '<span class="sb-badge">Bola de break</span>' : ''}</div>
       ${fila(0)}${fila(1)}
-      ${st.fin ? `<div class="sb-final">Gana ${esc(nombrePar(m, st.ganador))}</div>` : ''}
+      ${st.fin ? `<div class="sb-final">${st.empate ? 'Empate: mismo balance de puntos' : `Gana ${esc(nombrePar(m, st.ganador))}${tac ? ` · balance ${st.balance[st.ganador] > 0 ? '+' : ''}${st.balance[st.ganador]}` : ''}`}</div>` : ''}
     </section>
     ${pend ? vPideSaque(m, st, pend) : pideOro ? vPideOro(m, st) : ''}
+    ${dobleBtn ? `<div class="flex flex-wrap items-center gap-3">${dobleBtn}<span class="text-[13px] text-muted">${tac ? 'Si se cumple la norma trabajada, el punto suma 2.' : 'Cuenta como dos puntos. Con 30-40 en contra, pasa a ventaja/40; si se pierde esa ventaja, 40-40 y punto de oro.'}</span></div>` : ''}
     <section class="grid md:grid-cols-2 gap-4">
       ${orden.map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
         <button class="btn btn-ghost w-full" data-ppunto="${k}" ${bloqueado ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
     </section>
     ${vLectura(m)}
     <section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-2">Últimos puntos</h2>
-      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline flex-wrap"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span><span>${descPunto(m, p)}</span>${p.oro ? `<span class="chip chip-warn">Oro${p.ev.or != null && p.ev.or >= 0 ? ` · resta ${esc(corto(nombreJ(m, p.ev.or)))}` : ''}</span>` : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
+      ${ult.length ? `<ol class="flex flex-col gap-1.5 text-[14px]">${ult.map(p => `<li class="flex gap-2 items-baseline flex-wrap"><span class="chip ${p.par === 0 ? 'chip-p0' : 'chip-p1'}">P${p.par + 1}</span>${p.dbl ? '<span class="chip chip-warn">×2</span>' : ''}<span>${descPunto(m, p)}</span>${p.oro ? `<span class="chip chip-warn">Oro${p.ev.or != null && p.ev.or >= 0 ? ` · resta ${esc(corto(nombreJ(m, p.ev.or)))}` : ''}</span>` : p.bp ? `<span class="chip chip-neutral">${p.par !== p.server ? 'Rotura' : 'Break salvado'}</span>` : ''}</li>`).join('')}</ol>` : '<p class="text-muted text-[14px]">Toca Winner o Error en el jugador que cierra el punto y después el golpe. Si el punto acaba de otra forma, usa «Punto para la pareja».</p>'}
     </section>`;
 }
 function vPideSaque(m, st, pend) {
   const btn = (j, extra = '') => `<button class="gbtn !min-h-[64px]" data-sacador="${j}" ${extra}><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">Pareja ${parDe(j) + 1} · ${LADO(j)}</span></button>`;
   let titulo, texto, botones;
+  if (pend.tipo === 'tactico') {
+    if (m.sorteo == null) return `<section class="panel p-5 flex flex-col sm:flex-row sm:items-center gap-4"><div class="flex-1"><h2 class="text-2xl font-bold">Sorteo de saque</h2><p class="text-muted text-[14px] mt-1">Lanza la moneda para decidir qué pareja saca la primera ronda.</p></div><div class="flex gap-2"><button class="btn btn-primary" data-moneda>Lanzar moneda</button><button class="btn btn-ghost" data-sorteo-manual>Ya está sorteado</button></div></section>`;
+    const pb = k => `<button class="gbtn !min-h-[64px]" data-saque-par="${k}"><span class="font-display text-xl font-bold">${esc(nombrePar(m, k))}</span><span class="text-[12px]">Pareja ${k + 1} saca la ronda 1</span></button>`;
+    return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">${m.sorteo === -1 ? '¿Qué pareja saca primero?' : `Gana el sorteo la pareja ${m.sorteo + 1}`}</h2><p class="text-muted text-[14px] mt-1">Una pareja saca toda la primera ronda; en la siguiente saca la otra.</p></div><div class="grid grid-cols-2 gap-2">${pb(m.sorteo === 1 ? 1 : 0)}${pb(m.sorteo === 1 ? 0 : 1)}</div></section>`;
+  }
   if (pend.tipo === 'inicio') {
     if (m.sorteo == null) return `<section class="panel p-5 flex flex-col sm:flex-row sm:items-center gap-4"><div class="flex-1"><h2 class="text-2xl font-bold">Sorteo de saque</h2><p class="text-muted text-[14px] mt-1">Lanza la moneda para decidir qué pareja elige. Después marca quién saca el primer juego.</p></div><div class="flex gap-2"><button class="btn btn-primary" data-moneda>Lanzar moneda</button><button class="btn btn-ghost" data-sorteo-manual>Ya está sorteado</button></div></section>`;
     titulo = m.sorteo === -1 ? '¿Quién saca el primer juego?' : `Gana el sorteo la pareja ${m.sorteo + 1}`;
@@ -1418,9 +1494,11 @@ function anotar(m, ev) {
   if (antes.fin) return;
   const extra = oroEnJuego(m, antes) && m.oroSel != null && m.oroSel >= 0 ? { or: m.oroSel } : {};
   delete m.oroSel;
+  if (m.dobleSel) extra.d = 1; delete m.dobleSel;
   m.eventos.push({ ...ev, ...extra, t: Date.now() });
   const st = motor(m);
-  if (st.fin && m.estado !== 'terminado') toast(`Partido terminado: gana ${nombrePar(m, st.ganador)}. Pulsa «Guardar y cerrar».`);
+  if (st.fin && m.estado !== 'terminado') toast(st.empate ? 'Terminado en empate de balance. Pulsa «Guardar y cerrar».' : `${st.tactico ? 'Juego' : 'Partido'} terminado: gana ${nombrePar(m, st.ganador)}. Pulsa «Guardar y cerrar».`);
+  else if (st.tactico && st.rondas.length > antes.rondas.length) { const rr = st.rondas[st.rondas.length - 1]; toast(`Fin de la ronda ${st.rondas.length}: ${rr.pts.join('-')}. Ahora saca la pareja ${st.server + 1}.`); }
   else if (st.juegos.length > antes.juegos.length) { const jg = st.juegos[st.juegos.length - 1]; toast(`Juego para la pareja ${jg.winner + 1} · ${st.sets.length > antes.sets.length ? 'set ' + st.sets[st.sets.length - 1].join('-') : st.games.join('-')}`); }
   m.resultado = resultadoTxt(st);
   guardarPartido(m); render();
@@ -1441,7 +1519,7 @@ const varia = (semilla, ops) => ops[hashStr(semilla) % ops.length];
 function lecturaPartido(m) {
   const S = statsDe(m); const st = S.st; const P = st.puntos; const out = [];
   if (P.length < 4) return [{ tono: 'neutral', t: 'Arrancando', d: 'Con unos puntos más aparecerán aquí las claves del partido: rachas, quién regala puntos, armas de cada jugador y cómo va el saque.' }];
-  const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
+  const Mh = mediasPor(filasPartidos(esTactico(m) ? 'tactico' : 'partido').filter(f => f.partido !== m.id), METRICAS_P);
   const nom = j => corto(nombreJ(m, j));
   // Racha y momento
   const last = P[P.length - 1].par; let racha = 0; for (let i = P.length - 1; i >= 0 && P[i].par === last; i--) racha++;
@@ -1495,12 +1573,12 @@ function vLectura(m) {
   const L = lecturaPartido(m);
   const col = { ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' };
   return `<section class="panel p-4 min-w-0" aria-live="polite"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-xl font-bold">Lectura en directo</h2>
-      <button class="btn btn-ghost !py-1.5 text-[13px]" data-pia>Pedir lectura táctica a la IA</button></div>
+      ${ui.role === 'admin' ? '<button class="btn btn-ghost !py-1.5 text-[13px]" data-pia>Pedir lectura táctica a la IA</button>' : ''}</div>
     <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${L.map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${col[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[14px] text-muted mt-1 leading-snug">${esc(x.d)}</p></article>`).join('')}</div></section>`;
 }
 /* Datos para la IA: los jugadores van como A1, A2, B1, B2 y los nombres se ponen después en la app */
 function datosIAPartido(m) {
-  const S = statsDe(m); const etiqueta = ['A1', 'A2', 'B1', 'B2']; const Mh = mediasPor(filasPartidos().filter(f => f.partido !== m.id), METRICAS_P);
+  const S = statsDe(m); const etiqueta = ['A1', 'A2', 'B1', 'B2']; const Mh = mediasPor(filasPartidos(esTactico(m) ? 'tactico' : 'partido').filter(f => f.partido !== m.id), METRICAS_P);
   const r2 = v => v == null ? null : Math.round(v * 100) / 100;
   return {
     formato: FORMATOS[m.formato], punto_de_oro: !!m.oro, marcador: resultadoTxt(S.st), terminado: S.st.fin,
@@ -1528,14 +1606,17 @@ function vInformePartido(m) {
   const sets = motor(m).sets.length + (motor(m).fin ? 0 : 1);
   const sel = ui.pset ?? null;
   const S = statsDe(m, sel); const st = S.st;
-  const tabs = [[null, 'Partido'], ...Array.from({ length: sets }, (_, i) => [i, `Set ${i + 1}`])];
+  const tac = esTactico(m);
+  const tabs = [[null, tac ? 'Juego completo' : 'Partido'], ...Array.from({ length: sets }, (_, i) => [i, tac ? `Ronda ${i + 1}` : `Set ${i + 1}`])];
   const f = (v, fn) => v == null ? '—' : fn(v);
-  const M = mediasPor(filasPartidos(), METRICAS_P);
+  const M = mediasPor(filasPartidos(tac ? 'tactico' : 'partido'), METRICAS_P);
+  const edita = puedeMarcar(m);
   const misJ = [0, 1, 2, 3].filter(j => m.jugadores[j]?.id && alumno(m.jugadores[j].id) && (ui.role === 'admin' || m.jugadores[j].id === ui.studentLogged));
-  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Partidos</button>
-      ${ui.role === 'admin' && m.estado !== 'terminado' ? `<button class="btn btn-primary !py-1.5 text-[13px]" data-pmodo="marcador">Volver al marcador</button>` : ''}
-      ${ui.role === 'admin' && m.estado === 'terminado' ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-preabrir>Reabrir para corregir</button>` : ''}</div>` +
-    pageHead(`${esc(nombrePar(m, 0))} <span class="text-muted">vs</span> ${esc(nombrePar(m, 1))}`, `${fmtDate(m.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]} · Resultado ${resultadoTxt(motor(m))}`) + `
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}${ui.role === 'admin' ? 'Marcador' : 'Mis partidos'}</button>
+      ${edita && m.estado !== 'terminado' ? `<button class="btn btn-primary !py-1.5 text-[13px]" data-pmodo="marcador">Volver al marcador</button>` : ''}
+      ${edita && m.estado === 'terminado' ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-preabrir>Reabrir para corregir</button>` : ''}
+      ${edita ? `<button class="btn btn-ghost !py-1.5 text-[13px] text-bad" data-pborrar="${m.id}">Eliminar</button>` : ''}</div>` +
+    pageHead(`${esc(nombrePar(m, 0))} <span class="text-muted">vs</span> ${esc(nombrePar(m, 1))}`, `${fmtDate(m.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${tac ? `Juego táctico a ${tacDe(m).meta} puntos` : `${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}`} · Resultado ${resultadoTxt(motor(m))}${registradoPor(m) ? ` · Registrado por ${esc(registradoPor(m))}` : ''}`) + `
   <div class="flex flex-wrap gap-2">${tabs.map(([k, l]) => `<button class="chip ${sel === k ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-pset="${k ?? ''}">${l}</button>`).join('')}</div>
   ${sel == null && m.eventos.length >= 4 ? `<section class="panel p-4 min-w-0"><h2 class="text-xl font-bold mb-3">Claves del partido</h2><div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${lecturaPartido(m).map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${{ ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' }[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[14px] text-muted mt-1 leading-snug">${esc(x.d)}</p></article>`).join('')}</div></section>` : ''}
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Jugadores</h2></div>
@@ -1544,7 +1625,7 @@ function vInformePartido(m) {
     </tbody></table></section>
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Parejas</h2></div>
     <table class="data min-w-[560px]"><thead><tr><th></th><th class="text-right">Pareja 1</th><th class="text-right">Pareja 2</th></tr></thead><tbody>
-    ${[['Juegos ganados', p => p.gw], ['Puntos ganados', p => p.won], ['Puntos ganados al saque', p => `${p.svW}/${p.svN} · ${f(p.pctSv, pct)}`], ['Puntos ganados al resto', p => `${p.rsW}/${p.rsN} · ${f(p.pctRs, pct)}`], ['Juegos de saque ganados', p => `${p.held}/${p.svJ}`], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Puntos por juego al saque', p => f(p.ppjS, v => dec(v, 2))], ['Puntos por juego al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
+    ${[...(tac ? [['Puntos en el marcador', p => p.marcador], ['Balance', p => (p.marcador - p.marcadorRival > 0 ? '+' : '') + (p.marcador - p.marcadorRival)]] : [['Juegos ganados', p => p.gw]]), ['Puntos jugados ganados', p => p.won], ...(S.pair[0].dblN + S.pair[1].dblN ? [['Puntos dobles ganados', p => p.dblN]] : []), ['Puntos ganados al saque', p => `${p.svW}/${p.svN} · ${f(p.pctSv, pct)}`], ['Puntos ganados al resto', p => `${p.rsW}/${p.rsN} · ${f(p.pctRs, pct)}`], ['Juegos de saque ganados', p => `${p.held}/${p.svJ}`], ['Media puntos/juego', p => f(p.ppj, v => dec(v, 2))], ['Puntos por juego al saque', p => f(p.ppjS, v => dec(v, 2))], ['Puntos por juego al resto', p => f(p.ppjR, v => dec(v, 2))], ['Puntos de oro', p => `${p.oroG}/${p.oroJ} · ${f(p.pctOro, pct)}`], ['Roturas conseguidas', p => `${p.bpC}/${p.bpO} · ${f(p.pctBreak, pct)}`], ['Errores no forzados', p => `${p.enf} · ${f(p.pctEnf, pct)}`], ['Winners', p => `${p.win} · ${f(p.pctWin, pct)}`], ['Winners − ENF', p => (p.dif > 0 ? '+' : '') + p.dif], ['Índice win', p => f(p.indice, v => dec(v, 2))]]
       .map(([l, fn]) => `<tr><td>${l}</td><td class="text-right tnum">${fn(S.pair[0])}</td><td class="text-right tnum">${fn(S.pair[1])}</td></tr>`).join('')}
     </tbody></table></section>
   <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Golpes</h2><p class="text-[13px] text-muted">Errores no forzados / winners por golpe.</p></div>
@@ -1555,17 +1636,35 @@ function vInformePartido(m) {
     <div class="grid lg:grid-cols-2 gap-5">${misJ.map(j => { const a = alumno(m.jugadores[j].id); const x = statsDe(m).jug[j]; return `<div class="min-w-0"><div class="font-semibold mb-1">${esc(a.anon ? 'Tú' : a.nombre)}</div>${cmpTabla(METRICAS_P, x, M.grupo(a.grupo), M.escuela, 'Este partido')}</div>`; }).join('')}</div></section>` : ''}`;
 }
 
-function modalPartido() {
-  if (reales().length < 1) return toast('Da de alta a algún alumno antes de marcar partidos');
-  const opts = sel => `<option value="">— Elige jugador —</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${sel === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}<option value="inv">Invitado (escribir nombre)</option>`;
-  const g0 = ui.filtroGrupo !== 'todos' ? ui.filtroGrupo : state.grupos[0]?.id; const sug = reales().filter(a => a.grupo === g0).slice(0, 4).map(a => a.id);
-  openModal(`<form id="fPartido" class="flex flex-col gap-3">${modalHead('Nuevo partido')}
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mF">Fecha</label><input id="mF" type="date" class="field" value="${TODAY_ISO}"></div><div><label class="lbl" for="mT">Tipo</label><select id="mT" class="field"><option value="clase">Durante la clase</option><option value="partido">Partido</option></select></div></div>
+function modalPartido(modo0) {
+  const alu = ui.role === 'alumno';
+  const lista = alu && LIVE ? (state.companeros || []) : reales().map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo }));
+  if (!lista.length) return toast('Da de alta a algún alumno antes de marcar partidos');
+  const grupos = alu && LIVE ? [...new Set(lista.map(x => x.grupo))].map(id => ({ id, nombre: state.grupos.find(g => g.id === id)?.nombre || 'Otros grupos' })) : [...state.grupos, { id: null, nombre: 'Sin grupo' }];
+  const opts = sel => `<option value="">— Elige jugador —</option>${grupos.map(g => { const xs = lista.filter(a => (a.grupo || null) === g.id); return xs.length ? `<optgroup label="${esc(g.nombre)}">${xs.map(a => `<option value="${a.id}" ${sel === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>` : ''; }).join('')}<option value="inv">Invitado (escribir nombre)</option>`;
+  let sug;
+  if (alu) sug = [ui.studentLogged];
+  else { const g0 = ui.filtroGrupo !== 'todos' ? ui.filtroGrupo : state.grupos[0]?.id; sug = reales().filter(a => a.grupo === g0).slice(0, 4).map(a => a.id); }
+  const modo = modo0 === 'tactico' ? 'tactico' : 'partido';
+  openModal(`<form id="fPartido" class="flex flex-col gap-3">${modalHead(alu ? 'Registrar partido' : 'Nuevo marcador')}
+    ${alu ? '<input type="hidden" id="mModo" value="partido">' : `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="radiogroup" aria-label="Qué vas a marcar">${[['partido', 'Partido'], ['tactico', 'Juego táctico']].map(([k, l]) => `<label class="px-4 py-1.5 rounded-full cursor-pointer has-[:checked]:bg-court has-[:checked]:text-courtink"><input type="radio" name="mModoR" value="${k}" class="sr-only" ${modo === k ? 'checked' : ''}>${l}</label>`).join('')}</div><input type="hidden" id="mModo" value="${modo}">`}
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mF">Fecha</label><input id="mF" type="date" class="field" value="${TODAY_ISO}"></div>
+      <div data-solo="partido" ${modo === 'tactico' ? 'hidden' : ''}><label class="lbl" for="mT">Tipo</label><select id="mT" class="field">${alu ? '<option value="partido">Partido</option>' : '<option value="clase">Durante la clase</option><option value="partido">Partido</option>'}</select></div>
+      <div data-solo="tactico" ${modo === 'tactico' ? '' : 'hidden'}><label class="lbl" for="tMeta">Puntos para ganar la ronda</label><input id="tMeta" type="number" min="3" max="30" class="field tnum" value="${state.settings.metaTactico || 7}"></div></div>
+    ${alu ? '<p class="text-[13px] text-muted -mt-1">Lo puede marcar quien esté viendo el partido con tu móvil. Las estadísticas se suman a las tuyas y a las de los compañeros de la escuela que elijas.</p>' : ''}
     ${[0, 1].map(k => `<fieldset class="rounded-2xl border border-line p-3 flex flex-col gap-2"><legend class="px-1 text-[13px] font-semibold ${k ? 'text-warn' : 'text-court'}">Pareja ${k + 1}</legend>
       ${[0, 1].map(n => { const j = k * 2 + n; return `<div class="text-[12px] font-semibold text-muted -mb-1">${n ? 'Revés' : 'Derecha (drive)'}</div><div class="grid grid-cols-[1fr_auto] gap-2"><select id="mJ${j}" class="field" aria-label="Pareja ${k + 1}, jugador de ${n ? 'revés' : 'derecha'}" data-jsel="${j}">${opts(sug[j])}</select><input id="mN${j}" class="field w-36" placeholder="Nombre invitado" aria-label="Nombre del invitado ${j + 1}" hidden></div>`; }).join('')}</fieldset>`).join('')}
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mFo">Formato</label><select id="mFo" class="field">${Object.entries(FORMATOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><div class="text-[13px] text-muted self-end pb-2">El saque se sortea al empezar.</div></div>
-    <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="mO" class="w-4 h-4" checked> Punto de oro en 40-40</label>
+    <div data-solo="partido" class="flex flex-col gap-3" ${modo === 'tactico' ? 'hidden' : ''}>
+      <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="mFo">Formato</label><select id="mFo" class="field">${Object.entries(FORMATOS).filter(([k]) => k !== 'tactico' && !(alu && k === 'libre')).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div><div class="text-[13px] text-muted self-end pb-2">El saque se sortea al empezar.</div></div>
+      <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="mO" class="w-4 h-4" checked> Punto de oro en 40-40</label>
+    </div>
+    <div data-solo="tactico" class="flex flex-col gap-3" ${modo === 'tactico' ? '' : 'hidden'}>
+      <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="tRon">Rondas</label><select id="tRon" class="field">${[2, 4, 6].map(n => `<option value="${n}" ${n === (state.settings.rondasTactico || 2) ? 'selected' : ''}>${n} (${n / 2} de saque y ${n / 2} de resto)</option>`).join('')}</select></div>
+        <label class="flex items-center gap-2 text-[14px] self-end pb-2"><input type="checkbox" id="tDif" class="w-4 h-4"> Ganar la ronda por 2 de diferencia</label></div>
+      <p class="text-[13px] text-muted">En cada ronda saca siempre la misma pareja hasta que alguien llega a la meta; en la siguiente saca la otra. Gana quien tenga mejor balance de puntos (ganados − perdidos) al terminar todas las rondas.</p>
+    </div>
     <button class="btn btn-primary" type="submit">Empezar a marcar</button></form>`);
+  document.querySelectorAll('input[name=mModoR]').forEach(r => r.onchange = () => { const v = document.querySelector('input[name=mModoR]:checked').value; $('#mModo').value = v; document.querySelectorAll('#fPartido [data-solo]').forEach(el => { el.hidden = el.dataset.solo !== v; }); });
 }
 /* Estadística del alumno por categorías, comparada con su grupo y la escuela */
 const CAT_P = [
@@ -1597,15 +1696,21 @@ function parejasDe(id) {
   return Object.values(P).sort((a, b) => b.won / (b.tot || 1) - a.won / (a.tot || 1));
 }
 function vPartidosAlumno() {
-  const a = alumno(ui.studentLogged);
-  const mios = (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length).sort((x, y) => y.fecha.localeCompare(x.fecha));
-  const M = mediasPor(filasPartidos(), METRICAS_ALL); const yo = M.alumno(a.id), g = M.grupo(a.grupo), e = M.escuela;
-  if (!mios.length) return pageHead('Mis partidos', 'Aquí verás tus estadísticas cuando tu entrenador marque un partido o un juego en clase en el que participes.') + `<div class="panel p-6"><h2 class="text-2xl font-bold">Todavía no hay partidos tuyos</h2><p class="text-muted mt-1">En cuanto juegues uno con el marcador, aparecerán aquí tus winners, errores, saque, resto y puntos clave.</p></div>`;
+  const a = alumno(ui.studentLogged); const modo = ui.amodo || 'partido'; const tac = modo === 'tactico';
+  const todos = (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) || puedeMarcar(m));
+  const enJuego = todos.filter(m => puedeMarcar(m) && m.estado !== 'terminado' && !motor(m).fin);
+  const mios = todos.filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length && esTactico(m) === tac).sort((x, y) => y.fecha.localeCompare(x.fecha));
+  const nTac = todos.filter(m => esTactico(m) && m.eventos.length && m.jugadores.some(j => j.id === a.id)).length;
+  const M = mediasPor(filasPartidos(modo), METRICAS_ALL); const yo = M.alumno(a.id), g = M.grupo(a.grupo), e = M.escuela;
+  const cabecera = pageHead('Mis partidos', tac ? 'Juegos tácticos de clase: se cuentan aparte de los partidos porque la puntuación es distinta.' : 'Tus estadísticas agrupadas por tipo de juego y comparadas con tu grupo y con toda la escuela. ▲ indica que estás mejor que la media de tu grupo; ▼, que estás peor.', `<button class="btn btn-primary" data-open="partido">Registrar un partido</button>`) +
+    `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist">${[['partido', 'Partidos'], ['tactico', `Juegos tácticos${nTac ? ` (${nTac})` : ''}`]].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${modo === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${modo === k}" data-amodo="${k}">${l}</button>`).join('')}</div>` +
+    (enJuego.length ? `<section class="panel p-4 flex flex-col gap-2"><h2 class="text-xl font-bold">Sin terminar</h2>${enJuego.map(m => `<button class="text-left rounded-xl bg-surface2/70 px-3 py-2 hover:bg-surface2" data-partido="${m.id}"><span class="font-semibold">${esc(nombrePar(m, 0))} vs ${esc(nombrePar(m, 1))}</span> <span class="text-muted text-[13px]">· ${fmtDate(m.fecha)} · ${resultadoTxt(motor(m))} · seguir marcando</span></button>`).join('')}</section>` : '');
+  if (!mios.length) return cabecera + `<div class="panel p-6"><h2 class="text-2xl font-bold">${tac ? 'Aún no hay juegos tácticos tuyos' : 'Todavía no hay partidos tuyos'}</h2><p class="text-muted mt-1">${tac ? 'Aparecerán cuando tu entrenador marque un juego táctico en clase en el que participes.' : 'Cuando tu entrenador marque un partido en el que juegues, o registres uno tú con «Registrar un partido», aparecerán aquí tus winners, errores, saque, resto y puntos clave.'}</p></div>`;
   const fin = mios.filter(m => motor(m).fin), gan = fin.filter(m => { const j = m.jugadores.findIndex(x => x.id === a.id); return motor(m).ganador === parDe(j); }).length;
   const prs = parejasDe(a.id);
-  return pageHead('Mis partidos', 'Tus estadísticas agrupadas por tipo de juego y comparadas con tu grupo y con toda la escuela. ▲ indica que estás mejor que la media de tu grupo; ▼, que estás peor.') + `
+  return cabecera + `
   <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    ${stat('Partidos', mios.length, `${fin.length} terminados`)}
+    ${stat(tac ? 'Juegos' : 'Partidos', mios.length, `${fin.length} terminados`)}
     ${stat('Ganados', fin.length ? `${gan}/${fin.length}` : '—', fin.length ? pct(gan / fin.length) : 'sin partidos terminados', gan * 2 >= fin.length && fin.length ? 'text-ok' : '')}
     ${stat('Puntos ganados', yo?.pctPts == null ? '—' : pct(yo.pctPts), 'de los puntos jugados por tu pareja')}
     ${stat('Winners − errores', yo?.dif == null ? '—' : (yo.dif > 0 ? '+' : '') + dec(yo.dif, 1), 'de media por partido', yo?.dif < 0 ? 'text-bad' : 'text-ok')}
@@ -1625,10 +1730,10 @@ function vPartidosAlumno() {
   </tbody></table></div>`;
 }
 function afterPartidosAlumno() {
-  const a = alumno(ui.studentLogged);
-  const filas = filasPartidos().filter(f => f.alumno === a.id).sort((x, y) => x.fecha.localeCompare(y.fecha));
+  const a = alumno(ui.studentLogged); const modo = ui.amodo || 'partido';
+  const filas = filasPartidos(modo).filter(f => f.alumno === a.id).sort((x, y) => x.fecha.localeCompare(y.fecha));
   if (!filas.length) return;
-  const M = mediasPor(filasPartidos(), METRICAS_ALL); const g = M.grupo(a.grupo);
+  const M = mediasPor(filasPartidos(modo), METRICAS_ALL); const g = M.grupo(a.grupo);
   const p100 = v => v == null ? null : +(v * 100).toFixed(1);
   mkChart('chEvo', { type: 'line', data: { labels: filas.map(f => fmtDate(f.fecha, { day: 'numeric', month: 'short' })), datasets: [
     { label: '% winners', data: filas.map(f => p100(f.pctWin)), borderColor: cv('--ok'), backgroundColor: cv('--ok'), tension: .3, pointRadius: 4 },
@@ -1787,20 +1892,85 @@ function vLogin() {
       </form>
     </div></div>`;
 }
+/* ---------- Carga de entrenamiento (eTRIMP de Edwards) y relación aguda:crónica ---------- */
+function cargaDe(id, tipo = 'todo') {
+  const ss = sesionesDe(id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
+  const w0 = parseISO(weekKey(TODAY_ISO)); const semanas = [];
+  for (let k = 7; k >= 0; k--) { const d = new Date(w0); d.setDate(d.getDate() - 7 * k); semanas.push(iso(d)); }
+  const porSem = Object.fromEntries(semanas.map(w => [w, { ent: 0, par: 0, n: 0 }]));
+  ss.forEach(s => { const w = weekKey(s.fecha); if (porSem[w]) { porSem[w][s.tipo === 'partido' ? 'par' : 'ent'] += etrimp(s.zonas); porSem[w].n++; } });
+  const hace = n => { const d = new Date(TODAY); d.setDate(d.getDate() - n); return iso(d); };
+  const suma = desde => ss.filter(s => s.fecha > desde && s.fecha <= TODAY_ISO).reduce((t, s) => t + etrimp(s.zonas), 0);
+  const aguda = suma(hace(7)), cronica = suma(hace(28)) / 4;
+  const historia = ss.length ? (TODAY - parseISO(ss[0].fecha)) / 864e5 : 0;
+  return { semanas, porSem, aguda, cronica, acwr: cronica > 0 && historia >= 21 ? aguda / cronica : null, ss };
+}
+function acwrTxt(r) {
+  if (r == null) return { tono: 'neutral', t: 'Aún sin referencia', d: 'Con tres o cuatro semanas de registros podremos comparar tu carga semanal con la de tu último mes.' };
+  if (r < .8) return { tono: 'warn', t: 'Semana por debajo de lo habitual', d: 'Has acumulado menos carga que tu media del último mes. Si no es un descanso buscado, es buen momento para sumar un partido o una sesión.' };
+  if (r <= 1.3) return { tono: 'ok', t: 'Carga en tu zona óptima', d: 'Tu carga de esta semana está entre 0,8 y 1,3 veces la de tu último mes, el rango que se asocia a progresar con menos riesgo de lesión (Gabbett, 2016).' };
+  if (r <= 1.5) return { tono: 'warn', t: 'Semana algo más cargada', d: 'Llevas más carga de lo habitual. Cuida el descanso y la hidratación antes de seguir subiendo.' };
+  return { tono: 'bad', t: 'Pico de carga', d: 'Llevas más de 1,5 veces tu carga media del último mes. Los aumentos bruscos se asocian a más riesgo de lesión: conviene aflojar unos días.' };
+}
+const TONO_BORDE = { ok: 'border-ok', bad: 'border-bad', warn: 'border-warn', neutral: 'border-line' };
+function asistenciaDe(id) {
+  let pres = 0, falta = 0;
+  Object.entries(state.asistencia).forEach(([k, o]) => { const x = o?.[id]; if (!x || k.split('|')[1] > TODAY_ISO) return; if (x.e === 'presente') pres++; else if (x.e === 'falta') falta++; });
+  return { pres, falta, tot: pres + falta };
+}
+/* Fortaleza y aspecto a mejorar frente al grupo (partidos) */
+function fortalezas(a) {
+  const M = mediasPor(filasPartidos(), METRICAS_ALL); const yo = M.alumno(a.id), g = M.grupo(a.grupo);
+  if (!yo || !g) return null;
+  const difs = METRICAS_ALL.filter(([k, , , low]) => low != null && yo[k] != null && g[k] != null && Math.abs(g[k]) > 1e-9 && k !== 'gan')
+    .map(([k, l, f, low]) => ({ k, l, f, v: yo[k], gv: g[k], rel: ((yo[k] - g[k]) / Math.abs(g[k])) * (low ? -1 : 1) }));
+  if (!difs.length) return null;
+  difs.sort((x, y) => y.rel - x.rel);
+  return { mejor: difs[0].rel > .03 ? difs[0] : null, peor: difs[difs.length - 1].rel < -.03 ? difs[difs.length - 1] : null };
+}
+function conclusionesAlumno(a) {
+  const out = []; const s = saldo(a);
+  out.push(s < 0 ? { tono: 'bad', t: 'Bono pendiente', d: `Has recibido ${-s} ${-s === 1 ? 'clase' : 'clases'} más de las pagadas. Renueva antes de la próxima clase.` } : s <= state.settings.umbral ? { tono: 'warn', t: s ? `Te ${s === 1 ? 'queda 1 clase' : `quedan ${s} clases`}` : 'Bono agotado', d: 'Es buen momento para renovar y no quedarte sin plaza.' } : { tono: 'ok', t: `${s} clases disponibles`, d: 'Tu bono está al día.' });
+  const as = asistenciaDe(a.id);
+  if (as.tot >= 3) out.push({ tono: as.pres / as.tot >= .85 ? 'ok' : as.pres / as.tot >= .65 ? 'neutral' : 'warn', t: `Has venido a ${as.pres} de ${as.tot} clases`, d: as.pres / as.tot >= .85 ? 'Una asistencia muy constante: la regularidad es lo que más se nota en pista.' : as.pres / as.tot >= .65 ? 'Buena asistencia; cada clase que no faltas suma.' : 'Faltar a menudo frena el progreso. Si te viene mal el horario, coméntalo y buscamos un relevo.' });
+  const ent = sesionesDe(a.id).filter(x => x.tipo !== 'partido');
+  if (ent.length) {
+    const F = mediasPor(filasFC(), METRICAS_FC); const yo = F.alumno(a.id), g = F.grupo(a.grupo);
+    if (yo?.med != null) out.push({ tono: 'neutral', t: `Intensidad media del ${pct(yo.med)}`, d: `De tu FC máxima en clase${g?.med != null ? ` (tu grupo, ${pct(g.med)})` : ''}. ${yo.med >= .77 ? 'Trabajas a intensidad vigorosa.' : yo.med >= .64 ? 'Trabajas a intensidad moderada.' : 'Hay margen para subir el ritmo en los ejercicios de juego.'}` });
+  }
+  const C = cargaDe(a.id); if (C.ss.length) { const t = acwrTxt(C.acwr); out.push({ tono: t.tono, t: `${t.t} · ${Math.round(C.aguda)} de carga esta semana`, d: t.d }); }
+  const fz = fortalezas(a);
+  if (fz?.mejor) out.push({ tono: 'ok', t: `Tu punto fuerte: ${fz.mejor.l.toLowerCase()}`, d: `${fz.mejor.f(fz.mejor.v)} frente al ${fz.mejor.f(fz.mejor.gv)} de media en tu grupo.` });
+  if (fz?.peor) out.push({ tono: 'warn', t: `A trabajar: ${fz.peor.l.toLowerCase()}`, d: `${fz.peor.f(fz.peor.v)} frente al ${fz.peor.f(fz.peor.gv)} de media en tu grupo.` });
+  if (!sesionesDe(a.id).some(x => x.tipo === 'partido')) out.push({ tono: 'neutral', t: '¿Juegas partidos fuera de clase?', d: 'Si tienes pulsómetro, registra tu pulso desde «Mi corazón» y lo sumaremos a tus datos.' });
+  return out;
+}
 function vInicio() {
   const a = alumno(ui.studentLogged); const g = grupo(a.grupo); const prox = g.id ? proximas(g, 3) : []; const ss = sesionesDe(a.id); const last = ss[ss.length - 1];
-  return `<div><p class="text-muted">Hola,</p>${pageHead(esc(a.nombre.split(' ')[0]), `${esc(g.nombre)} · ${diaPl(g.dia)} de ${g.hora} a ${g.fin}`)}</div>
+  const as = asistenciaDe(a.id); const C = cargaDe(a.id);
+  const mios = (state.partidos || []).filter(m => !esTactico(m) && m.jugadores.some(j => j.id === a.id) && m.eventos.length);
+  const fin = mios.filter(m => motor(m).fin); const gan = fin.filter(m => motor(m).ganador === parDe(m.jugadores.findIndex(x => x.id === a.id))).length;
+  return `<div><p class="text-muted">Hola,</p>${pageHead(esc(a.nombre.split(' ')[0]), g.id ? `${esc(g.nombre)} · ${diaPl(g.dia)} de ${g.hora} a ${g.fin}` : 'Sin grupo asignado')}</div>
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    ${stat('Clases disponibles', saldo(a), estado(a) === 'ok' ? 'bono al día' : 'toca renovar', estado(a) === 'debe' ? 'text-bad' : estado(a) === 'aviso' ? 'text-warn' : 'text-ok')}
+    ${stat('Asistencia', as.tot ? pct(as.pres / as.tot) : '—', as.tot ? `${as.pres} de ${as.tot} clases` : 'sin listas todavía')}
+    ${stat('Carga esta semana', C.ss.length ? Math.round(C.aguda) : '—', C.acwr == null ? 'eTRIMP de tus sesiones' : `${dec(C.acwr, 2)} veces tu media del mes`)}
+    ${stat('Partidos ganados', fin.length ? `${gan}/${fin.length}` : '—', fin.length ? pct(gan / fin.length) : 'aún sin partidos terminados', fin.length && gan * 2 >= fin.length ? 'text-ok' : '')}
+  </section>
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 flex flex-col gap-3"><div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Tu bono</h2>${estadoChip(a)}</div>${ballRow(a, 20)}
       <p class="text-[13.5px] text-muted">Cada bola es una clase pagada; las tachadas ya las has disfrutado.</p>
-      ${estado(a) !== 'ok' ? `<div class="rounded-xl bg-warn/10 text-[14px] p-3">Para la próxima clase necesitas renovar. Bono mensual: <strong>${fmtEur(tarifaDe(a).mes)}</strong> · trimestral: <strong>${fmtEur(tarifaDe(a).trimestre)}</strong>.</div>` : ''}
+      ${estado(a) !== 'ok' ? `<div class="rounded-xl bg-warn/10 text-[14px] p-3">Para la próxima clase necesitas renovar. Bono de 4 clases: <strong>${fmtEur(tarifaDe(a).mes)}</strong> · de 10: <strong>${fmtEur(tarifaDe(a).trimestre)}</strong> · clase suelta: <strong>${fmtEur(precioDe(tarifaDe(a).id, 'suelta'))}</strong>.</div>` : ''}
     </div>
     <div class="panel p-5 lg:col-span-2 min-w-0"><h2 class="text-2xl font-bold mb-3">Próximas clases</h2>
       ${prox.length ? '' : '<p class="text-muted">Aún no tienes grupo asignado.</p>'}<ol class="grid sm:grid-cols-3 gap-3">${prox.map((d, k) => { const c = contenido(g.id, d); return `<li class="rounded-2xl ${k === 0 ? 'bg-turf text-turfink' : 'bg-surface2'} p-4 flex flex-col gap-2"><div class="text-[13px] ${k === 0 ? 'opacity-80' : 'text-muted'}">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'short' })} · ${g.hora}</div><div class="font-display text-xl font-bold leading-tight">${esc(c.titulo)}</div><ul class="text-[13.5px] flex flex-col gap-1 ${k === 0 ? 'opacity-90' : 'text-muted'}">${c.items.map(i => `<li class="flex gap-2"><span aria-hidden="true">·</span>${esc(i)}</li>`).join('')}</ul></li>`; }).join('')}</ol>
     </div>
   </section>
-  ${last ? `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">Tu última sesión · ${fmtDate(last.fecha, { day: 'numeric', month: 'long' })}</h2><button class="btn btn-ghost !py-1.5 text-[13px]" data-go="informe">Ver informe completo</button></div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">${[['FC media', last.fcMed + ' ppm', pct(last.fcMed / fcMaxTeo(a))], ['FC máxima', last.fcMax + ' ppm', pct(last.fcMax / fcMaxTeo(a))], ['Calorías', last.kcal + ' kcal', last.duracion + ' min de clase'], ['Carga (eTRIMP)', etrimp(last.zonas), 'según tiempo en cada zona']].map(([l, v, n]) => `<div><div class="text-[13px] text-muted">${l}</div><div class="num text-3xl font-bold">${v}</div><div class="text-[12.5px] text-muted">${n}</div></div>`).join('')}</div>
+  <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">Tus conclusiones</h2><span class="text-[13px] text-muted">Se actualizan con cada clase, pulso y partido</span></div>
+    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">${conclusionesAlumno(a).map(x => `<article class="rounded-2xl bg-surface2/60 border-l-4 ${TONO_BORDE[x.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(x.t)}</h3><p class="text-[13.5px] text-muted mt-1">${esc(x.d)}</p></article>`).join('')}</div>
+  </section>
+  ${last ? `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">Tu último registro de pulso · ${fmtDate(last.fecha, { day: 'numeric', month: 'long' })}${last.tipo === 'partido' ? ' <span class="chip chip-warn align-middle">Partido</span>' : ''}</h2><button class="btn btn-ghost !py-1.5 text-[13px]" data-go="informe">Ver informe completo</button></div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">${[['FC media', last.fcMed + ' ppm', pct(last.fcMed / fcMaxTeo(a))], ['FC máxima', last.fcMax + ' ppm', pct(last.fcMax / fcMaxTeo(a))], ['Calorías', last.kcal + ' kcal', last.duracion + ' min'], ['Carga (eTRIMP)', etrimp(last.zonas), 'según tiempo en cada zona']].map(([l, v, n]) => `<div><div class="text-[13px] text-muted">${l}</div><div class="num text-3xl font-bold">${v}</div><div class="text-[12.5px] text-muted">${n}</div></div>`).join('')}</div>
     <div class="mt-4">${zoneBar(last.zonas)}<div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[12.5px] text-muted">${last.zonas.map((m, i) => `<span><span class="tz${i + 1}">●</span> Z${i + 1} ${m} min</span>`).join('')}</div></div>
   </section>` : ''}`;
 }
@@ -1824,14 +1994,34 @@ function interpretacion(a) {
   if (Math.abs(trend) > .015) out.push(trend > 0 ? 'En las últimas clases tu FC media ha subido. Puede deberse a contenidos más exigentes o a cansancio acumulado; lo comentamos en pista.' : 'En las últimas clases tu FC media ha bajado con contenidos parecidos, una buena señal de adaptación.');
   return out;
 }
+/* ---------- Mi corazón: evolución con series a elegir, carga y registros propios ---------- */
+const SERIES_FC = [['med', 'FC media', '--court'], ['max', 'FC máxima', '--heart'], ['carga', 'Carga (eTRIMP)', '--z4'], ['kcal', 'Calorías', '--z3'], ['dur', 'Minutos', '--muted'], ['grupo', 'Media del grupo', '--z2']];
 function vInforme() {
-  const a = alumno(ui.studentLogged); const ss = sesionesDe(a.id);
-  const totK = ss.reduce((t, s) => t + s.kcal, 0); const totMin = ss.reduce((t, s) => t + s.duracion, 0);
-  return pageHead('Mi corazón en pista', `Frecuencia cardíaca registrada con pulsómetro en ${ss.length} sesiones. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`) + `
-  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Sesiones', ss.length, `${totMin} min en pista`)}${stat('Calorías', totK.toLocaleString('es-ES'), 'kcal acumuladas')}${stat('FC media', pct(ss.reduce((t, s) => t + s.fcMed / fcMaxTeo(a), 0) / (ss.length || 1)), 'promedio de la temporada')}${stat('Pico más alto', Math.max(0, ...ss.map(s => s.fcMax)) + ' ppm', 'máximo registrado')}</section>
-  <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Tu frecuencia cardíaca, sesión a sesión</h2><div class="h-64"><canvas id="chFCs"></canvas></div></section>
-  ${(() => { const F = mediasPor(filasFC(), METRICAS_FC); return F.alumno(a.id) ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Tú frente a tu grupo y la escuela</h2>${cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela)}</section>` : ''; })()}
+  const a = alumno(ui.studentLogged); const tipo = ui.fcTipo || 'todo';
+  const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
+  const totK = ss.reduce((t, s) => t + (s.kcal || 0), 0); const totMin = ss.reduce((t, s) => t + s.duracion, 0);
+  const C = cargaDe(a.id); const ac = acwrTxt(C.acwr);
+  ui.fcSeries = ui.fcSeries || new Set(['med', 'max', 'carga']);
+  const nPar = sesionesDe(a.id).filter(s => s.tipo === 'partido').length;
+  const mias = sesionesDe(a.id).filter(s => s.tipo === 'partido').reverse();
+  return pageHead('Mi corazón en pista', `Frecuencia cardíaca registrada con pulsómetro. Porcentajes sobre tu FC máxima teórica de ${fcMaxTeo(a)} ppm.`, `<button class="btn btn-primary" data-go="grabar">${I.vivo.replace('<svg', '<svg width="18" height="18"')}Registrar mi pulso en un partido</button>`) + `
+  <div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start" role="tablist" aria-label="Qué registros ver">${[['todo', 'Todo'], ['entrenamiento', 'Clases'], ['partido', `Partidos${nPar ? ` (${nPar})` : ''}`]].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${tipo === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${tipo === k}" data-fctipo="${k}">${l}</button>`).join('')}</div>
+  ${ss.length ? `<section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Sesiones', ss.length, `${totMin} min registrados`)}${stat('Calorías', totK.toLocaleString('es-ES'), 'kcal acumuladas')}${stat('FC media', pct(ss.reduce((t, s) => t + s.fcMed / fcMaxTeo(a), 0) / ss.length), 'promedio')}${stat('Carga total', Math.round(ss.reduce((t, s) => t + etrimp(s.zonas), 0)).toLocaleString('es-ES'), 'eTRIMP acumulado')}</section>
+  <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Tu evolución</h2><span class="text-[13px] text-muted">Elige qué datos ver</span></div>
+    <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Datos del gráfico">${SERIES_FC.map(([k, l, c]) => `<button class="chip !py-1.5 !px-3 !text-[13px] border ${ui.fcSeries.has(k) ? 'bg-surface2 border-line font-semibold' : 'border-line text-muted'}" aria-pressed="${ui.fcSeries.has(k)}" data-fcserie="${k}"><span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background:rgb(var(${c}))${ui.fcSeries.has(k) ? '' : ';opacity:.35'}"></span>${l}</button>`).join('')}</div>
+    <div class="h-72"><canvas id="chFCs" aria-label="Evolución de tu frecuencia cardíaca y tu carga"></canvas></div>
+    <p class="text-[12.5px] text-muted mt-2">FC en % de tu máxima (eje izquierdo). Carga, calorías y minutos, en el eje derecho. Los puntos con forma de rombo son partidos.</p></section>` : `<section class="panel p-6"><h2 class="text-2xl font-bold">${tipo === 'partido' ? 'Aún no has registrado partidos' : 'Todavía no hay registros'}</h2><p class="text-muted mt-1">${tipo === 'partido' ? 'Si juegas con pulsómetro, pulsa «Registrar mi pulso en un partido» y tus datos aparecerán aquí.' : 'En cuanto llevemos pulsómetro en clase aparecerán aquí tus datos.'}</p></section>`}
   <section class="grid lg:grid-cols-5 gap-4">
+    <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-1">Carga de entrenamiento</h2><p class="text-[13px] text-muted mb-2">Suma semanal del eTRIMP de Edwards (minutos en cada zona × número de la zona). Clases y partidos, últimas 8 semanas.</p><div class="h-60"><canvas id="chCarga" aria-label="Carga semanal"></canvas></div></div>
+    <div class="panel p-5 lg:col-span-2 min-w-0 flex flex-col gap-3">
+      <h2 class="text-2xl font-bold">Esta semana</h2>
+      <div class="flex items-end gap-4 flex-wrap"><div><div class="num text-5xl font-bold">${Math.round(C.aguda)}</div><div class="text-[13px] text-muted">carga últimos 7 días</div></div><div><div class="num text-3xl font-bold text-muted">${Math.round(C.cronica)}</div><div class="text-[13px] text-muted">media semanal del mes</div></div>${C.acwr != null ? `<div><div class="num text-3xl font-bold">${dec(C.acwr, 2)}</div><div class="text-[13px] text-muted">relación semana / mes</div></div>` : ''}</div>
+      <article class="rounded-2xl bg-surface2/60 border-l-4 ${TONO_BORDE[ac.tono]} p-3"><h3 class="font-display text-lg font-bold leading-tight">${esc(ac.t)}</h3><p class="text-[13.5px] text-muted mt-1">${esc(ac.d)}</p></article>
+      <p class="text-[12.5px] text-muted">Como referencia: una clase de 90 minutos a intensidad moderada suele sumar entre 150 y 250.</p>
+    </div>
+  </section>
+  ${(() => { const F = mediasPor(filasFC(), METRICAS_FC); return F.alumno(a.id) ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Tú frente a tu grupo y la escuela</h2><p class="text-[13px] text-muted mb-3">Solo clases, para comparar lo mismo con lo mismo.</p>${cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela)}</section>` : ''; })()}
+  ${ss.length ? `<section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-2">Minutos en cada zona</h2><div class="h-60"><canvas id="chZ"></canvas></div></div>
     <div class="panel p-5 lg:col-span-2 min-w-0 flex flex-col gap-3">
       <div class="flex items-center gap-2"><h2 class="text-2xl font-bold">Lo que dicen tus datos</h2></div>
@@ -1839,19 +2029,100 @@ function vInforme() {
         ? `<span class="chip chip-ok self-start">Revisado por tu entrenador</span>${inf.texto.split(/\n{2,}/).map(p => `<p class="text-[14.5px] leading-relaxed">${esc(p)}</p>`).join('')}`
         : `<span class="chip chip-neutral self-start">Resumen automático</span>${interpretacion(a).map(p => `<p class="text-[14.5px] leading-relaxed">${p}</p>`).join('')}`; })()}
     </div>
-  </section>`;
+  </section>` : ''}
+  ${mias.length ? `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Tus registros en partidos</h2><p class="text-[13px] text-muted">Los has grabado tú. Puedes borrar los que estén mal.</p></div>
+    <table class="data min-w-[600px]"><thead><tr><th>Fecha</th><th class="text-right">Minutos</th><th class="text-right">FC media</th><th class="text-right">FC máx.</th><th class="text-right">Carga</th><th class="text-right">kcal</th><th></th></tr></thead><tbody>
+    ${mias.map(s => `<tr><td>${fmtDate(s.fecha)}</td><td class="text-right tnum">${s.duracion}</td><td class="text-right tnum">${s.fcMed} ppm · ${pct(s.fcMed / fcMaxTeo(a))}</td><td class="text-right tnum">${s.fcMax}</td><td class="text-right tnum">${etrimp(s.zonas)}</td><td class="text-right tnum">${s.kcal}</td><td class="text-right"><button class="btn btn-ghost !py-1 !px-2.5 text-[12.5px] text-bad" data-fcborrar="${s.id}">Borrar</button></td></tr>`).join('')}
+    </tbody></table></section>` : ''}`;
 }
 function afterInforme() {
-  const a = alumno(ui.studentLogged); const ss = sesionesDe(a.id);
-  fcChart('chFCs', a.id);
-  mkChart('chZ', { type: 'bar', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: [0, 1, 2, 3, 4].map(z => ({ label: `Zona ${z + 1}`, data: ss.map(s => s.zonas[z]), backgroundColor: cv(`--z${z + 1}`), stack: 'z', maxBarThickness: 38 })) }, options: baseOpts({ stacked: true, y: { title: 'minutos' } }) });
+  const a = alumno(ui.studentLogged); const tipo = ui.fcTipo || 'todo';
+  const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
+  const max = fcMaxTeo(a); const S = ui.fcSeries || new Set(); const F = mediasPor(filasFC(), METRICAS_FC); const gm = F.grupo(a.grupo)?.med;
+  const forma = ss.map(s => s.tipo === 'partido' ? 'rectRot' : 'circle');
+  const ds = [];
+  if (S.has('max')) ds.push({ label: 'FC máxima (%)', data: ss.map(s => +(s.fcMax / max * 100).toFixed(1)), borderColor: cv('--heart'), backgroundColor: cv('--heart'), tension: .3, pointRadius: 4, pointStyle: forma, yAxisID: 'y' });
+  if (S.has('med')) ds.push({ label: 'FC media (%)', data: ss.map(s => +(s.fcMed / max * 100).toFixed(1)), borderColor: cv('--court'), backgroundColor: cv('--court', .12), fill: true, tension: .3, pointRadius: 4, pointStyle: forma, yAxisID: 'y' });
+  if (S.has('grupo') && gm != null) ds.push({ label: 'FC media del grupo (%)', data: ss.map(() => +(gm * 100).toFixed(1)), borderColor: cv('--z2'), borderDash: [6, 4], pointRadius: 0, borderWidth: 2, yAxisID: 'y' });
+  if (S.has('carga')) ds.push({ type: 'bar', label: 'Carga (eTRIMP)', data: ss.map(s => etrimp(s.zonas)), backgroundColor: cv('--z4', .45), borderRadius: 4, maxBarThickness: 26, yAxisID: 'y2', order: 9 });
+  if (S.has('kcal')) ds.push({ label: 'Calorías', data: ss.map(s => s.kcal), borderColor: cv('--z3'), backgroundColor: cv('--z3'), tension: .3, pointRadius: 3, pointStyle: forma, yAxisID: 'y2' });
+  if (S.has('dur')) ds.push({ label: 'Minutos', data: ss.map(s => s.duracion), borderColor: cv('--muted'), backgroundColor: cv('--muted'), borderDash: [3, 3], tension: .3, pointRadius: 3, yAxisID: 'y2' });
+  const derecha = ['carga', 'kcal', 'dur'].some(k => S.has(k)), izquierda = ['max', 'med', 'grupo'].some(k => S.has(k));
+  const o = baseOpts({ y: { title: '% FC máx.' } });
+  o.scales.y.display = izquierda;
+  o.scales.y2 = { position: 'right', display: derecha, beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { ...o.scales.y.ticks }, title: { display: true, text: 'carga · kcal · min', color: cv('--muted') } };
+  mkChart('chFCs', { type: 'line', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: ds }, options: o });
+  const C = cargaDe(a.id);
+  mkChart('chCarga', { type: 'bar', data: { labels: C.semanas.map(w => fmtDate(w, { day: 'numeric', month: 'short' })), datasets: [
+    { label: 'Clases', data: C.semanas.map(w => Math.round(C.porSem[w].ent)), backgroundColor: cv('--court'), stack: 'c', maxBarThickness: 38, borderRadius: 4 },
+    { label: 'Partidos', data: C.semanas.map(w => Math.round(C.porSem[w].par)), backgroundColor: cv('--z4'), stack: 'c', maxBarThickness: 38, borderRadius: 4 }
+  ] }, options: baseOpts({ stacked: true, y: { title: 'eTRIMP' } }) });
+  if (ss.length) mkChart('chZ', { type: 'bar', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: [0, 1, 2, 3, 4].map(z => ({ label: `Zona ${z + 1}`, data: ss.map(s => s.zonas[z]), backgroundColor: cv(`--z${z + 1}`), stack: 'z', maxBarThickness: 38 })) }, options: baseOpts({ stacked: true, y: { title: 'minutos' } }) });
+}
+
+/* ---------- Grabar el pulso en un partido (lo hace el propio alumno) ---------- */
+function vGrabar() {
+  const a = alumno(ui.studentLogged); const s = live.slots[0];
+  if (!live.running && !(s.device || s.sim)) { live.slots = [live.slots[0]]; }
+  s.alumno = a.id;
+  const conectado = !!(s.device || s.sim);
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="informe">${I.back}Mi corazón</button></div>` +
+  pageHead('Pulso en partido', 'Graba tu frecuencia cardíaca mientras juegas. Se guardará como partido, aparte de las clases.', conectado ? `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Terminar y guardar' : 'Empezar a grabar'}</button>` : '') + `
+  ${BT_OK ? '' : `<section class="panel p-5 flex flex-col gap-2"><h2 class="text-2xl font-bold">Este navegador no puede usar el pulsómetro</h2>
+    <ul class="list-disc pl-5 text-[14.5px] flex flex-col gap-1"><li><strong>Android:</strong> abre la app en Google Chrome.</li><li><strong>iPhone o iPad:</strong> Safari no permite conectar pulsómetros, tampoco si añades la app a la pantalla de inicio. Instala el navegador gratuito <strong>Bluefy</strong> y abre la app desde él.</li><li><strong>Ordenador:</strong> Chrome o Edge.</li></ul>
+    ${LIVE ? '' : '<button class="btn btn-ghost self-start" data-sim="0">Probar con el simulador</button>'}</section>`}
+  <section class="grid lg:grid-cols-5 gap-4">
+    <div class="lg:col-span-3 min-w-0">${slotCard(s, '')}</div>
+    <div class="lg:col-span-2 panel p-5 flex flex-col gap-2 text-[14px]"><h2 class="text-xl font-bold">Antes de empezar</h2>
+      <ol class="list-decimal pl-5 flex flex-col gap-1.5">
+        <li>Ponte la banda (humedece los electrodos) o activa en tu reloj la opción de <em>emitir frecuencia cardíaca</em> (en Garmin, «Transmitir FC»; en Polar, «Compartir FC con otros dispositivos»). El Apple Watch no la emite.</li>
+        <li>Cierra otras apps que usen el pulsómetro y pulsa «Conectar pulsómetro».</li>
+        <li>Pulsa «Empezar a grabar» al empezar el partido y «Terminar y guardar» al acabar.</li>
+        <li>Deja la pantalla encendida y la app abierta: si bloqueas el móvil, el navegador deja de recibir el pulso.</li>
+      </ol>
+      <div class="num text-4xl font-bold mt-2" id="liveClock">${clockTxt()}</div><div class="text-[13px] text-muted -mt-1">${live.running ? 'Grabando' : 'Sin grabar'}</div>
+    </div>
+  </section>
+  <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Últimos 3 minutos</h2><canvas id="liveCanvas" class="w-full" height="180" aria-label="Frecuencia cardíaca en directo"></canvas></section>`;
+}
+
+/* ---------- Avisos: emails recibidos y actividad ---------- */
+const TIPO_EMAIL = { confirmacion: 'Pago', aviso: 'Aviso de bono', bienvenida: 'Bienvenida', sesion: 'Resumen de sesión' };
+function avisosDe(a) {
+  const out = [];
+  state.outbox.filter(e => e.alumno === a.id && e.estado !== 'Error').forEach(e => out.push({ cat: 'emails', fecha: (e.fecha || '').slice(0, 10) || TODAY_ISO, ts: e.fecha || '', icono: 'emails', titulo: e.subject, sub: `Email · ${TIPO_EMAIL[e.tipo] || 'Mensaje'}${e.estado === 'En cola' ? ' · pendiente de envío' : ''}`, email: e.id }));
+  state.pagos.filter(p => p.alumno === a.id).forEach(p => out.push({ cat: 'pagos', fecha: p.fecha, ts: p.fecha, icono: 'pagos', titulo: `Pago registrado: ${fmtEur(p.importe)}`, sub: `${conceptoTxt(p)} · ${p.metodo}${p.clases ? ` · +${p.clases} ${p.clases === 1 ? 'clase' : 'clases'}` : ''}` }));
+  Object.entries(state.asistencia).forEach(([k, o]) => { const x = o?.[a.id]; if (!x) return; const [gid, f] = k.split('|'); const c = contenido(gid, f); out.push({ cat: 'clases', fecha: f, ts: f, icono: 'clases', titulo: x.e === 'presente' ? `Clase: ${c.titulo}` : 'Faltaste a clase', sub: `${grupo(gid).nombre}${x.c ? ' · se descuenta del bono' : ' · no se descuenta'}${x.e !== 'presente' && x.e !== 'falta' ? ` · ${x.e}` : ''}` }); });
+  sesionesDe(a.id).forEach(s => out.push({ cat: 'pulso', fecha: s.fecha, ts: s.fecha, icono: 'informe', titulo: s.tipo === 'partido' ? 'Pulso registrado en un partido' : 'Pulso registrado en clase', sub: `${s.duracion} min · FC media ${pct(s.fcMed / fcMaxTeo(a))} · carga ${etrimp(s.zonas)}` }));
+  (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length).forEach(m => { const st = motor(m); const k = parDe(m.jugadores.findIndex(j => j.id === a.id)); out.push({ cat: 'partidos', fecha: m.fecha, ts: m.creado || m.fecha, icono: 'partidos', titulo: `${esTactico(m) ? 'Juego táctico' : 'Partido'}: ${resultadoTxt(st)}`, sub: `${nombrePar(m, 0)} vs ${nombrePar(m, 1)}${st.fin ? (st.empate ? ' · empate' : st.ganador === k ? ' · ganado' : ' · perdido') : ' · en juego'}`, partido: m.id }); });
+  (state.ajustesClases || []).filter(x => x.alumno === a.id).forEach(x => out.push({ cat: 'clases', fecha: x.fecha, ts: x.fecha, icono: 'clases', titulo: `Ajuste del bono: ${x.clases > 0 ? '+' : ''}${x.clases} ${Math.abs(x.clases) === 1 ? 'clase' : 'clases'}`, sub: x.motivo || 'Ajuste de tu entrenador' }));
+  return out.sort((x, y) => (y.fecha + y.ts).localeCompare(x.fecha + x.ts));
+}
+function vAvisos() {
+  const a = alumno(ui.studentLogged); const cat = ui.avCat || 'todo';
+  const todos = avisosDe(a); const lista = todos.filter(x => cat === 'todo' || x.cat === cat);
+  const cats = [['todo', 'Todo'], ['emails', 'Emails'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['pulso', 'Pulso'], ['partidos', 'Partidos']];
+  return pageHead('Avisos', 'Los emails que te hemos enviado y todo lo que se ha registrado sobre ti: pagos, clases, pulso y partidos.') + `
+  <div class="flex flex-wrap gap-2" role="tablist">${cats.map(([k, l]) => { const n = k === 'todo' ? todos.length : todos.filter(x => x.cat === k).length; return `<button class="chip !py-1.5 !px-3.5 !text-[13.5px] ${cat === k ? 'bg-court text-courtink' : 'chip-neutral'}" role="tab" aria-selected="${cat === k}" data-avcat="${k}">${l} <span class="tnum opacity-75 ml-1">${n}</span></button>`; }).join('')}</div>
+  ${lista.length ? `<ol class="panel divide-y divide-line">${lista.map(x => `<li><button class="w-full text-left flex items-start gap-3 px-4 py-3 ${x.email || x.partido ? 'hover:bg-surface2/60' : 'cursor-default'}" ${x.email ? `data-veremail="${x.email}"` : x.partido ? `data-partido="${x.partido}"` : 'tabindex="-1"'}>
+      <span class="shrink-0 w-9 h-9 rounded-xl bg-surface2 grid place-items-center text-court [&>svg]:w-5 [&>svg]:h-5">${I[x.icono] || I.panel}</span>
+      <span class="min-w-0 flex-1"><span class="block font-semibold leading-snug">${esc(x.titulo)}</span><span class="block text-[13px] text-muted">${esc(x.sub)}</span></span>
+      <span class="shrink-0 text-[12.5px] text-muted tnum">${fmtDate(x.fecha, { day: 'numeric', month: 'short' })}</span></button></li>`).join('')}</ol>`
+    : `<div class="panel p-6"><h2 class="text-2xl font-bold">Nada por aquí todavía</h2><p class="text-muted mt-1">Cuando te enviemos un email o se registre un pago, una clase, tu pulso o un partido, aparecerá aquí.</p></div>`}`;
+}
+function verEmail(id) {
+  const e = state.outbox.find(x => x.id === id); if (!e) return;
+  openModal(`<div class="flex flex-col gap-3">${modalHead(TIPO_EMAIL[e.tipo] || 'Email')}
+    <div class="text-[13px] text-muted">${e.fecha ? fmtDate(e.fecha.slice(0, 10), { weekday: 'long', day: 'numeric', month: 'long' }) : ''} · para ${esc(e.to || '')}</div>
+    <h3 class="text-xl font-bold">${esc(e.subject)}</h3>
+    ${e.html ? `<iframe title="Email" sandbox class="w-full rounded-xl border border-line bg-white" style="height:70vh" srcdoc="${esc(e.html)}"></iframe>` : `<pre class="whitespace-pre-wrap font-sans text-[14.5px] leading-relaxed">${esc(e.body)}</pre>`}</div>`);
 }
 function vPagosAlumno() {
   const a = alumno(ui.studentLogged); const ps = state.pagos.filter(p => p.alumno === a.id).sort((x, y) => y.fecha.localeCompare(x.fecha));
   return pageHead('Mis pagos', `Tarifa ${tarifaDe(a).nombre}: ${fmtEur(tarifaDe(a).mes)} al mes o ${fmtEur(tarifaDe(a).trimestre)} el trimestre.`) + `
   <section class="panel p-5 flex flex-wrap items-center gap-4"><div class="flex-1 min-w-[200px]">${ballRow(a, 20)}</div>${estadoChip(a)}</section>
   <div class="panel scroll-x"><table class="data min-w-[480px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-  ${ps.map(p => `<tr><td>${fmtDate(p.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}</td><td>${CONCEPTOS.find(c => c.id === p.concepto).nombre}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('')}</tbody></table></div>`;
+  ${ps.map(p => `<tr><td>${fmtDate(p.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}</td><td>${conceptoTxt(p)}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 /* ---------- Modales ---------- */
@@ -1865,15 +2136,23 @@ function modalPago(forId) {
   const a0 = forId ? alumno(forId) : reales()[0];
   openModal(`<form id="fPago" class="flex flex-col gap-3">${modalHead('Registrar pago')}
     <div><label class="lbl" for="pA">Alumno</label><select id="pA" class="field">${reales().map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pC">Concepto</label><select id="pC" class="field">${CONCEPTOS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
-    <div><label class="lbl" for="pI">Importe (€)</label><input id="pI" type="number" step="0.5" min="0" class="field tnum" value="${precioDe(grupo(a0.grupo).tarifa, 'mes')}"></div></div>
+    <div><label class="lbl" for="pC">Concepto</label><select id="pC" class="field">${CONCEPTOS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pN">Cantidad</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-pn="-1" aria-label="Uno menos">−</button><input id="pN" type="number" min="1" max="50" step="1" inputmode="numeric" class="field tnum text-center" value="1"><button type="button" class="btn btn-ghost !px-3" data-pn="1" aria-label="Uno más">+</button></div></div>
+    <div><label class="lbl" for="pI">Importe total (€)</label><input id="pI" type="number" step="0.5" min="0" class="field tnum" value="${precioDe(grupo(a0.grupo).tarifa, 'mes')}"></div></div>
     <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pM">Método</label><select id="pM" class="field"><option>Bizum</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
     <div><label class="lbl" for="pF">Fecha</label><input id="pF" type="date" class="field" value="${TODAY_ISO}"></div></div>
     <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="pE" checked class="w-4 h-4"> Enviar email de confirmación al alumno</label>
     <p class="text-[13px] text-muted" id="pHint"></p>
     <button class="btn btn-primary" type="submit">Registrar pago</button></form>`);
-  const upd = () => { const a = alumno($('#pA').value); const c = CONCEPTOS.find(x => x.id === $('#pC').value); $('#pI').value = precioDe(grupo(a.grupo).tarifa, c.id) || $('#pI').value; $('#pHint').textContent = `${tarifaDe(a).nombre}. Saldo actual: ${saldo(a)} clases → quedará en ${saldo(a) + c.clases}.`; };
-  $('#pA').onchange = upd; $('#pC').onchange = upd; upd();
+  const upd = () => {
+    const a = alumno($('#pA').value); const t = grupo(a.grupo).tarifa; const c = CONCEPTOS.find(x => x.id === $('#pC').value);
+    [...$('#pC').options].forEach(o => { const cc = CONCEPTOS.find(x => x.id === o.value); const pr = precioDe(t, cc.id); o.textContent = cc.nombre + (pr ? ` · ${fmtEur(pr)}` : ''); });
+    const n = Math.max(1, Math.min(50, parseInt($('#pN').value, 10) || 1)); $('#pN').value = n;
+    const pr = precioDe(t, c.id); if (pr) $('#pI').value = Math.round(pr * n * 100) / 100;
+    const cl = c.clases * n;
+    $('#pHint').textContent = `${tarifaDe(a).nombre}${pr ? ` · ${n} × ${fmtEur(pr)}` : ''}. ${cl ? `Suma ${cl} ${cl === 1 ? 'clase' : 'clases'}: saldo ${saldo(a)} → ${saldo(a) + cl}.` : 'No suma clases.'}`;
+  };
+  ui.pagoUpd = upd; $('#pA').onchange = upd; $('#pC').onchange = upd; $('#pN').oninput = upd; upd();
 }
 function modalAlta(id) {
   if (!state.grupos.length) { toast('Crea primero un grupo'); return modalGrupo(); }
@@ -1981,14 +2260,14 @@ async function loadAll(silencioso) {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { ui.auth = 'login'; return render(); }
-    ui.email = session.user.email;
+    ui.email = session.user.email; ui.uid = session.user.id;
     ui.isAdmin = (await need(sb.rpc('es_admin'))) === true;
     const q = t => sb.from(t).select('*');
     const vacio = Promise.resolve({ data: [], error: null });
     const [aj, tar, gr, al, pa, se, as, fc, te, em, av, ia, ajc, ga] = (await Promise.all([
       q('ajustes').maybeSingle(), q('tarifas').order('id'), q('grupos').eq('activo', true).order('dia_semana'), q('alumnos').order('nombre'), q('pagos'),
       q('sesiones'), q('asistencia'), q('registros_fc').order('fecha'), q('partidos').order('fecha'),
-      ui.isAdmin ? q('emails').order('creado', { ascending: false }).limit(300) : vacio, ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false }),
+      q('emails').order('creado', { ascending: false }).limit(300), ui.isAdmin ? q('avisos') : vacio, q('informes_ia').order('generado', { ascending: false }),
       q('ajustes_clases').order('fecha'), ui.isAdmin ? q('gastos').order('fecha') : vacio
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
@@ -1996,15 +2275,15 @@ async function loadAll(silencioso) {
     if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre, suelta: t.precio_suelta == null ? null : +t.precio_suelta }));
     s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
     s.bajas = Object.fromEntries(al.filter(a => !a.activo).map(a => [a.id, a.nombre]));
-    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
+    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, uid: a.user_id || null, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
     const porId = {};
     se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; });
     as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || {})[x.alumno_id] = { e: x.estado || 'presente', c: x.cobra ?? true }; });
     s.ajustesClases = ajc.map(x => ({ id: x.id, alumno: x.alumno_id, fecha: x.fecha, clases: x.clases, motivo: x.motivo }));
     s.gastos = ga.map(x => ({ id: x.id, fecha: x.fecha, concepto: x.concepto, categoria: x.categoria, importe: +x.importe, metodo: x.metodo, notas: x.notas }));
-    s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor }));
-    s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, sacadores: x.extra?.sacadores || null, sorteo: x.extra?.sorteo ?? null, ladoInv: !!x.extra?.ladoInv, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
+    s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor, tipo: r.tipo || 'entrenamiento' }));
+    s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, sacadores: x.extra?.sacadores || null, sorteo: x.extra?.sorteo ?? null, ladoInv: !!x.extra?.ladoInv, tactico: x.extra?.tactico || null, saqueOk: !!x.extra?.saqueOk, creadoPor: x.creado_por || null, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
     s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, html: m.html, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
     av.forEach(x => { s.warned[`${x.alumno_id}|${x.clases_recibidas}`] = true; });
     ia.forEach(x => { if (!s.informes[x.alumno_id]) s.informes[x.alumno_id] = { id: x.id, texto: x.texto, publicado: x.publicado, generado: x.generado }; });
@@ -2014,10 +2293,11 @@ async function loadAll(silencioso) {
       if (!me) { ui.auth = 'sin-ficha'; return render(); }
       const comp = await need(sb.rpc('comparativa'));
       (comp?.alumnos || []).forEach(x => state.alumnos.push({ id: x.k, anon: true, nombre: 'Compañero', grupo: x.grupo, edad: x.edad, sexo: x.sexo, peso: 70, inicial: 0, email: '' }));
-      (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0 }));
+      (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0, tipo: x.tipo || 'entrenamiento' }));
+      try { state.companeros = (await need(sb.rpc('companeros'))).map(x => ({ id: x.id, nombre: x.nombre, grupo: x.grupo_id })); } catch (e) { state.companeros = []; }
       const num = v => v == null ? null : +v;
-      state.statsAnon = (comp?.partidos || []).map(x => ({ alumno: x.k, grupo: x.grupo, partido: x.p, fecha: x.fecha, enf: x.enf, win: x.win, dif: x.win - x.enf, pctEnf: num(x.pct_enf), pctWin: num(x.pct_win), pctOro: num(x.pct_oro), pctBreak: num(x.pct_break), ppj: num(x.ppj), indice: num(x.indice), ganado: x.ganado, gan: x.ganado == null ? null : x.ganado ? 1 : 0, pctPts: num(x.pct_puntos), pctSrv: num(x.pct_saque), pctSvPar: num(x.pct_saque_pareja), pctRsPar: num(x.pct_resto_pareja), pctHold: num(x.pct_juegos_saque), pctOroR: num(x.pct_oro_resto) }));
-      ui.role = 'alumno'; ui.studentLogged = me.id; if (!['inicio', 'informe', 'partidos', 'pagos'].includes(ui.view) && !ui.view.startsWith('partido:')) ui.view = 'inicio';
+      state.statsAnon = (comp?.partidos || []).map(x => ({ modo: x.modo || 'partido', alumno: x.k, grupo: x.grupo, partido: x.p, fecha: x.fecha, enf: x.enf, win: x.win, dif: x.win - x.enf, pctEnf: num(x.pct_enf), pctWin: num(x.pct_win), pctOro: num(x.pct_oro), pctBreak: num(x.pct_break), ppj: num(x.ppj), indice: num(x.indice), ganado: x.ganado, gan: x.ganado == null ? null : x.ganado ? 1 : 0, pctPts: num(x.pct_puntos), pctSrv: num(x.pct_saque), pctSvPar: num(x.pct_saque_pareja), pctRsPar: num(x.pct_resto_pareja), pctHold: num(x.pct_juegos_saque), pctOroR: num(x.pct_oro_resto) }));
+      ui.role = 'alumno'; ui.studentLogged = me.id; if (!ALUMNO_NAV.some(([k]) => k === ui.view) && ui.view !== 'grabar' && !ui.view.startsWith('partido:')) ui.view = 'inicio';
     } else if (!silencioso) { ui.role = 'admin'; ui.view = 'panel'; }
     ui.auth = 'ok';
   } catch (err) {
@@ -2048,7 +2328,9 @@ const P = {
   },
   async borrarGasto(id) { await need(sb.from('gastos').delete().eq('id', id)); },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
-  async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null }).select('id').single()); r.id = d.id; },
+  async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null, tipo: r.tipo || 'entrenamiento' }).select('id').single()); r.id = d.id; },
+  async borrarFC(id) { await need(sb.from('registros_fc').delete().eq('id', id)); },
+  async borrarPartido(id) { await need(sb.from('partidos').delete().eq('id', id)); },
   async tarifa(t) { await need(sb.from('tarifas').update({ nombre: t.nombre, precio_mes: t.mes, precio_trimestre: t.trimestre, precio_suelta: t.suelta }).eq('id', t.id)); },
   async bajaAlumnos(ids, definitivo) { if (definitivo) await need(sb.from('alumnos').delete().in('id', ids)); else await need(sb.from('alumnos').update({ activo: false }).in('id', ids)); },
   async borrarGrupo(id, conHistorial) {
@@ -2066,10 +2348,10 @@ const P = {
     g.id = d.id;
   },
   async partido(m) {
-    await need(sb.from('partidos').upsert({ id: m.id, fecha: m.fecha, tipo: m.tipo, grupo_id: m.grupo && grupo(m.grupo).id ? m.grupo : null, jugadores: m.jugadores, alumnos: m.jugadores.map(j => j.id).filter(Boolean), formato: m.formato, punto_oro: m.oro, saque_inicial: m.saque || 0, extra: { sacadores: m.sacadores || null, sorteo: m.sorteo ?? null, ladoInv: !!m.ladoInv }, eventos: m.eventos, estado: m.estado, resultado: m.resultado, actualizado: new Date().toISOString() }));
+    await need(sb.from('partidos').upsert({ id: m.id, fecha: m.fecha, tipo: m.tipo, grupo_id: m.grupo && grupo(m.grupo).id ? m.grupo : null, jugadores: m.jugadores, alumnos: m.jugadores.map(j => j.id).filter(Boolean), formato: m.formato, punto_oro: m.oro, saque_inicial: m.saque || 0, extra: { sacadores: m.sacadores || null, sorteo: m.sorteo ?? null, ladoInv: !!m.ladoInv, tactico: m.tactico || null, saqueOk: !!m.saqueOk }, eventos: m.eventos, estado: m.estado, resultado: m.resultado, actualizado: new Date().toISOString() }));
     if (m.estado !== 'terminado' && m.eventos.length % 10) return;   // estadísticas: al cerrar y cada 10 puntos
     const { st, jug } = statsDe(m);
-    const filas = jug.filter(x => m.jugadores[x.j]?.id).map(x => ({ partido_id: m.id, alumno_id: m.jugadores[x.j].id, pareja: x.k, fecha: m.fecha, ganado: st.fin ? st.ganador === x.k : null, enf: x.enf, win: x.win, pct_enf: x.pctEnf, pct_win: x.pctWin, g_enf: x.gEnf, g_win: x.gWin, pct_oro: x.pctOro, pct_break: x.pctBreak, ppj: x.ppj, indice: x.indice, golpes_enf: x.ge, golpes_win: x.gw, pct_puntos: x.pctPts, pct_saque: x.pctSrv, pct_saque_pareja: x.pctSvPar, pct_resto_pareja: x.pctRsPar, pct_juegos_saque: x.pctHold, pct_oro_resto: x.pctOroR }));
+    const filas = jug.filter(x => m.jugadores[x.j]?.id).map(x => ({ partido_id: m.id, alumno_id: m.jugadores[x.j].id, pareja: x.k, fecha: m.fecha, ganado: st.fin ? st.ganador === x.k : null, enf: x.enf, win: x.win, pct_enf: x.pctEnf, pct_win: x.pctWin, g_enf: x.gEnf, g_win: x.gWin, pct_oro: x.pctOro, pct_break: x.pctBreak, ppj: x.ppj, indice: x.indice, golpes_enf: x.ge, golpes_win: x.gw, pct_puntos: x.pctPts, pct_saque: x.pctSrv, pct_saque_pareja: x.pctSvPar, pct_resto_pareja: x.pctRsPar, pct_juegos_saque: x.pctHold, pct_oro_resto: x.pctOroR, modo: esTactico(m) ? 'tactico' : 'partido' }));
     await need(sb.from('stats_jugador').delete().eq('partido_id', m.id));
     if (filas.length) await need(sb.from('stats_jugador').insert(filas));
   },
@@ -2132,19 +2414,29 @@ function render() {
     else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
-    else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
+    else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); }, grabar: () => { html = vGrabar(); after = drawLive; } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
   }
   app.innerHTML = shell(html);
   if (after) after();
   updateDock();
 }
-function rerenderIf(v) { if (ui.view === v) render(); }
+function rerenderIf(v) { if (ui.view === v || (v === 'vivo' && ui.view === 'grabar')) render(); }
 function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
   if (e.target.closest('[data-nonav]') && !e.target.matches('input')) { const cb = e.target.closest('[data-nonav]').querySelector('input[data-sel]'); if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); } return; }
   if (e.target.matches('input[data-sel], input[data-selall]')) return;
+  if (e.target.closest('[data-wa]')) { const t = $('#waTxt')?.value || ''; window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener'); return; }
+  if (e.target.closest('[data-wa-copiar]')) { const t = $('#waTxt')?.value || ''; (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => toast('Texto copiado'), () => { $('#waTxt').select(); toast('Selecciona y copia el texto'); }); return; }
+  const fct = e.target.closest('[data-fctipo]'); if (fct) { ui.fcTipo = fct.dataset.fctipo; return render(); }
+  const fcs = e.target.closest('[data-fcserie]'); if (fcs) { const k = fcs.dataset.fcserie; ui.fcSeries = ui.fcSeries || new Set(); ui.fcSeries.has(k) ? ui.fcSeries.delete(k) : ui.fcSeries.add(k); return render(); }
+  const fcb = e.target.closest('[data-fcborrar]'); if (fcb) return openModal(`<div class="flex flex-col gap-3">${modalHead('Borrar registro')}<p class="text-[15px]">Se borrará este registro de pulso. No se puede deshacer.</p><div class="flex gap-2"><button class="btn btn-primary !bg-bad !border-bad" data-fcborrar-ok="${fcb.dataset.fcborrar}">Borrar</button><button class="btn btn-ghost" data-close>Cancelar</button></div></div>`);
+  const fcbo = e.target.closest('[data-fcborrar-ok]'); if (fcbo) { const id = fcbo.dataset.fcborrarOk; state.sesionesFC = state.sesionesFC.filter(x => x.id !== id); closeModal(); return tras(() => P.borrarFC(id), 'Registro borrado'); }
+  const avc = e.target.closest('[data-avcat]'); if (avc) { ui.avCat = avc.dataset.avcat; return render(); }
+  const ve = e.target.closest('[data-veremail]'); if (ve) return verEmail(ve.dataset.veremail);
+  const pm = e.target.closest('[data-amodo]'); if (pm) { ui.amodo = pm.dataset.amodo; return render(); }
+  const pn = e.target.closest('[data-pn]'); if (pn) { const i = $('#pN'); i.value = Math.max(1, (parseInt(i.value, 10) || 1) + +pn.dataset.pn); ui.pagoUpd?.(); return; }
   if (e.target.closest('[data-sel-none]')) { ui.sel = new Set(); return render(); }
   if (e.target.closest('[data-borrar-sel]')) return modalBorrarAlumnos([...(ui.sel || [])]);
   const bA = e.target.closest('[data-borrar-alumno]'); if (bA) return modalBorrarAlumnos([bA.dataset.borrarAlumno]);
@@ -2175,7 +2467,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -2188,7 +2480,7 @@ document.addEventListener('click', async e => {
   if (d.open === 'pago') return modalPago(d.for);
   if (d.open === 'alta') return modalAlta(d.for);
   if (d.open === 'grupo') return modalGrupo(d.for);
-  if (d.open === 'partido') return modalPartido();
+  if (d.open === 'partido') return modalPartido(d.modo);
   if (d.open === 'ajuste') return modalAjuste(d.for);
   if (d.open === 'gasto') return modalGasto(d.for);
   if (d.ajstep) { const i = $('#ajN'); i.value = (parseInt(i.value, 10) || 0) + +d.ajstep; return; }
@@ -2211,6 +2503,10 @@ document.addEventListener('click', async e => {
     if (m && d.pick) return pickGolpe(m, +d.j, d.pick);
     if (m && d.moneda !== undefined) return lanzarMoneda(m);
     if (m && d.sorteoManual !== undefined) { m.sorteo = -1; guardarPartido(m); return render(); }
+    if (m && d.pborrar) return openModal(`<div class="flex flex-col gap-3">${modalHead('Eliminar')}<p class="text-[15px]">Se borrará este ${esTactico(m) ? 'juego' : 'partido'} y sus estadísticas. No se puede deshacer.</p><div class="flex gap-2"><button class="btn btn-primary !bg-bad !border-bad" data-pborrar-ok="${m.id}">Eliminar</button><button class="btn btn-ghost" data-close>Cancelar</button></div></div>`);
+    if (d.pborrarOk) { const id = d.pborrarOk; state.partidos = state.partidos.filter(x => x.id !== id); closeModal(); ui.view = 'partidos'; return tras(() => P.borrarPartido(id), 'Eliminado'); }
+    if (m && d.saquePar !== undefined) { m.saque = +d.saquePar; m.saqueOk = true; guardarPartido(m); return render(); }
+    if (m && d.doble !== undefined) { m.dobleSel = !m.dobleSel; return render(); }
     if (m && d.sacador !== undefined) { const st = motor(m); const set = st.sets.length; const j = +d.sacador; m.sacadores = m.sacadores || {}; const sc = m.sacadores[set]; if (!sc || sc[0] == null) m.sacadores[set] = [j, null]; else sc[1] = j; guardarPartido(m); return render(); }
     if (m && d.saqueSigue !== undefined) { const st = motor(m); const set = st.sets.length; const prev = ordenSaque(m, set - 1); const n = st.sets[set - 1][0] + st.sets[set - 1][1]; m.sacadores[set] = [prev[n % 4], prev[(n + 1) % 4]]; guardarPartido(m); return render(); }
     if (m && d.oroResta !== undefined) { m.oroSel = +d.oroResta; return render(); }
@@ -2317,10 +2613,11 @@ async function onSubmit(f) {
   }
   if (f.id === 'fPago') {
     const a = alumno($('#pA').value); const c = CONCEPTOS.find(x => x.id === $('#pC').value);
-    const p = { id: 'P' + Date.now(), alumno: a.id, fecha: $('#pF').value || TODAY_ISO, metodo: $('#pM').value, concepto: c.id, clases: c.clases, importe: +$('#pI').value || 0 };
+    const n = Math.max(1, parseInt($('#pN').value, 10) || 1);
+    const p = { id: 'P' + Date.now(), alumno: a.id, fecha: $('#pF').value || TODAY_ISO, metodo: $('#pM').value, concepto: c.id, clases: c.clases * n, importe: +$('#pI').value || 0 };
     const sent = $('#pE').checked;
     state.pagos.push(p);
-    const m = sent ? queueEmail(a, 'confirmacion', { concepto: c.nombre, importe: p.importe, fecha: p.fecha, metodo: p.metodo }) : null;
+    const m = sent ? queueEmail(a, 'confirmacion', { concepto: conceptoTxt(p), importe: p.importe, fecha: p.fecha, metodo: p.metodo }) : null;
     closeModal();
     return tras(async () => { await P.pago(p); if (m) await P.email(m); }, sent ? `Pago registrado. Email de agradecimiento para ${a.nombre.split(' ')[0]}.` : 'Pago registrado');
   }
@@ -2379,11 +2676,16 @@ async function onSubmit(f) {
     return tras(() => P.grupo(g, true), 'Grupo creado');
   }
   if (f.id === 'fPartido') {
-    const jugadores = [0, 1, 2, 3].map(j => { const v = $('#mJ' + j).value; if (v === 'inv') return { id: null, nombre: $('#mN' + j).value.trim() || `Invitado ${j + 1}` }; const a = v ? alumno(v) : null; return a ? { id: a.id, nombre: a.nombre } : { id: null, nombre: `Jugador ${j + 1}` }; });
+    const jugadores = [0, 1, 2, 3].map(j => { const v = $('#mJ' + j).value; if (v === 'inv') return { id: null, nombre: $('#mN' + j).value.trim() || `Invitado ${j + 1}` }; const a = v ? (alumno(v) || (state.companeros || []).find(x => x.id === v)) : null; return a ? { id: a.id, nombre: a.nombre } : { id: null, nombre: `Jugador ${j + 1}` }; });
     const ids = jugadores.map(j => j.id).filter(Boolean);
     if (new Set(ids).size !== ids.length) return toast('Hay un jugador repetido');
-    const g = ids.length ? alumno(ids[0]).grupo : null;
-    const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: $('#mT').value, grupo: g, jugadores, formato: $('#mFo').value, oro: $('#mO').checked, saque: 0, sacadores: {}, sorteo: null, ladoInv: false, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
+    const alu = ui.role === 'alumno';
+    if (alu && !ids.includes(ui.studentLogged)) return toast('Tienes que estar entre los cuatro jugadores');
+    const g = ids.length && alumno(ids[0]) ? alumno(ids[0]).grupo : (alu ? alumno(ui.studentLogged).grupo : null);
+    const tac = $('#mModo').value === 'tactico';
+    const m = { id: (crypto.randomUUID ? crypto.randomUUID() : 'M' + Date.now()), fecha: $('#mF').value || TODAY_ISO, tipo: tac ? 'clase' : $('#mT').value, grupo: g, jugadores, formato: tac ? 'tactico' : $('#mFo').value, oro: tac ? false : $('#mO').checked, saque: 0, sacadores: tac ? null : {}, sorteo: null, ladoInv: false, eventos: [], estado: 'en_juego', resultado: '0-0', creado: new Date().toISOString() };
+    if (tac) { m.tactico = { meta: Math.max(3, Math.min(30, +$('#tMeta').value || 7)), rondas: +$('#tRon').value || 2, dif2: $('#tDif').checked }; state.settings.metaTactico = m.tactico.meta; state.settings.rondasTactico = m.tactico.rondas; }
+    if (alu) { m.porAlumno = ui.studentLogged; m.creadoPor = ui.uid || null; }
     state.partidos = state.partidos || []; state.partidos.push(m);
     closeModal(); guardarPartido(m, true); return go('partido:' + m.id);
   }
@@ -2392,6 +2694,7 @@ async function onSubmit(f) {
     return tras(() => P.ajustes(state.settings), 'Reglas guardadas');
   }
 }
+document.addEventListener('input', e => { if (e.target.id === 'waTxt' && ui.waTxt) ui.waTxt.texto = e.target.value; });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('resize', () => { if (ui.view === 'vivo') drawLive(); });
