@@ -30,7 +30,7 @@ La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMI
 
 ## Recordatorio de WhatsApp
 
-En el panel hay un editor de mensajes de WhatsApp. El mensaje predeterminado saluda según la hora y recuerda la hora del entrenamiento del grupo elegido. Se pueden crear y guardar otros mensajes; los datos entre llaves ({saludo}, {cuando}, {hora}, {hora_fin}, {grupo}, {contenido}…) se rellenan solos. «Enviar por WhatsApp» abre WhatsApp con el texto para elegir el grupo. WhatsApp no ofrece una forma gratuita de enviar mensajes automáticos a grupos: su API oficial para grupos es de pago, requiere cuenta de empresa verificada y admite como mucho 8 participantes.
+En el panel hay un editor de mensajes de WhatsApp. El mensaje predeterminado saluda según la hora y recuerda la hora del entrenamiento del grupo elegido. Se elige el grupo con un botón y el texto se actualiza con su día y su hora. Se pueden crear y guardar otros mensajes; los datos entre llaves ({saludo}, {cuando}, {hora}, {hora_fin}, {grupo}, {contenido}…) se rellenan solos. «Enviar por WhatsApp» abre WhatsApp con el texto para elegir el grupo. WhatsApp no ofrece una forma gratuita de enviar mensajes automáticos a grupos: su API oficial para grupos es de pago, requiere cuenta de empresa verificada y admite como mucho 8 participantes.
 
 ## Pulsómetros
 
@@ -86,6 +86,13 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 - Índice de recuperación: %FC máxima − %FC media.
 - eTRIMP (Edwards): minutos en Z1 × 1 + … + Z5 × 5.
 - Calorías: ecuación de Keytel et al. (2005).
+
+## Animaciones
+
+- Al cambiar de pantalla, los bloques entran escalonados y las cifras principales cuentan hasta su valor.
+- Pulsómetros: el % sube o baja de forma continua, una flecha indica si la frecuencia está subiendo o bajando, el corazón late al ritmo real, un medidor de fases marca la posición dentro de la zona y, al cambiar de fase, una onda del color de la nueva zona recorre la tarjeta.
+- Marcador: los números giran al cambiar, la fila de la pareja que gana el punto se ilumina y hay celebraciones al ganar un juego, un set o el partido. En el punto de oro el marcador pasa a modo dorado y se resalta la pareja que resta.
+- Si el dispositivo tiene activado «reducir movimiento», las animaciones se desactivan.
 
 ## Protección de datos
 

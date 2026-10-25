@@ -249,6 +249,97 @@
   .coin-face.c1 { background: rgb(var(--court)); color: rgb(var(--court-ink)); transform: rotateY(180deg); }
   @media (prefers-reduced-motion: reduce) { .coin.spin { animation: none; } }
   .chip-p0 { background: rgb(var(--court) / .14); color: rgb(var(--court)); } .chip-p1 { background: rgb(var(--z4) / .18); color: rgb(var(--warn)); }
+  /* ===== Movimiento (tokens compartidos: rebote suave al llegar, salida más rápida) ===== */
+  :root { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-back: cubic-bezier(.34, 1.56, .64, 1); --t-fast: 160ms; --t-med: 280ms; --t-slow: 420ms; }
+  @keyframes enterUp { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+  @keyframes fadeIn { from { opacity: 0; } }
+  @keyframes popIn { from { opacity: 0; transform: scale(.6); } }
+  .ve main .max-w-6xl > * { animation: enterUp var(--t-slow) var(--ease-back) both; }
+  .ve main .max-w-6xl > :nth-child(2) { animation-delay: 50ms; } .ve main .max-w-6xl > :nth-child(3) { animation-delay: 100ms; }
+  .ve main .max-w-6xl > :nth-child(4) { animation-delay: 150ms; } .ve main .max-w-6xl > :nth-child(5) { animation-delay: 200ms; }
+  .ve main .max-w-6xl > :nth-child(6) { animation-delay: 250ms; } .ve main .max-w-6xl > :nth-child(n+7) { animation-delay: 300ms; }
+  .ve section.grid > *, .ve .stagger > * { animation: enterUp var(--t-slow) var(--ease-back) both; animation-delay: calc(var(--i, 0) * 45ms + 80ms); }
+  .ve .ballrow > .ball { animation: popIn var(--t-slow) var(--ease-back) both; animation-delay: calc(var(--i, 0) * 35ms + 200ms); }
+  .ve .tab[aria-current] svg, .ve .navlink[aria-current] .dot { animation: popIn var(--t-slow) var(--ease-back) both; }
+  .navlink, .tab { transition: background-color var(--t-med) var(--ease-out), color var(--t-med) var(--ease-out); }
+  .panel.click, tr.click { transition: background-color var(--t-fast) ease; }
+  .btn, .chip, .gbtn { transition: transform var(--t-fast) var(--ease-out), background-color var(--t-med) ease, box-shadow var(--t-med) ease, color var(--t-med) ease; }
+  .gbtn:active, .chip[data-fcserie]:active, .chip[data-avcat]:active { transform: scale(.96); }
+  #modal:not([hidden]) { animation: fadeIn 200ms ease both; }
+  @keyframes sheetUp { from { opacity: .4; transform: translateY(48px); } }
+  #modal > div { animation: sheetUp 320ms var(--ease-out) both; }
+  @media (min-width: 640px) { #modal > div { animation: popIn 300ms var(--ease-back) both; } }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(18px) scale(.9); } }
+  #toast > div { animation: toastIn 340ms var(--ease-back) both; }
+
+  /* ===== Pulsómetros ===== */
+  .zcard, .hf-panel { position: relative; overflow: hidden; isolation: isolate; }
+  .zchange::after { content: ''; position: absolute; left: 50%; top: 45%; width: 40px; height: 40px; margin: -20px; border-radius: 50%; background: var(--zd); opacity: .3; z-index: -1; animation: zripple 1s var(--ease-out) forwards; pointer-events: none; }
+  @keyframes zripple { to { transform: scale(42); opacity: 0; } }
+  .zin { animation: zin 520ms var(--ease-back); }
+  @keyframes zin { from { opacity: 0; transform: translateY(12px) scale(.88); } }
+  .zchange[data-dir="up"] [data-f="pct"] { animation: bump 650ms var(--ease-back); }
+  @keyframes bump { 35% { transform: scale(1.1); } }
+  .trend { display: inline-block; font-size: .32em; margin-left: .15em; vertical-align: .9em; color: var(--zd); font-weight: 800; line-height: 1; }
+  .trend[data-t="1"] { animation: trendUp 1.1s ease-in-out infinite; } .trend[data-t="-1"] { animation: trendDown 1.1s ease-in-out infinite; opacity: .75; }
+  @keyframes trendUp { 50% { transform: translateY(-.35em); } } @keyframes trendDown { 50% { transform: translateY(.35em); } }
+  .hb { width: .62em; height: .62em; color: var(--zd); flex: none; opacity: .35; transform-origin: center; }
+  .hb.on { opacity: 1; animation: beat 1s ease-in-out infinite; }
+  .zmeter { position: relative; height: 12px; margin: .35rem 0 .2rem; }
+  .zseg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 100%; }
+  .zseg i { border-radius: 4px; opacity: .3; transition: opacity .4s ease, transform .5s var(--ease-back); }
+  .zseg i.on { opacity: 1; transform: scaleY(1.6); }
+  .zseg .z1 { background: rgb(var(--z1)); } .zseg .z2 { background: rgb(var(--z2)); } .zseg .z3 { background: rgb(var(--z3)); } .zseg .z4 { background: rgb(var(--z4)); } .zseg .z5 { background: rgb(var(--z5)); }
+  .zmark { position: absolute; inset: -6px 0; transform: translateX(calc(var(--p, 0) * 1%)); transition: transform .9s var(--ease-out); pointer-events: none; }
+  .zmark b { position: absolute; left: -7px; top: 0; width: 14px; height: 24px; border-radius: 7px; background: #fff; border: 3px solid var(--zd); box-shadow: 0 2px 6px rgb(0 0 0 / .25); }
+  .hf-panel .zmeter { width: min(80%, 640px); height: clamp(12px, 2.2vmin, 22px); margin: .6rem auto .3rem; }
+  .hf-panel .zmark { inset: -8px 0; } .hf-panel .zmark b { width: 18px; left: -9px; height: calc(100% + 0px); top: 0; bottom: 0; }
+  .hf-panel .zmark { top: -8px; bottom: -8px; } .hf-panel .zmark b { height: 100%; }
+  .zmeter.off .zmark { opacity: 0; } .zmark { transition: transform .9s var(--ease-out), opacity .3s ease; }
+  .hf-bpm { display: inline-flex; align-items: center; gap: .15em; }
+  .dock-chip { transition: background-color .6s ease, color .6s ease; }
+
+  /* ===== Marcador ===== */
+  @keyframes sbFlip { 0% { opacity: 0; transform: translateY(-40%) scale(.7); } 60% { opacity: 1; transform: translateY(5%) scale(1.1); } 100% { transform: none; } }
+  .sb-flip { animation: sbFlip 440ms var(--ease-back); }
+  @keyframes rowGana { 0% { box-shadow: inset 0 0 0 2px rgb(var(--ball)), 0 0 26px rgb(var(--ball) / .35); } 100% { box-shadow: inset 0 0 0 2px transparent, 0 0 0 transparent; } }
+  .sb-row.gana { animation: rowGana 900ms var(--ease-out); }
+  .sb-badge { animation: zin 400ms var(--ease-back) both; }
+  .sb-badge.bp { background: #ff5a68; color: #fff; animation: zin 400ms var(--ease-back) both, bpPulse 1.4s ease-in-out 400ms infinite; }
+  @keyframes bpPulse { 50% { box-shadow: 0 0 0 6px rgb(255 90 104 / .25); } }
+  [data-doble][aria-pressed="true"] { animation: dblGlow .9s ease-in-out infinite alternate; }
+  @keyframes dblGlow { to { box-shadow: 0 0 0 7px rgb(var(--court) / .22); } }
+  .scoreboard { transition: background .5s ease, box-shadow .5s ease; }
+  .scoreboard.oro { position: relative; overflow: hidden; background: linear-gradient(135deg, #261a00 0%, #5c4100 48%, #261a00 100%); animation: oroGlow 1.6s ease-in-out infinite alternate; }
+  .scoreboard.oro::before { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgb(255 232 150 / .22) 50%, transparent 70%); transform: translateX(-100%); animation: shimmer 2.6s ease-in-out infinite; pointer-events: none; }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+  @keyframes oroGlow { from { box-shadow: 0 0 0 2px #ffcf3a, 0 10px 34px -12px rgb(255 196 40 / .55); } to { box-shadow: 0 0 0 3px #ffe07a, 0 16px 56px -8px rgb(255 196 40 / .9); } }
+  .scoreboard.oro .sb-pts { color: #ffd84a; text-shadow: 0 0 22px rgb(255 205 60 / .75); }
+  .scoreboard.oro .sb-row.srv .sb-ball { background: #ffd84a; }
+  .oro-banner { display: flex; align-items: center; justify-content: center; gap: .6rem; font-family: var(--f-display); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: clamp(1.5rem, 5.5vw, 2.4rem); color: #ffd84a; line-height: 1; padding: .2rem 0 .35rem; animation: oroPulse 1.3s ease-in-out infinite; }
+  .oro-banner small { font-family: var(--f-sans, inherit); letter-spacing: 0; text-transform: none; font-size: .45em; font-weight: 700; color: #ffe9a8; }
+  @keyframes oroPulse { 50% { transform: scale(1.045); } }
+  .pcol.oro-resta { box-shadow: 0 0 0 3px #ffcf3a, 0 10px 32px -12px rgb(255 196 40 / .8); }
+  .oro-pide { border: 2px solid #ffcf3a !important; background: linear-gradient(135deg, rgb(255 207 58 / .18), rgb(var(--surface)) 60%); animation: enterUp var(--t-slow) var(--ease-back) both; }
+
+  /* ===== Celebraciones ===== */
+  .celebra { position: fixed; inset: 0; z-index: 85; pointer-events: none; display: grid; place-items: center; overflow: hidden; }
+  .celebra.c-juego { place-items: start center; padding-top: 16vh; }
+  .cele-card { background: #07122a; color: #fff; border-radius: 22px; padding: .9rem 1.6rem; text-align: center; box-shadow: 0 20px 60px -20px rgb(0 0 0 / .6); animation: popIn .5s var(--ease-back) both, fadeOut .3s ease-in forwards; }
+  .c-juego .cele-card { animation-delay: 0s, .95s; padding: .55rem 1.2rem; } .c-set .cele-card { animation-delay: 0s, 1.55s; } .c-fin .cele-card { animation-delay: 0s, 2.3s; } .c-oro .cele-card { animation-delay: 0s, 1.2s; background: linear-gradient(135deg, #3a2800, #7a5600); box-shadow: 0 0 0 3px #ffcf3a, 0 20px 60px -20px rgb(255 196 40 / .8); }
+  @keyframes fadeOut { to { opacity: 0; transform: scale(.94); } }
+  .cele-t { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 8vw, 4.6rem); line-height: 1; color: rgb(var(--ball)); letter-spacing: .02em; }
+  .c-juego .cele-t { font-size: clamp(1.3rem, 4.5vw, 1.9rem); } .c-oro .cele-t { color: #ffd84a; text-transform: uppercase; letter-spacing: .12em; }
+  .cele-s { font-weight: 600; font-size: clamp(.95rem, 2.6vw, 1.15rem); opacity: .9; margin-top: .25rem; }
+  .conf { position: absolute; left: 50%; top: 52%; width: 10px; height: 15px; border-radius: 2px; background: var(--c); opacity: 0; animation: conf 1.6s var(--ease-out) var(--d) forwards; }
+  .conf.round { border-radius: 50%; width: 11px; height: 11px; }
+  @keyframes conf { 0% { opacity: 1; transform: translate(-50%, 0) rotate(0); } 45% { opacity: 1; transform: translate(calc(-50% + var(--x) * .7), var(--y)) rotate(calc(var(--r) * .5)); } 100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(var(--y) + 45vh)) rotate(var(--r)); } }
+
+  .wa-bubble { animation: toastIn .35s var(--ease-back) both; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+    .conf { display: none; }
+  }
 </style>
 
 <div id="app" class="min-h-full"></div>
@@ -606,7 +697,7 @@ function pageHead(title, sub, actions = '') {
   return `<div class="flex flex-wrap items-end gap-3 justify-between"><div class="min-w-0"><h1 class="text-4xl sm:text-5xl font-bold leading-none">${title}</h1>${sub ? `<p class="text-muted mt-2 max-w-2xl">${sub}</p>` : ''}</div>${actions ? `<div class="flex flex-wrap gap-2">${actions}</div>` : ''}</div>`;
 }
 function stat(label, value, note = '', tone = '') {
-  return `<div class="panel p-4 flex flex-col gap-1 min-w-0"><div class="text-[13px] font-semibold text-muted">${label}</div><div class="num text-3xl sm:text-4xl font-bold ${tone}">${value}</div>${note ? `<div class="text-[13px] text-muted">${note}</div>` : ''}</div>`;
+  return `<div class="panel p-4 flex flex-col gap-1 min-w-0"><div class="text-[13px] font-semibold text-muted">${label}</div><div class="num text-3xl sm:text-4xl font-bold stat-v ${tone}">${value}</div>${note ? `<div class="text-[13px] text-muted">${note}</div>` : ''}</div>`;
 }
 
 /* ==========================================================
@@ -644,9 +735,9 @@ function vRecordatorioWA() {
   const cambios = ui.wa.texto !== pl.texto || ui.wa.nombre !== pl.nombre;
   return `<section class="panel p-5 flex flex-col gap-4 min-w-0">
     <div class="flex flex-wrap items-baseline justify-between gap-2"><h2 class="text-2xl font-bold">Mensaje de WhatsApp</h2><span class="text-[13px] text-muted">${d ? `Próxima clase del grupo: ${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })}${d === TODAY_ISO ? ' (hoy)' : ''}` : ''}</span></div>
-    <div class="grid sm:grid-cols-3 gap-3">
+    <div><div class="lbl">¿A qué grupo va dirigido?</div><div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Grupo del mensaje">${state.grupos.map(g => { const on = g.id === ui.wa.gid; const pd = proximas(g, 1)[0]; return `<button type="button" role="radio" aria-checked="${on}" class="rounded-2xl border px-3.5 py-2 text-left transition ${on ? 'bg-court text-courtink border-court shadow-md' : 'border-line hover:bg-surface2'}" data-wa-g="${g.id}"><span class="block font-semibold leading-tight">${esc(g.nombre)}</span><span class="block text-[12.5px] ${on ? 'opacity-85' : 'text-muted'}">${DAYS[g.dia]} · ${g.hora}–${g.fin}${pd === TODAY_ISO ? ' · hoy' : ''}</span></button>`; }).join('')}</div></div>
+    <div class="grid sm:grid-cols-2 gap-3">
       <div><label class="lbl" for="waSel">Mensaje</label><select id="waSel" class="field" data-wa-sel>${C.plantillas.map(x => `<option value="${x.id}" ${x.id === pl.id ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}<option value="__nueva">+ Nuevo mensaje…</option></select></div>
-      <div><label class="lbl" for="waGrp">Grupo</label><select id="waGrp" class="field" data-wa-grp>${state.grupos.map(g => `<option value="${g.id}" ${g.id === ui.wa.gid ? 'selected' : ''}>${esc(g.nombre)} · ${DAYS[g.dia].toLowerCase()} ${g.hora}</option>`).join('')}</select></div>
       <div><label class="lbl" for="waNom">Nombre del mensaje</label><input id="waNom" class="field" value="${esc(ui.wa.nombre)}"></div>
     </div>
     <div class="grid lg:grid-cols-2 gap-4 min-w-0">
@@ -657,7 +748,7 @@ function vRecordatorioWA() {
         <div class="flex flex-wrap gap-1" aria-label="Insertar emoji">${WA_EMOJI.map(e => `<button type="button" class="w-9 h-9 rounded-lg hover:bg-surface2 text-lg" data-wa-ins="${e}" aria-label="Insertar ${e}">${e}</button>`).join('')}</div>
       </div>
       <div class="flex flex-col gap-2 min-w-0"><div class="lbl !mb-0">Así se verá</div>
-        <div class="rounded-2xl p-4 bg-[#E6DDD4] dark:bg-[#0B141A] flex-1"><div id="waPrev" class="max-w-[95%] ml-auto rounded-xl rounded-tr-sm bg-[#D9FDD3] dark:bg-[#005C4B] text-[#111B21] dark:text-[#E9EDEF] px-3 py-2 text-[14.5px] leading-relaxed whitespace-pre-wrap break-words shadow-sm">${esc(waRellenar(ui.wa.texto, ui.wa.gid))}</div></div>
+        <div class="rounded-2xl p-4 bg-[#E6DDD4] dark:bg-[#0B141A] flex-1"><div id="waPrev" class="wa-bubble max-w-[95%] ml-auto rounded-xl rounded-tr-sm bg-[#D9FDD3] dark:bg-[#005C4B] text-[#111B21] dark:text-[#E9EDEF] px-3 py-2 text-[14.5px] leading-relaxed whitespace-pre-wrap break-words shadow-sm">${esc(waRellenar(ui.wa.texto, ui.wa.gid))}</div></div>
       </div>
     </div>
     <div class="flex flex-wrap gap-2">
@@ -978,9 +1069,10 @@ function slotCard(s, selHTML) {
     <div class="flex items-center justify-between gap-2"><div class="font-display text-xl font-bold">Sensor ${s.i + 1}</div><span class="chip ${s.status === 'conectado' || s.status === 'simulado' ? 'chip-ok' : s.status === 'conectando' ? 'chip-warn' : 'chip-neutral'}" data-f="status">${statusTxt(s)}</span></div>
     ${selHTML}
     <div class="flex items-end gap-4 flex-wrap">
-      <div><div class="num text-7xl leading-none zfig" data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}<span class="text-3xl">%</span></div><div class="text-[12.5px] font-semibold opacity-80">de su FC máxima</div></div>
-      <div><div class="num text-4xl leading-none zfig" data-f="hr">${s.hr ?? '––'}</div><div class="text-[12.5px] font-semibold opacity-80">ppm</div></div>
+      <div><div class="num text-7xl leading-none zfig"><span data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}</span><span class="text-3xl">%</span><span class="trend" data-f="trend"></span></div><div class="text-[12.5px] font-semibold opacity-80">de su FC máxima</div></div>
+      <div><div class="num text-4xl leading-none zfig flex items-center gap-1.5">${HEART_SVG.replace('class="hb', `class="hb ${s.hr ? 'on' : ''}`).replace('<svg', `<svg style="${s.hr ? `animation-duration:${(60 / s.hr).toFixed(2)}s` : ''}"`)}<span data-f="hr">${s.hr ?? '––'}</span></div><div class="text-[12.5px] font-semibold opacity-80">ppm</div></div>
     </div>
+    ${zmeter(s.hr, max, s.hr ? z : 0)}
     <div class="font-bold zfig" data-f="zone">${s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : '&nbsp;')}</div>
     <div class="zbar" data-f="zbar">${s.z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>
     <div class="flex justify-between text-[13px] font-semibold opacity-80 tnum"><span data-f="kcal">${Math.round(s.kcal)} kcal</span><span data-f="trimp">eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}</span></div>
@@ -1105,9 +1197,10 @@ function refreshLive(i) { updateFull(i); updateDock(); }
 function updateSlot(i) {
   const s = live.slots[i]; const el = document.getElementById('slot' + i); if (!el) return;
   const { max, z } = slotInfo(s);
-  el.className = `zcard hz${s.hr ? z : 'x'} p-4 flex flex-col gap-3 min-w-0`;
-  el.querySelector('[data-f="pct"]').innerHTML = `${s.hr ? Math.round(s.hr / max * 100) : '––'}<span class="text-3xl">%</span>`;
+  el.className = `zcard hz${s.hr ? z : 'x'} p-4 flex flex-col gap-3 min-w-0${el.classList.contains('zchange') ? ' zchange' : ''}`;
+  tweenNum(el.querySelector('[data-f="pct"]'), s.hr ? Math.round(s.hr / max * 100) : null, v => v == null ? '––' : String(v));
   el.querySelector('[data-f="hr"]').textContent = s.hr ?? '––';
+  hrExtras(el, s, max, s.hr ? z : 0);
   el.querySelector('[data-f="zone"]').innerHTML = s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : '&nbsp;');
   const tot = s.z.reduce((t, x) => t + x, 0) || 1;
   el.querySelector('[data-f="zbar"]').innerHTML = s.z.map((m, k) => `<span class="z${k + 1}" style="width:${m / tot * 100}%"></span>`).join('');
@@ -1182,8 +1275,9 @@ function hfPanel(s) {
   const { max, z, nombre } = slotInfo(s);
   return `<section class="hf-panel hz${s.hr ? z : 'x'}" id="hf${s.i}" role="status" aria-atomic="true">
     <div class="hf-name">${esc(nombre)}</div>
-    <div class="hf-figs"><span class="hf-pct num" data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}<small>%</small></span><span class="hf-bpm num" data-f="bpm">${s.hr ?? '––'}<small>ppm</small></span></div>
+    <div class="hf-figs"><span class="hf-pct num"><span data-f="pct">${s.hr ? Math.round(s.hr / max * 100) : '––'}</span><small>%</small><span class="trend" data-f="trend"></span></span><span class="hf-bpm num">${HEART_SVG.replace('class="hb', `class="hb ${s.hr ? 'on' : ''}`)}<span data-f="bpm">${s.hr ?? '––'}</span><small>ppm</small></span></div>
     <div class="hf-zone" data-f="zona">${s.hr ? ZONA_TXT[z] : (s.device || s.sim ? 'Esperando señal…' : 'Sensor sin conectar')}</div>
+    ${zmeter(s.hr, max, s.hr ? z : 0)}
     <div class="hf-meta tnum" data-f="meta">${live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : ''}</div>
   </section>`;
 }
@@ -1192,9 +1286,10 @@ function updateFull(i) {
   const list = fullSlots();
   if (i == null || !document.getElementById('hf' + i) || el.querySelectorAll('.hf-panel').length !== list.length) { el.innerHTML = fullHTML(); return; }
   const s = live.slots[i]; const p = document.getElementById('hf' + i); const { max, z } = slotInfo(s);
-  p.className = `hf-panel hz${s.hr ? z : 'x'}`;
-  p.querySelector('[data-f="pct"]').innerHTML = `${s.hr ? Math.round(s.hr / max * 100) : '––'}<small>%</small>`;
-  p.querySelector('[data-f="bpm"]').innerHTML = `${s.hr ?? '––'}<small>ppm</small>`;
+  p.className = `hf-panel hz${s.hr ? z : 'x'}${p.classList.contains('zchange') ? ' zchange' : ''}`;
+  tweenNum(p.querySelector('[data-f="pct"]'), s.hr ? Math.round(s.hr / max * 100) : null, v => v == null ? '––' : String(v));
+  p.querySelector('[data-f="bpm"]').textContent = s.hr ?? '––';
+  hrExtras(p, s, max, s.hr ? z : 0);
   p.querySelector('[data-f="zona"]').textContent = s.hr ? ZONA_TXT[z] : 'Esperando señal…';
   p.querySelector('[data-f="meta"]').textContent = live.running ? `${Math.round(s.kcal)} kcal · eTRIMP ${Math.round(etrimp(s.z.map(x => x / 60)))}` : '';
 }
@@ -1441,10 +1536,10 @@ function vMarcador(m) {
   const pend = pendienteSaque(m, st);
   const pideOro = oro && m.oroSel === undefined && !pend;
   const bloqueado = st.fin || !!pend || pideOro;
-  const fila = k => `<div class="sb-row ${st.server === k ? 'srv' : ''}">
+  const fila = k => `<div class="sb-row ${st.server === k ? 'srv' : ''}" data-k="${k}">
       <div class="sb-name"><span class="sb-ball" aria-hidden="true"></span><span class="truncate">${esc(nombrePar(m, k))}</span>${st.server === k && st.sj != null ? `<span class="text-[12px] font-semibold opacity-75 truncate">saca ${esc(corto(nombreJ(m, st.sj)))}</span>` : ''}<span class="sr-only">${st.server === k ? '(saca)' : ''}</span></div>
-      ${st.sets.map(x => `<div class="sb-set ${x[k] > x[1 - k] ? 'won' : ''}">${x[k]}</div>`).join('')}
-      ${st.fin ? (tac ? `<div class="sb-games" title="Balance">${st.balance[k] > 0 ? '+' : ''}${st.balance[k]}</div>` : '') : tac ? `<div class="sb-pts">${k ? p1 : p0}</div>` : `<div class="sb-games">${st.games[k]}</div><div class="sb-pts">${k ? p1 : p0}</div>`}
+      ${st.sets.map((x, i) => `<div class="sb-set ${x[k] > x[1 - k] ? 'won' : ''}" data-sb="s${i}${k}">${x[k]}</div>`).join('')}
+      ${st.fin ? (tac ? `<div class="sb-games" title="Balance">${st.balance[k] > 0 ? '+' : ''}${st.balance[k]}</div>` : '') : tac ? `<div class="sb-pts" data-sb="p${k}">${k ? p1 : p0}</div>` : `<div class="sb-games" data-sb="g${k}">${st.games[k]}</div><div class="sb-pts" data-sb="p${k}">${k ? p1 : p0}</div>`}
     </div>`;
   const jugador = j => { const x = S.jug[j]; return `<div class="pcard ${st.sj === j ? 'ring-2 ring-ball' : ''}">
       <div class="flex items-baseline justify-between gap-2 min-w-0"><div class="min-w-0"><div class="text-[11.5px] font-semibold text-muted">${LADO(j)}${st.sj === j ? ' · saca' : ''}</div><div class="font-display text-xl font-bold truncate">${esc(nombreJ(m, j))}</div></div><div class="text-[12.5px] text-muted tnum shrink-0 text-right">W ${x.win} · E ${x.enf}${x.oroRN ? `<br>Oro restando ${x.oroRW}/${x.oroRN}` : ''}${x.pctEnf != null && S.pair[x.k].lost >= 3 ? `<br>${pct(x.pctEnf)} ENF${(() => { const id = m.jugadores[j]?.id; const h = id ? Mh.alumno(id) : null; return h?.pctEnf != null ? ` <span class="${x.pctEnf > h.pctEnf + .08 ? 'text-bad font-semibold' : x.pctEnf < h.pctEnf - .08 ? 'text-ok font-semibold' : ''}">(suele ${pct(h.pctEnf)})</span>` : ''; })()}` : ''}</div></div>
@@ -1457,15 +1552,19 @@ function vMarcador(m) {
   return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-go="partidos">${I.back}Marcador</button>
       <span class="chip chip-neutral">${tac ? `Juego táctico · a ${T.meta} puntos · ${T.rondas} rondas${T.dif2 ? ' · por 2' : ''}` : `${m.tipo === 'clase' ? 'Clase' : 'Partido'} · ${FORMATOS[m.formato]}${m.oro ? ' · punto de oro' : ''}`}</span>
       <div class="ml-auto flex flex-wrap gap-2">${m.eventos.length ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-undo>Deshacer último punto</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-plado>Cambiar lados</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pmodo="stats">Estadísticas</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pfin>${st.fin ? 'Guardar y cerrar' : tac ? 'Terminar juego' : 'Terminar partido'}</button></div></div>
-    <section class="scoreboard" aria-live="polite" aria-atomic="true">
-      <div class="sb-head"><span>${st.fin ? 'Final' : tac ? `Ronda ${st.rondas.length + 1} de ${T.rondas} · saca la pareja ${st.server + 1}` : st.tb ? 'Tie-break' : `Set ${st.sets.length + 1}`}</span>${m.dobleSel && !st.fin ? '<span class="sb-badge oro">Punto doble ×2</span>' : oro ? '<span class="sb-badge oro">Punto de oro</span>' : st.adv != null ? '<span class="sb-badge">Ventaja por punto doble</span>' : bp ? '<span class="sb-badge">Bola de break</span>' : ''}</div>
+    <section class="scoreboard ${oro && !st.fin ? 'oro' : ''}" aria-live="polite" aria-atomic="true" data-m="${m.id}" data-n="${m.eventos.length}" data-oro="${oro && !st.fin ? 1 : 0}" data-sets="${st.sets.length}" data-fin="${st.fin ? 1 : 0}" data-ult="${st.puntos.length ? st.puntos[st.puntos.length - 1].par : ''}"
+      data-juego-t="${(() => { const jg = st.juegos[st.juegos.length - 1]; return jg ? esc(`Juego · ${nombrePar(m, jg.winner)}`) : ''; })()}"
+      data-set-t="${tac ? `Fin de la ronda ${st.rondas.length}` : st.sets.length ? esc(`Set para ${nombrePar(m, st.sets[st.sets.length - 1][0] > st.sets[st.sets.length - 1][1] ? 0 : 1)}`) : ''}" data-set-s="${st.sets.length ? st.sets[st.sets.length - 1].join(' - ') : ''}"
+      data-fin-t="${st.fin ? (st.empate ? 'Empate' : esc(`¡Gana ${nombrePar(m, st.ganador)}!`)) : ''}" data-fin-s="${st.fin ? esc(resultadoTxt(st)) : ''}">
+      ${oro && !st.fin ? `<div class="oro-banner"><span>Punto de oro</span>${m.oroSel != null && m.oroSel >= 0 ? `<small>resta ${esc(corto(nombreJ(m, m.oroSel)))}</small>` : ''}</div>` : ''}
+      <div class="sb-head"><span>${st.fin ? 'Final' : tac ? `Ronda ${st.rondas.length + 1} de ${T.rondas} · saca la pareja ${st.server + 1}` : st.tb ? 'Tie-break' : `Set ${st.sets.length + 1}`}</span>${m.dobleSel && !st.fin ? '<span class="sb-badge oro">Punto doble ×2</span>' : oro ? '' : st.adv != null ? '<span class="sb-badge">Ventaja por punto doble</span>' : bp ? '<span class="sb-badge bp">Bola de break</span>' : ''}</div>
       ${fila(0)}${fila(1)}
       ${st.fin ? `<div class="sb-final">${st.empate ? 'Empate: mismo balance de puntos' : `Gana ${esc(nombrePar(m, st.ganador))}${tac ? ` · balance ${st.balance[st.ganador] > 0 ? '+' : ''}${st.balance[st.ganador]}` : ''}`}</div>` : ''}
     </section>
     ${pend ? vPideSaque(m, st, pend) : pideOro ? vPideOro(m, st) : ''}
     ${dobleBtn ? `<div class="flex flex-wrap items-center gap-3">${dobleBtn}<span class="text-[13px] text-muted">${tac ? 'Si se cumple la norma trabajada, el punto suma 2.' : 'Cuenta como dos puntos. Con 30-40 en contra, pasa a ventaja/40; si se pierde esa ventaja, 40-40 y punto de oro.'}</span></div>` : ''}
     <section class="grid md:grid-cols-2 gap-4">
-      ${orden.map(k => `<div class="pcol pcol-${k}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
+      ${orden.map(k => `<div class="pcol pcol-${k} ${oro && !st.fin && k !== st.server ? 'oro-resta' : ''}"><div class="pcol-head"><span>Pareja ${k + 1}</span><span class="tnum">${S.pair[k].won} puntos</span></div>${jugador(k * 2)}${jugador(k * 2 + 1)}
         <button class="btn btn-ghost w-full" data-ppunto="${k}" ${bloqueado ? 'disabled' : ''}>Punto para la pareja ${k + 1} (sin winner ni error)</button></div>`).join('')}
     </section>
     ${vLectura(m)}
@@ -1498,7 +1597,7 @@ function vPideSaque(m, st, pend) {
 }
 function vPideOro(m, st) {
   const r = 1 - st.server;
-  return `<section class="panel p-5 flex flex-col gap-3 border-2 border-ball"><div><h2 class="text-2xl font-bold">Punto de oro: ¿quién resta?</h2><p class="text-muted text-[14px] mt-1">La pareja ${r + 1} decide qué jugador recibe. Sirve para saber cuántos puntos de oro gana cada uno cuando le toca restar.</p></div>
+  return `<section class="panel p-5 flex flex-col gap-3 oro-pide"><div><h2 class="text-2xl font-bold">Punto de oro: ¿quién resta?</h2><p class="text-muted text-[14px] mt-1">La pareja ${r + 1} decide qué jugador recibe. Sirve para saber cuántos puntos de oro gana cada uno cuando le toca restar.</p></div>
     <div class="grid grid-cols-3 gap-2">${[r * 2, r * 2 + 1].map(j => `<button class="gbtn !min-h-[64px]" data-oro-resta="${j}"><span class="font-display text-xl font-bold">${esc(corto(nombreJ(m, j)))}</span><span class="text-[12px]">${LADO(j)}</span></button>`).join('')}<button class="gbtn !min-h-[64px]" data-oro-resta="-1"><span class="font-display text-xl font-bold">Sin indicar</span><span class="text-[12px]">Seguir</span></button></div></section>`;
 }
 function lanzarMoneda(m) {
@@ -1532,6 +1631,7 @@ function anotar(m, ev) {
   m.eventos.push({ ...ev, ...extra, t: Date.now() });
   const st = motor(m);
   if (st.fin && m.estado !== 'terminado') toast(st.empate ? 'Terminado en empate de balance. Pulsa «Guardar y cerrar».' : `${st.tactico ? 'Juego' : 'Partido'} terminado: gana ${nombrePar(m, st.ganador)}. Pulsa «Guardar y cerrar».`);
+  else if (!RM()) { /* la celebración en pantalla ya lo anuncia */ }
   else if (st.tactico && st.rondas.length > antes.rondas.length) { const rr = st.rondas[st.rondas.length - 1]; toast(`Fin de la ronda ${st.rondas.length}: ${rr.pts.join('-')}. Ahora saca la pareja ${st.server + 1}.`); }
   else if (st.juegos.length > antes.juegos.length) { const jg = st.juegos[st.juegos.length - 1]; toast(`Juego para la pareja ${jg.winner + 1} · ${st.sets.length > antes.sets.length ? 'set ' + st.sets[st.sets.length - 1].join('-') : st.games.join('-')}`); }
   m.resultado = resultadoTxt(st);
@@ -2424,8 +2524,74 @@ function render() {
     else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
   }
   app.innerHTML = shell(html);
+  const vk = [ui.role, ui.view, ui.pmodo || '', ui.ptab || '', ui.amodo || '', ui.avCat || ''].join('|');
+  const nueva = vk !== ui._vk; ui._vk = vk;
+  app.classList.toggle('ve', nueva && !RM());
+  if (nueva) { clearTimeout(ui._veT); ui._veT = setTimeout(() => app.classList.remove('ve'), 1200); prepararEntrada(app); }
   if (after) after();
+  if (ui.view.startsWith('partido:')) animMarcador(); else ui.sbPrev = null;
   updateDock();
+}
+/* ---------- Movimiento: entrada de pantalla, cifras que cuentan, pulso y marcador ---------- */
+const RM = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+function prepararEntrada(root) {
+  root.querySelectorAll('section.grid, .stagger').forEach(g => [...g.children].forEach((c, i) => c.style.setProperty('--i', Math.min(i, 10))));
+  root.querySelectorAll('.ballrow').forEach(g => [...g.children].forEach((c, i) => c.style.setProperty('--i', Math.min(i, 20))));
+  if (!RM()) root.querySelectorAll('.stat-v').forEach(contar);
+}
+function contar(el) {
+  const m = el.textContent.trim().match(/^(-?)([\d.]+(?:,\d+)?)(\s?(?:%|€|kcal|ppm)?)$/); if (!m) return;
+  const dec = (m[2].split(',')[1] || '').length; const fin = parseFloat(m[2].replace(/\./g, '').replace(',', '.')) * (m[1] ? -1 : 1);
+  if (!isFinite(fin) || Math.abs(fin) < 2 && !dec) return;
+  const fmt = v => v.toLocaleString('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + m[3];
+  const t0 = performance.now(), d = 800; el.textContent = fmt(0);
+  const paso = now => { const k = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(fin * e); if (k < 1 && el.isConnected) requestAnimationFrame(paso); else el.textContent = fmt(fin); };
+  requestAnimationFrame(paso);
+}
+function tweenNum(el, to, fmt) {
+  if (!el) return; const from = el._v; el._v = to;
+  if (to == null) { el.innerHTML = fmt(null); return; }
+  if (from == null || RM() || from === to) { el.innerHTML = fmt(to); return; }
+  cancelAnimationFrame(el._raf); const t0 = performance.now(), d = 650;
+  const paso = now => { const k = Math.min(1, (now - t0) / d), e = 1 - Math.pow(1 - k, 3); el.innerHTML = fmt(Math.round(from + (to - from) * e)); if (k < 1) el._raf = requestAnimationFrame(paso); };
+  el._raf = requestAnimationFrame(paso);
+}
+function tendencia(s) { const xs = s.samples.slice(-12).map(x => x.hr); if (xs.length < 8) return 0; const a = media(xs.slice(-4)), b = media(xs.slice(0, 4)); return a - b > 3 ? 1 : b - a > 3 ? -1 : 0; }
+const HEART_SVG = '<svg class="hb" data-f="hb" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>';
+const zmeter = (hr, max, z) => `<div class="zmeter ${hr ? '' : 'off'}" data-f="zm" style="--p:${hr ? Math.max(0, Math.min(1, (hr / max - .5) / .5)) * 100 : 0}" aria-hidden="true"><div class="zseg">${[1, 2, 3, 4, 5].map(k => `<i class="z${k} ${k === z ? 'on' : ''}"></i>`).join('')}</div><div class="zmark"><b></b></div></div>`;
+function hrExtras(el, s, max, z) {
+  const hr = s.hr;
+  const zm = el.querySelector('[data-f="zm"]'); if (zm) { zm.classList.toggle('off', !hr); zm.style.setProperty('--p', hr ? Math.max(0, Math.min(1, (hr / max - .5) / .5)) * 100 : 0); zm.querySelectorAll('i').forEach((x, k) => x.classList.toggle('on', k + 1 === z)); }
+  const hb = el.querySelector('[data-f="hb"]'); if (hb) { hb.classList.toggle('on', !!hr); hb.style.animationDuration = hr ? (60 / hr).toFixed(2) + 's' : ''; }
+  const tr = el.querySelector('[data-f="trend"]'); if (tr) { const t = hr ? tendencia(s) : 0; if (tr.dataset.t !== String(t)) { tr.dataset.t = t; tr.textContent = t > 0 ? '▲' : t < 0 ? '▼' : ''; tr.title = t > 0 ? 'Subiendo' : t < 0 ? 'Bajando' : ''; } }
+  if (el._z != null && z && el._z && el._z !== z && !RM()) {
+    el.dataset.dir = z > el._z ? 'up' : 'down'; el.classList.remove('zchange'); void el.offsetWidth; el.classList.add('zchange');
+    const zl = el.querySelector('[data-f="zone"],[data-f="zona"]'); if (zl) { zl.classList.remove('zin'); void zl.offsetWidth; zl.classList.add('zin'); }
+  }
+  if (z) el._z = z;
+}
+function celebra(nivel, titulo, sub = '') {
+  document.querySelectorAll('.celebra').forEach(x => x.remove());
+  const d = document.createElement('div'); d.className = `celebra c-${nivel}`; d.setAttribute('role', 'status');
+  const n = RM() ? 0 : { juego: 12, oro: 26, set: 26, fin: 48 }[nivel] || 0;
+  const cols = nivel === 'oro' ? ['#ffd84a', '#ffcf3a', '#fff1b8', '#e0a800', '#ffffff'] : ['#D6EA28', '#1A4EBA', '#16A36A', '#EE960A', '#E23C48', '#ffffff'];
+  d.innerHTML = `<div class="cele-card"><div class="cele-t">${esc(titulo)}</div>${sub ? `<div class="cele-s">${esc(sub)}</div>` : ''}</div>` + Array.from({ length: n }, (_, i) => `<span class="conf ${i % 3 === 0 ? 'round' : ''}" style="--x:${((Math.random() * 2 - 1) * (nivel === 'juego' ? 22 : 46)).toFixed(1)}vw;--y:${(-(18 + Math.random() * (nivel === 'juego' ? 16 : 42))).toFixed(1)}vh;--r:${Math.round(Math.random() * 720 - 360)}deg;--c:${cols[i % cols.length]};--d:${(Math.random() * .2).toFixed(2)}s"></span>`).join('');
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), { juego: 1300, oro: 1600, set: 1950, fin: 2700 }[nivel] || 1500);
+}
+function animMarcador() {
+  const sb = document.querySelector('.scoreboard[data-m]'); if (!sb) { ui.sbPrev = null; return; }
+  const cur = { m: sb.dataset.m, n: +sb.dataset.n, oro: sb.dataset.oro === '1', sets: +sb.dataset.sets, fin: sb.dataset.fin === '1', vals: {} };
+  sb.querySelectorAll('[data-sb]').forEach(x => { cur.vals[x.dataset.sb] = x.textContent.trim(); });
+  const pr = ui.sbPrev; ui.sbPrev = cur;
+  if (!pr || pr.m !== cur.m || cur.n <= pr.n) return;          // solo cuando se suma un punto (no al deshacer ni al entrar)
+  Object.entries(cur.vals).forEach(([k, v]) => { if (pr.vals[k] !== v) sb.querySelector(`[data-sb="${k}"]`)?.classList.add('sb-flip'); });
+  sb.querySelector(`.sb-row[data-k="${sb.dataset.ult}"]`)?.classList.add('gana');
+  const juego = ['g0', 'g1'].some(k => k in pr.vals && pr.vals[k] !== cur.vals[k]);
+  if (cur.fin && !pr.fin) { celebra('fin', sb.dataset.finT || '¡Final!', sb.dataset.finS || ''); navigator.vibrate?.([60, 80, 60, 80, 120]); }
+  else if (cur.sets > pr.sets) { celebra('set', sb.dataset.setT || 'Set', sb.dataset.setS || ''); navigator.vibrate?.([50, 60, 50]); }
+  else if (juego) celebra('juego', sb.dataset.juegoT || 'Juego');
+  if (cur.oro && !pr.oro && !cur.fin) { setTimeout(() => celebra('oro', 'Punto de oro', 'Quien gane este punto se lleva el juego'), juego ? 650 : 0); navigator.vibrate?.([30, 50, 30]); }
 }
 function rerenderIf(v) { if (ui.view === v) render(); }
 function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
@@ -2436,6 +2602,7 @@ document.addEventListener('click', async e => {
   if (e.target.matches('input[data-sel], input[data-selall]')) return;
   if (e.target.closest('[data-wa]')) { const t = waRellenar($('#waTxt')?.value || '', ui.wa?.gid); window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener'); return; }
   if (e.target.closest('[data-wa-copiar]')) { const t = waRellenar($('#waTxt')?.value || '', ui.wa?.gid); (navigator.clipboard?.writeText(t) || Promise.reject()).then(() => toast('Texto copiado'), () => toast('No se pudo copiar: copia el texto de la vista previa')); return; }
+  const wg = e.target.closest('[data-wa-g]'); if (wg) { ui.wa.gid = wg.dataset.waG; return render(); }
   const wi = e.target.closest('[data-wa-ins]'); if (wi) { const ta = $('#waTxt'); const a = ta.selectionStart ?? ta.value.length, b = ta.selectionEnd ?? a; ta.value = ta.value.slice(0, a) + wi.dataset.waIns + ta.value.slice(b); ta.focus(); ta.selectionStart = ta.selectionEnd = a + wi.dataset.waIns.length; ta.dispatchEvent(new Event('input', { bubbles: true })); return; }
   if (e.target.closest('[data-wa-guardar]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === ui.wa.edId); if (!pl) return; pl.texto = ui.wa.texto; pl.nombre = (ui.wa.nombre || '').trim() || 'Mensaje'; C.sel = pl.id; ui.wa.nombre = pl.nombre; return waGuardarConf(C, 'Mensaje guardado'); }
   if (e.target.closest('[data-wa-reset]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === WA_DEF.id); Object.assign(pl, WA_DEF); ui.wa.edId = null; return waGuardarConf(C, 'Texto original restaurado'); }
@@ -2581,7 +2748,6 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'waGrp') { ui.wa.gid = e.target.value; const pv = $('#waPrev'); if (pv) pv.textContent = waRellenar(ui.wa.texto, ui.wa.gid); return; }
   if (e.target.id === 'waSel') {
     if (e.target.value === '__nueva') { const C = waConf(); const n = { id: 'm' + Date.now(), nombre: 'Mensaje nuevo', texto: '{saludo}, equipo! 🎾\n\n' }; C.plantillas.push(n); C.sel = n.id; ui.wa.sel = n.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje nuevo creado: escríbelo y guárdalo'); }
     ui.wa.sel = e.target.value; ui.wa.edId = null; const C = waConf(); C.sel = ui.wa.sel; state.settings.wa = C; return render();
