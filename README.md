@@ -47,6 +47,19 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 - Gmail permite unos 100 emails al día desde una cuenta gratuita: la app no deja enviar más de 90 de una vez.
 - Al registrar un pago, el alumno recibe un email de agradecimiento con el pago y el estado de su bono.
 
+## Diseño de sesiones
+
+En *Clases*, cada sesión tiene un botón «Diseñar la sesión», con los mismos campos que la hoja de sesión de la escuela:
+
+- **Cabecera:** número de sesión (se calcula solo), nivel, contenidos y objetivos de carga (minutos por encima del 90 % de la FC máxima y RPE objetivo).
+- **Fases:** calentamiento, técnica, táctica y partido, y opcionalmente físico o vuelta a la calma. Cada fase tiene tareas con minutos, descripción y, si hacen falta, físico, competición, variante, objetivo y puntuación. Las fases y las tareas se pueden reordenar, duplicar y borrar.
+- **Tiempo:** una barra muestra los minutos planificados frente a la duración de la clase.
+- **Varias pistas:** «Versión para otra pista» crea una copia de la sesión para cambiarla, como las dos mitades de la hoja.
+- **Reutilizar:** se puede copiar la sesión anterior, copiar cualquier otra sesión o reutilizar tareas ya usadas en esa fase.
+- **Imprimir:** sale en A4 apaisado con el formato de la hoja de sesión (dos mitades; si hay una sola pista, se repite).
+- **Pulsómetros:** si ese día hubo sesión de pulsómetros, se muestra el tiempo real por encima del 90 % junto al objetivo.
+- **Portal del alumno:** los contenidos aparecen en sus próximas clases. Si se marca «La sesión completa», el alumno también puede abrir la sesión con sus tareas.
+
 ## Bonos, fijos y relevos
 
 - **Fijo del grupo:** se le cobra cada clase con lista pasada, aunque falte, salvo que le cubra un relevo.

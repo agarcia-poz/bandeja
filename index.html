@@ -336,6 +336,35 @@
   @keyframes conf { 0% { opacity: 1; transform: translate(-50%, 0) rotate(0); } 45% { opacity: 1; transform: translate(calc(-50% + var(--x) * .7), var(--y)) rotate(calc(var(--r) * .5)); } 100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(var(--y) + 45vh)) rotate(var(--r)); } }
 
   .wa-bubble { animation: toastIn .35s var(--ease-back) both; }
+
+  /* ===== Diseño de sesiones ===== */
+  .fase { border-left: 6px solid rgb(var(--fc)); }
+  .tarea { background: rgb(var(--surface2) / .55); border: 1px solid rgb(var(--line)); border-radius: 16px; padding: .75rem; transition: box-shadow var(--t-med) ease, background-color var(--t-med) ease; }
+  .tarea:focus-within { background: rgb(var(--surface)); box-shadow: 0 0 0 2px rgb(var(--fc) / .55), 0 8px 24px -16px rgb(var(--ink) / .4); }
+  .ibtn { width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 10px; color: rgb(var(--muted)); font-weight: 700; transition: background-color var(--t-fast) ease, color var(--t-fast) ease; }
+  .ibtn:hover:not(:disabled) { background: rgb(var(--surface2)); color: rgb(var(--ink)); } .ibtn:disabled { opacity: .3; }
+  .ibtn.text-bad { color: rgb(var(--bad)); }
+  .mchip { min-width: 26px; height: 24px; border-radius: 8px; font-size: 11.5px; font-weight: 700; color: rgb(var(--muted)); background: rgb(var(--surface)); border: 1px solid rgb(var(--line)); transition: all var(--t-fast) ease; }
+  .mchip.on, .mchip:hover { background: rgb(var(--fc, var(--court))); color: #fff; border-color: transparent; }
+  .rpe { height: 40px; border-radius: 10px; font-family: var(--f-display); font-weight: 800; font-size: 1.15rem; background: rgb(var(--rc) / .14); color: rgb(var(--ink)); transition: transform var(--t-fast) var(--ease-back), background-color var(--t-med) ease; }
+  .rpe.on { background: rgb(var(--rc)); color: #fff; transform: scale(1.08); box-shadow: 0 6px 16px -8px rgb(var(--rc)); }
+  textarea.auto { resize: none; overflow: hidden; }
+  #print { display: none; }
+  @media print {
+    @page { size: A4 landscape; margin: 7mm; }
+    body > *:not(#print) { display: none !important; }
+    html, body { background: #fff !important; }
+    #print { display: block !important; color: #000; font: 9.5px/1.25 Figtree, Arial, sans-serif; }
+    .ps-page { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+    .ps-half table { width: 100%; border-collapse: collapse; }
+    .ps-half td, .ps-half th { border: 1px solid #000; padding: 2px 4px; vertical-align: top; }
+    .ps-head th { font-weight: 700; text-align: center; white-space: nowrap; } .ps-head td { text-align: center; }
+    .ps-esc { font-weight: 800; letter-spacing: .04em; }
+    .ps-body { margin-top: 2mm; }
+    .ps-fase { width: 6mm; padding: 0 !important; vertical-align: middle !important; } .ps-fase span { display: block; writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 800; letter-spacing: .05em; margin: auto; }
+    .ps-min { width: 7mm; text-align: center; font-weight: 700; } .ps-desc { width: 62%; } .ps-main { font-weight: 700; white-space: pre-line; } .ps-x { white-space: pre-line; margin-top: 1px; }
+    .ps-dib { min-height: 18mm; height: 18mm; } .ps-pts { text-align: right; font-weight: 700; }
+  }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
     .conf { display: none; }
@@ -654,7 +683,7 @@ const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos
 
 function shell(content) {
   const nav = ui.role === 'admin' ? ADMIN_NAV : ALUMNO_NAV;
-  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view;
+  const cur = ui.view.startsWith('alumno:') ? 'alumnos' : ui.view.startsWith('partido:') ? 'partidos' : ui.view.startsWith('plan:') ? 'clases' : ui.view;
   const pendientes = state.outbox.filter(e => e.estado === 'En cola').length;
   const who = ui.role === 'admin' ? (LIVE ? esc(ui.email || 'Administrador') : 'Andrés · administrador') : esc(alumno(ui.studentLogged).nombre);
   const canSwitch = !LIVE || ui.isAdmin; const canLogout = LIVE || ui.role === 'alumno';
@@ -1010,8 +1039,8 @@ function vClases() {
   const lista = ui.asisDraft?.[ui.claseKey] || state.asistencia[ui.claseKey];
   const extra = [...new Set([...reales().filter(a => a.grupo === gid && esRelevo(a)).map(a => a.id), ...Object.keys(lista || {}).filter(id => !fijos.some(f => f.id === id)), ...(ui.extraAsis?.[ui.claseKey] || [])])].map(alumno).filter(Boolean);
   const presentes = lista;
-  const opts = state.grupos.map(gg => [...ultimasClases(gg, 2), ...proximas(gg, 3)].map(dd => ({ gg, dd }))).flat();
-  return pageHead('Clases', 'Pasa lista al terminar la clase. Se descuenta la clase del bono de quien corresponda y, si alguien llega al umbral, se prepara el aviso de pago.') + `
+  const opts = state.grupos.map(gg => [...new Set([...ultimasClases(gg, 2), ...proximas(gg, 3)])].map(dd => ({ gg, dd }))).flat();
+  return pageHead('Clases', 'Diseña cada sesión y pasa lista al terminar. Se descuenta la clase del bono de quien corresponda y, si alguien llega al umbral, se prepara el aviso de pago.') + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
   <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${dd < TODAY_ISO ? (done ? 'Lista pasada' : 'Sin lista') : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
   <section class="grid lg:grid-cols-2 gap-4">
@@ -1027,14 +1056,249 @@ function vClases() {
       </div>
       <button class="btn btn-primary self-start" type="submit">${presentes ? 'Actualizar lista' : 'Guardar lista'}</button>
     </form>
-    <form class="panel p-5 flex flex-col gap-3" id="fCont">
-      <h2 class="text-2xl font-bold">Contenidos de la sesión</h2>
-      <p class="text-[13px] text-muted -mt-2">El alumnado lo verá en su portal antes de la clase.</p>
-      <div><label class="lbl" for="cTit">Título</label><input id="cTit" class="field" value="${esc(c.titulo)}"></div>
-      <div><label class="lbl" for="cItems">Bloques (uno por línea)</label><textarea id="cItems" rows="5" class="field">${esc(c.items.join('\n'))}</textarea></div>
-      <button class="btn btn-ghost self-start" type="submit">Guardar contenidos</button>
-    </form>
+    ${vResumenPlan(ui.claseKey)}
   </section>`;
+}
+
+/* ==========================================================
+   DISEÑO DE SESIONES (como la hoja de sesión de la escuela)
+   ========================================================== */
+const FASES_TIPO = { calentamiento: ['Calentamiento', '--z3'], tecnica: ['Técnica', '--court'], tactica: ['Táctica', '--z4'], partido: ['Partido', '--z5'], fisico: ['Físico', '--z2'], calma: ['Vuelta a la calma', '--z1'] };
+const EXTRAS_T = [['fisico', 'Físico', 'Ej.: 3 saltos de valla'], ['competicion', 'Competición', 'Ej.: secuencia de golpe corto, largo, volea…'], ['variante', 'Variante', 'Ej.: misma tarea en cruzado'], ['objetivo', 'Objetivo', 'Qué se busca con la tarea'], ['puntos', 'Puntuación', 'Ej.: 2/1 puntos · juego a 15']];
+const clon = x => JSON.parse(JSON.stringify(x));
+const minDe = h => { const [a, b] = String(h || '0:0').split(':').map(Number); return a * 60 + (b || 0); };
+const durClase = g => Math.max(0, minDe(g.fin) - minDe(g.hora)) || 90;
+const planDe = key => (state.planes || {})[key] || null;
+const numSesion = (g, d) => sessionDates(g, SEASON_START, d).length || 1;
+const faseVacia = tipo => ({ tipo, nombre: FASES_TIPO[tipo]?.[0] || 'Fase', tareas: [] });
+function nuevoPlan(key) {
+  const [gid, d] = key.split('|'); const g = grupo(gid); const c = state.contenidos[key];
+  return { n: numSesion(g, d), nivel: g.nivel || '', titulo: c && c.titulo !== 'Contenido por definir' ? c.titulo : '', contenidos: c?.items || [], z5: 4, rpe: 7, visible: 'contenidos', versiones: [{ nombre: 'Pista 1', fases: ['calentamiento', 'tecnica', 'tactica', 'partido'].map(faseVacia) }] };
+}
+const minVersion = v => v.fases.reduce((t, f) => t + f.tareas.reduce((u, x) => u + (+x.min || 0), 0), 0);
+const minFase = f => f.tareas.reduce((u, x) => u + (+x.min || 0), 0);
+const tituloPlan = pl => (pl.titulo || '').trim() || pl.contenidos.join(' · ') || 'Contenido por definir';
+/* Minutos reales por encima del 90 % de la FC máxima (zona 5) de los alumnos del grupo ese día */
+function realZ5(key) {
+  const [gid, d] = key.split('|');
+  const ss = state.sesionesFC.filter(s => s.fecha === d && s.tipo !== 'partido' && alumno(s.alumno)?.grupo === gid);
+  return ss.length ? { media: media(ss.map(s => s.zonas[4] || 0)), n: ss.length } : null;
+}
+function bibliotecaTareas(tipo) {
+  const vistas = new Set(); const out = [];
+  Object.entries(state.planes || {}).sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1])).forEach(([k, pl]) => pl.versiones.forEach(v => v.fases.forEach(f => { if (f.tipo !== tipo) return; f.tareas.forEach(t => { const d = (t.desc || '').trim(); if (!d || vistas.has(d)) return; vistas.add(d); out.push(t); }); })));
+  return out.slice(0, 40);
+}
+function barraTiempo(v, dur) {
+  const tot = minVersion(v); const base = Math.max(dur, tot) || 1;
+  return `<div class="flex h-4 rounded-full overflow-hidden bg-surface2" role="img" aria-label="${tot} de ${dur} minutos planificados">${v.fases.map(f => { const m = minFase(f); return m ? `<span style="width:${m / base * 100}%;background:rgb(var(${FASES_TIPO[f.tipo]?.[1] || '--muted'}))" title="${esc(f.nombre)}: ${m}'"></span>` : ''; }).join('')}</div>`;
+}
+function vPlan(key) {
+  const [gid, d] = key.split('|'); const g = grupo(gid); if (!g.id) { ui.view = 'clases'; return vClases(); }
+  if (!ui.plan || ui.plan.key !== key) ui.plan = { key, d: clon(planDe(key) || nuevoPlan(key)), v: 0, sucio: false };
+  const pl = ui.plan.d; if (ui.plan.v >= pl.versiones.length) ui.plan.v = 0;
+  const vi = ui.plan.v, V = pl.versiones[vi]; const dur = durClase(g); const tot = minVersion(V);
+  const fechas = sessionDates(g, SEASON_START, iso(new Date(TODAY.getTime() + 120 * 86400000)));
+  const pos = fechas.indexOf(d); const prev = fechas[pos - 1], next = fechas[pos + 1];
+  const anterior = [...fechas.slice(0, Math.max(0, pos))].reverse().find(x => planDe(`${gid}|${x}`));
+  const real = realZ5(key);
+  const extraRow = (fi, ti, t) => EXTRAS_T.filter(([k]) => t[k] != null).map(([k, l, ph]) => `<div class="flex flex-wrap sm:flex-nowrap items-start gap-x-2 gap-y-0.5"><span class="w-full sm:w-24 shrink-0 text-[12.5px] font-semibold text-muted sm:pt-2">${l}</span><textarea rows="1" class="field auto !py-1.5 text-[14px] flex-1 min-w-0" data-p="t:${fi}:${ti}:${k}" placeholder="${ph}" aria-label="${l}">${esc(t[k])}</textarea><button type="button" class="ibtn" data-pa="delX" data-fi="${fi}" data-ti="${ti}" data-x="${k}" aria-label="Quitar ${l}">✕</button></div>`).join('');
+  const tarea = (fi, t, ti, n) => `<article class="tarea flex flex-col gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="sr-only" for="m${fi}_${ti}">Minutos</label><div class="relative"><input id="m${fi}_${ti}" type="number" min="0" max="120" step="1" inputmode="numeric" class="field !w-[4.6rem] text-center num text-xl font-bold !px-1 !pr-4 !py-1.5" value="${t.min ?? ''}" data-p="t:${fi}:${ti}:min"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-muted font-bold">'</span></div>
+        <div class="flex gap-1">${[5, 10, 15, 20].map(x => `<button type="button" class="mchip ${+t.min === x ? 'on' : ''}" data-pa="setMin" data-fi="${fi}" data-ti="${ti}" data-x="${x}" aria-label="${x} minutos">${x}</button>`).join('')}</div>
+        <div class="ml-auto flex gap-0.5">
+          <button type="button" class="ibtn" data-pa="upT" data-fi="${fi}" data-ti="${ti}" ${ti === 0 ? 'disabled' : ''} aria-label="Subir tarea">↑</button>
+          <button type="button" class="ibtn" data-pa="downT" data-fi="${fi}" data-ti="${ti}" ${ti === n - 1 ? 'disabled' : ''} aria-label="Bajar tarea">↓</button>
+          <button type="button" class="ibtn" data-pa="dupT" data-fi="${fi}" data-ti="${ti}" aria-label="Duplicar tarea" title="Duplicar">⧉</button>
+          <button type="button" class="ibtn text-bad" data-pa="delT" data-fi="${fi}" data-ti="${ti}" aria-label="Eliminar tarea">✕</button>
+        </div>
+      </div>
+      <textarea rows="2" class="field auto text-[15px]" data-p="t:${fi}:${ti}:desc" placeholder="Describe la tarea: organización, golpes, dirección, consignas…" aria-label="Descripción de la tarea">${esc(t.desc || '')}</textarea>
+      ${extraRow(fi, ti, t)}
+      <div class="flex flex-wrap gap-1.5">${EXTRAS_T.filter(([k]) => t[k] == null).map(([k, l]) => `<button type="button" class="chip chip-neutral !py-1 !px-2.5 !text-[12.5px]" data-pa="addX" data-fi="${fi}" data-ti="${ti}" data-x="${k}">+ ${l}</button>`).join('')}</div>
+    </article>`;
+  const fase = (f, fi) => { const lib = bibliotecaTareas(f.tipo); const col = FASES_TIPO[f.tipo]?.[1] || '--muted'; return `<section class="fase panel min-w-0" style="--fc: var(${col})">
+      <div class="flex flex-wrap items-center gap-2 px-4 pt-4 pb-2">
+        <span class="w-3 h-3 rounded-full shrink-0" style="background:rgb(var(${col}))"></span>
+        <input class="font-display text-2xl font-bold bg-transparent border-0 p-0 min-w-[10rem] flex-1 focus:outline-none focus:ring-2 focus:ring-court rounded" value="${esc(f.nombre)}" data-p="f:${fi}:nombre" aria-label="Nombre de la fase">
+        <span class="num text-xl font-bold tnum" data-fmin="${fi}">${minFase(f)}'</span>
+        <button type="button" class="ibtn" data-pa="upF" data-fi="${fi}" ${fi === 0 ? 'disabled' : ''} aria-label="Subir fase">↑</button><button type="button" class="ibtn" data-pa="downF" data-fi="${fi}" ${fi === V.fases.length - 1 ? 'disabled' : ''} aria-label="Bajar fase">↓</button><button type="button" class="ibtn text-bad" data-pa="delF" data-fi="${fi}" aria-label="Eliminar fase">✕</button>
+      </div>
+      <div class="flex flex-col gap-2 px-3 pb-3">${f.tareas.map((t, ti) => tarea(fi, t, ti, f.tareas.length)).join('') || `<p class="text-[13.5px] text-muted px-1">Sin tareas todavía.</p>`}
+        <div class="flex flex-wrap gap-2 pt-1"><button type="button" class="btn btn-ghost !py-1.5 text-[13.5px]" data-pa="addT" data-fi="${fi}">+ Añadir tarea</button>
+          ${lib.length ? `<select class="field !w-auto max-w-full !py-1.5 text-[13.5px]" data-reusar="${fi}" aria-label="Reutilizar una tarea"><option value="">Reutilizar una tarea anterior…</option>${lib.map((t, i) => `<option value="${i}">${t.min ? t.min + "' · " : ''}${esc(String(t.desc).replace(/\s+/g, ' ').slice(0, 90))}</option>`).join('')}</select>` : ''}</div>
+      </div></section>`; };
+  return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="volver">${I.back}Clases</button>
+      <div class="flex gap-1">${prev ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${prev}" aria-label="Sesión anterior">‹ ${fmtDate(prev, { day: 'numeric', month: 'short' })}</button>` : ''}${next ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${next}" aria-label="Sesión siguiente">${fmtDate(next, { day: 'numeric', month: 'short' })} ›</button>` : ''}</div>
+      <div class="ml-auto flex flex-wrap gap-2">${anterior ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="copiarAnt" data-x="${gid}|${anterior}">Copiar la sesión anterior</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="copiar">Copiar de otra sesión…</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="imprimir">Imprimir</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pa="guardar" id="planGuardar">${ui.plan.sucio ? 'Guardar sesión' : 'Guardada'}</button></div></div>` +
+  pageHead(`Sesión ${esc(String(pl.n))}`, `${esc(g.nombre)} · ${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}–${g.fin}`) + `
+  <section class="grid lg:grid-cols-3 gap-4">
+    <div class="panel p-5 lg:col-span-2 grid sm:grid-cols-4 gap-3 min-w-0">
+      <div><label class="lbl" for="pN">Nº de sesión</label><input id="pN" type="number" min="1" class="field tnum" value="${esc(String(pl.n))}" data-p="m:n"></div>
+      <div><label class="lbl" for="pNiv">Nivel</label><input id="pNiv" class="field" value="${esc(pl.nivel)}" data-p="m:nivel" placeholder="Iniciación"></div>
+      <div class="sm:col-span-2"><label class="lbl" for="pTit">Título para el alumnado <span class="font-normal text-muted">(opcional)</span></label><input id="pTit" class="field" value="${esc(pl.titulo)}" data-p="m:titulo" placeholder="${esc(pl.contenidos.join(' · ') || 'Si lo dejas vacío, se usan los contenidos')}"></div>
+      <div class="sm:col-span-4"><label class="lbl" for="pCont">Contenidos <span class="font-normal text-muted">(uno por línea)</span></label><textarea id="pCont" rows="2" class="field auto" data-p="m:contenidos" placeholder="Saque&#10;Golpe de revés">${esc(pl.contenidos.join('\n'))}</textarea></div>
+      <div class="sm:col-span-4"><span class="lbl">Qué ve el alumnado en su portal</span><div class="seg" role="radiogroup">${[['contenidos', 'Solo los contenidos'], ['completo', 'La sesión completa']].map(([k, l]) => `<label><input type="radio" name="pVis" value="${k}" data-p="m:visible" ${pl.visible === k ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
+    </div>
+    <div class="panel p-5 flex flex-col gap-3 min-w-0">
+      <h2 class="text-xl font-bold">Objetivos de carga</h2>
+      <div><label class="lbl" for="pZ5">Minutos por encima del 90 % de la FC máx.</label><div class="flex items-center gap-2"><input id="pZ5" type="number" min="0" max="60" class="field !w-24 tnum text-center num text-xl font-bold" value="${pl.z5 ?? ''}" data-p="m:z5"><span class="text-[13.5px] text-muted">${real ? `Real: <strong class="${real.media >= (pl.z5 || 0) ? 'text-ok' : 'text-warn'}">${dec(real.media, 1)} min</strong> de media (${real.n} ${real.n === 1 ? 'alumno' : 'alumnos'})` : 'El dato real aparecerá al guardar la sesión de pulsómetros'}</span></div></div>
+      <div><span class="lbl">RPE objetivo (esfuerzo percibido, 1–10)</span><div class="grid grid-cols-10 gap-1">${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button type="button" class="rpe ${+pl.rpe === n ? 'on' : ''}" style="--rc: var(${n <= 3 ? '--z2' : n <= 5 ? '--z3' : n <= 7 ? '--z4' : '--z5'})" data-pa="rpe" data-x="${n}" aria-pressed="${+pl.rpe === n}">${n}</button>`).join('')}</div></div>
+    </div>
+  </section>
+  <section class="panel p-4 flex flex-col gap-2 sticky top-[calc(env(safe-area-inset-top,0px)+3.6rem)] lg:top-2 z-30 shadow-sm" id="planTiempo">
+    <div class="flex flex-wrap items-center gap-2">
+      ${pl.versiones.length > 1 || ui.plan.mostrarPistas ? `<div class="flex flex-wrap gap-1">${pl.versiones.map((v, i) => `<button class="chip ${i === vi ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3 !text-[13.5px]" data-pa="selV" data-x="${i}">${esc(v.nombre)}</button>`).join('')}</div>` : ''}
+      <button class="chip chip-neutral !py-1.5 !px-3 !text-[13px]" data-pa="addV" title="Crea una copia de esta sesión para otra pista o nivel y cámbiala">+ Versión para otra pista</button>
+      ${pl.versiones.length > 1 ? `<input class="field !w-36 !py-1 text-[13.5px]" value="${esc(V.nombre)}" data-p="v:nombre" aria-label="Nombre de la versión"><button class="chip chip-neutral !py-1.5 !px-3 !text-[13px] text-bad" data-pa="delV">Quitar esta versión</button>` : ''}
+      <span class="ml-auto text-[14px]"><strong class="num text-2xl tnum" id="planTot">${tot}</strong> <span class="text-muted">de ${dur} min de clase</span> <span id="planAviso" class="font-semibold ${tot > dur ? 'text-bad' : tot === dur ? 'text-ok' : 'text-muted'}">${tot > dur ? `· sobran ${tot - dur}'` : tot === dur ? '· cuadra' : `· quedan ${dur - tot}'`}</span></span>
+    </div>
+    <div id="planBarra">${barraTiempo(V, dur)}</div>
+  </section>
+  <div class="flex flex-col gap-4">${V.fases.map(fase).join('')}</div>
+  <div class="flex flex-wrap items-center gap-2"><span class="text-[13.5px] text-muted">Añadir fase:</span>${Object.entries(FASES_TIPO).map(([k, [l, c]]) => `<button class="chip chip-neutral !py-1.5 !px-3 !text-[13px]" data-pa="addF" data-x="${k}"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:rgb(var(${c}))"></span>${l}</button>`).join('')}</div>
+  <div class="h-4"></div>`;
+}
+function autoAlto(root = document) { root.querySelectorAll('textarea.auto').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }); }
+function afterPlan() { autoAlto(); }
+function planTiempos() {
+  if (!ui.plan) return; const V = ui.plan.d.versiones[ui.plan.v]; const g = grupo(ui.plan.key.split('|')[0]); const dur = durClase(g); const tot = minVersion(V);
+  const t = $('#planTot'); if (t) t.textContent = tot;
+  const a = $('#planAviso'); if (a) { a.textContent = tot > dur ? `· sobran ${tot - dur}'` : tot === dur ? '· cuadra' : `· quedan ${dur - tot}'`; a.className = `font-semibold ${tot > dur ? 'text-bad' : tot === dur ? 'text-ok' : 'text-muted'}`; }
+  const b = $('#planBarra'); if (b) b.innerHTML = barraTiempo(V, dur);
+  V.fases.forEach((f, fi) => { const e = document.querySelector(`[data-fmin="${fi}"]`); if (e) e.textContent = minFase(f) + "'"; });
+}
+function planSucio() { ui.plan.sucio = true; const b = $('#planGuardar'); if (b) b.textContent = 'Guardar sesión'; }
+function planEditar(campo, valor) {
+  const pl = ui.plan.d; const V = pl.versiones[ui.plan.v]; const p = campo.split(':');
+  if (p[0] === 'm') { const k = p[1]; pl[k] = k === 'contenidos' ? valor.split('\n').map(s => s.trim()).filter(Boolean) : k === 'n' || k === 'z5' ? (valor === '' ? '' : +valor) : valor; }
+  else if (p[0] === 'v') V.nombre = valor;
+  else if (p[0] === 'f') V.fases[+p[1]].nombre = valor;
+  else if (p[0] === 't') { const t = V.fases[+p[1]].tareas[+p[2]]; t[p[3]] = p[3] === 'min' ? (valor === '' ? '' : Math.max(0, +valor)) : valor; }
+  planSucio(); if (p[0] === 't' && p[3] === 'min') planTiempos();
+}
+async function guardarPlan(silencio) {
+  const { key, d } = ui.plan; const pl = clon(d);
+  pl.contenidos = (pl.contenidos || []).filter(Boolean);
+  state.planes = state.planes || {}; state.planes[key] = pl;
+  state.contenidos[key] = { titulo: tituloPlan(pl), items: pl.contenidos };
+  ui.plan.sucio = false;
+  return tras(() => P.sesion(key, { titulo: tituloPlan(pl), contenidos: pl.contenidos, plan: pl }), silencio ? null : 'Sesión guardada');
+}
+function planAccion(a, el) {
+  const pl = ui.plan.d; const V = pl.versiones[ui.plan.v]; const fi = +el.dataset.fi, ti = +el.dataset.ti, x = el.dataset.x;
+  const mover = (arr, i, j) => { if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
+  switch (a) {
+    case 'volver': if (ui.plan.sucio) guardarPlan(true); ui.claseKey = ui.plan.key; ui.plan = null; return go('clases');
+    case 'ir': if (ui.plan.sucio) guardarPlan(true); ui.plan = null; return go('plan:' + x);
+    case 'guardar': return guardarPlan();
+    case 'imprimir': return imprimirPlan(pl, ui.plan.key);
+    case 'copiar': return modalCopiarPlan();
+    case 'copiarAnt': return aplicarCopia(x);
+    case 'rpe': pl.rpe = +x; break;
+    case 'addT': V.fases[fi].tareas.push({ min: V.fases[fi].tipo === 'calentamiento' ? 10 : 20, desc: '' }); ui.plan.foco = `t:${fi}:${V.fases[fi].tareas.length - 1}:desc`; break;
+    case 'delT': V.fases[fi].tareas.splice(ti, 1); break;
+    case 'dupT': V.fases[fi].tareas.splice(ti + 1, 0, clon(V.fases[fi].tareas[ti])); break;
+    case 'upT': mover(V.fases[fi].tareas, ti, ti - 1); break;
+    case 'downT': mover(V.fases[fi].tareas, ti, ti + 1); break;
+    case 'setMin': V.fases[fi].tareas[ti].min = +x; break;
+    case 'addX': V.fases[fi].tareas[ti][x] = ''; ui.plan.foco = `t:${fi}:${ti}:${x}`; break;
+    case 'delX': delete V.fases[fi].tareas[ti][x]; break;
+    case 'addF': V.fases.push(faseVacia(x)); break;
+    case 'delF': if (V.fases[fi].tareas.some(t => t.desc) && !el.dataset.ok) { el.dataset.ok = '1'; el.textContent = '¿Seguro?'; el.classList.add('!w-auto', '!px-2'); return; } V.fases.splice(fi, 1); break;
+    case 'upF': mover(V.fases, fi, fi - 1); break;
+    case 'downF': mover(V.fases, fi, fi + 1); break;
+    case 'addV': { const n = clon(V); n.nombre = `Pista ${pl.versiones.length + 1}`; if (pl.versiones.length === 1 && V.nombre === 'Pista 1') V.nombre = 'Pista 1'; pl.versiones.push(n); ui.plan.v = pl.versiones.length - 1; toast('Copia creada: cámbiala para la otra pista'); break; }
+    case 'delV': if (pl.versiones.length > 1) { pl.versiones.splice(ui.plan.v, 1); ui.plan.v = 0; } break;
+    case 'selV': ui.plan.v = +x; return render();
+    default: return;
+  }
+  planSucio(); render();
+  if (ui.plan.foco) { const f = document.querySelector(`[data-p="${ui.plan.foco}"]`); ui.plan.foco = null; f?.focus(); }
+}
+function modalCopiarPlan() {
+  const lista = Object.entries(state.planes || {}).filter(([k]) => k !== ui.plan.key).sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1]));
+  if (!lista.length) return toast('Todavía no hay otras sesiones diseñadas');
+  openModal(`<div class="flex flex-col gap-3">${modalHead('Copiar de otra sesión')}<p class="text-[14px] text-muted -mt-1">Se copian los contenidos, los objetivos y todas las tareas. Después puedes cambiar lo que quieras.</p>
+    <div class="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">${lista.map(([k, pl]) => { const [gid, d] = k.split('|'); const v = pl.versiones[0]; return `<button class="text-left rounded-2xl border border-line px-4 py-3 hover:bg-surface2" data-pa-copia="${k}"><div class="flex flex-wrap items-baseline justify-between gap-2"><span class="font-semibold">Sesión ${esc(String(pl.n))} · ${esc(grupo(gid).nombre)}</span><span class="text-[13px] text-muted">${fmtDate(d, { day: 'numeric', month: 'short' })} · ${minVersion(v)}'</span></div><div class="text-[13px] text-muted mt-0.5">${esc(tituloPlan(pl))}</div></button>`; }).join('')}</div></div>`);
+}
+function aplicarCopia(k) {
+  const src = planDe(k); if (!src) return; const pl = ui.plan.d;
+  Object.assign(pl, clon({ nivel: src.nivel, titulo: src.titulo, contenidos: src.contenidos, z5: src.z5, rpe: src.rpe, visible: src.visible, versiones: src.versiones }));
+  ui.plan.v = 0; closeModal(); planSucio(); render(); toast('Sesión copiada. Revisa y guarda.');
+}
+/* Lectura para el alumnado o resumen */
+function planLectura(pl, vi = 0) {
+  const V = pl.versiones[vi] || pl.versiones[0];
+  return V.fases.filter(f => f.tareas.length).map(f => `<section class="flex flex-col gap-2"><h3 class="font-display text-xl font-bold flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:rgb(var(${FASES_TIPO[f.tipo]?.[1] || '--muted'}))"></span>${esc(f.nombre)} <span class="text-muted text-base">${minFase(f)}'</span></h3>
+    ${f.tareas.map(t => `<div class="rounded-xl bg-surface2/70 p-3 text-[14px] leading-relaxed"><div class="flex gap-2"><span class="num font-bold shrink-0">${t.min ? t.min + "'" : ''}</span><div class="min-w-0"><div class="whitespace-pre-line">${esc(t.desc || '')}</div>${EXTRAS_T.filter(([k]) => t[k]).map(([k, l]) => `<div class="text-muted whitespace-pre-line"><strong class="text-ink">${l}:</strong> ${esc(t[k])}</div>`).join('')}</div></div></div>`).join('')}</section>`).join('');
+}
+function verPlanAlumno(key) {
+  const pl = planDe(key); if (!pl) return; const [gid, d] = key.split('|');
+  openModal(`<div class="flex flex-col gap-4">${modalHead(`Sesión ${esc(String(pl.n))}`)}<p class="text-[14px] text-muted -mt-2">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${esc(tituloPlan(pl))}</p>${planLectura(pl)}</div>`);
+}
+/* Impresión en el formato de la hoja de sesión: dos mitades en A4 apaisado */
+function imprimirPlan(pl, key) {
+  const [gid, d] = key.split('|'); const fecha = parseISO(d); const f = `${fecha.getDate()}/${fecha.getMonth() + 1}`;
+  const mitad = V => `<div class="ps-half"><table class="ps-head"><tr><td colspan="6" class="ps-esc">${esc((state.settings.escuela || '').toUpperCase())}</td></tr>
+      <tr><th>SESIÓN</th><td>${esc(String(pl.n))}</td><th>FECHA</th><td>${f}</td><th>NIVEL</th><td>${esc(pl.nivel || '-')}</td></tr>
+      <tr><th>CONTENIDO</th><td colspan="3">${esc(pl.contenidos.join('. '))}${pl.contenidos.length ? '.' : ''}${pl.versiones.length > 1 ? ` <em>(${esc(V.nombre)})</em>` : ''}</td><th>MIN. (&gt;90%)</th><td>${pl.z5 ?? ''}</td></tr>
+      <tr><td colspan="4"></td><th>RPE</th><td>${pl.rpe ?? ''}</td></tr></table>
+    <table class="ps-body">${V.fases.filter(x => x.tareas.length).map(x => x.tareas.map((t, i) => `<tr>${i === 0 ? `<th class="ps-fase" rowspan="${x.tareas.length}"><span>${esc(x.nombre.toUpperCase())}</span></th>` : ''}<td class="ps-min">${t.min ? t.min + "'" : ''}</td><td class="ps-desc"><div class="ps-main">${esc(t.desc || '')}</div>${[['competicion', 'Competición: '], ['fisico', 'Físico: '], ['variante', 'Variante: '], ['objetivo', 'OBJETIVO. ']].filter(([k]) => t[k]).map(([k, l]) => `<div class="ps-x">${l}${esc(t[k])}</div>`).join('')}</td><td class="ps-dib">${t.puntos ? `<div class="ps-pts">${esc(t.puntos)}</div>` : ''}</td></tr>`).join('')).join('')}</table></div>`;
+  const a = pl.versiones[0], b = pl.versiones[1] || pl.versiones[0];
+  let el = document.getElementById('print'); if (!el) { el = document.createElement('div'); el.id = 'print'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="ps-page">${mitad(a)}${mitad(b)}</div>`;
+  setTimeout(() => window.print(), 50);
+}
+/* Sesiones de ejemplo (modo demostración), basadas en la hoja de sesión de la escuela */
+function planesDemo(st) {
+  const g = st.grupos.find(x => x.id === 'G1'); if (!g) return {};
+  const fechas = sessionDates(g, SEASON_START, TODAY_ISO); const out = {};
+  const cal = { min: 10, desc: 'Calentamiento en paralelo. Progresión:\n- En paralelo con objetivo bote antes de línea (revés)\n- En paralelo con objetivo bote detrás de línea (revés)\n- Volea (revés)', competicion: 'Secuencia de golpe corto, golpe largo, volea, salida de pared.', objetivo: 'Calentamiento general y lúdico relacionado con el mantenimiento de bola.' };
+  const gp = { min: 20, desc: 'Game pressure. Sacadores sacan y punto en cruzado. Restador gana punto si aguanta 3 golpes.' };
+  const s2 = { n: fechas.length - 1, nivel: g.nivel, titulo: '', contenidos: ['Saque', 'Golpe de revés'], z5: 4, rpe: 7, visible: 'completo', versiones: [
+    { nombre: 'Pista 1', fases: [
+      { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [cal] },
+      { tipo: 'tecnica', nombre: 'Técnica', tareas: [
+        { min: 10, desc: '(Cuadro de derecha) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: '3 saltos de valla', variante: '(Cuadro de derecha) Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' },
+        { min: 10, desc: '(Cuadro de revés) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: 'Escalera con pasos frontales', variante: 'Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' }] },
+      { tipo: 'tactica', nombre: 'Táctica', tareas: [gp] },
+      { tipo: 'partido', nombre: 'Partido', tareas: [{ min: 20, desc: '2 vs 2.', objetivo: 'Puesta en práctica de lo aprendido en clase.', puntos: '2/1 puntos' }] }] },
+    { nombre: 'Pista 2', fases: [
+      { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [cal] },
+      { tipo: 'tecnica', nombre: 'Técnica', tareas: [{ min: 20, desc: 'Golpe de derecha paralelo (a zona de conos) + golpe de derecha al centro (darle al tubo)', fisico: '3 saltos de valla', variante: 'Golpe de derecha cruzado (a zona de conos) + golpe de derecha al centro' }] },
+      { tipo: 'tactica', nombre: 'Táctica', tareas: [{ ...gp }, { min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Defensores no pueden hacer globo.', variante: 'Juego a 15 puntos.' }] },
+      { tipo: 'partido', nombre: 'Partido', tareas: [{ min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Si un atacante golpea 2 veces seguidas se puede hacer globo.', variante: 'Juego a 15 puntos.' }] }] }] };
+  const s3 = { n: fechas.length, nivel: g.nivel, titulo: '', contenidos: ['Saque', 'Golpe de derecha', 'Salida de pared con globo'], z5: 4, rpe: 7, visible: 'contenidos', versiones: [
+    { nombre: 'Pista 1', fases: [
+      { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [{ ...cal, competicion: 'Secuencia en cruzado de saque/golpe corto + resto a volea de derecha + volea de derecha que toque pared + salida de pared con globo.' }] },
+      { tipo: 'tecnica', nombre: 'Técnica', tareas: [
+        { min: 20, desc: '(Cuadro de derecha) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' },
+        { min: 20, desc: '(Cuadro de revés) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' }] },
+      { tipo: 'tactica', nombre: 'Táctica', tareas: [{ ...gp }, { min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Defensores no pueden hacer globo.', variante: 'Juego a 15 puntos.' }] }] }] };
+  const k2 = `G1|${fechas[fechas.length - 2]}`, k3 = `G1|${fechas[fechas.length - 1]}`;
+  if (fechas.length >= 2) { out[k2] = s2; st.contenidos[k2] = { titulo: 'Saque · Golpe de revés', items: s2.contenidos }; }
+  if (fechas.length >= 1) { out[k3] = s3; st.contenidos[k3] = { titulo: 'Saque · Golpe de derecha · Salida de pared con globo', items: s3.contenidos }; }
+  const sig = sessionDates(g, iso(new Date(TODAY.getTime() + 86400000)), iso(new Date(TODAY.getTime() + 8 * 86400000)))[0];
+  if (sig) { const kn = `G1|${sig}`; out[kn] = { ...JSON.parse(JSON.stringify(s2)), n: fechas.length + 1, contenidos: ['Volea de derecha', 'Volea de revés'], visible: 'completo' }; st.contenidos[kn] = { titulo: 'Volea de derecha · Volea de revés', items: ['Volea de derecha', 'Volea de revés'] }; }
+  return out;
+}
+/* ---------- Resumen en la pantalla de Clases ---------- */
+function vResumenPlan(key) {
+  const pl = planDe(key); const [gid, d] = key.split('|'); const g = grupo(gid);
+  if (!pl) return `<section class="panel p-5 flex flex-col gap-3"><h2 class="text-2xl font-bold">Sesión ${numSesion(g, d)}</h2>
+    <p class="text-[14px] text-muted">Aún no está diseñada. Planifica las fases (calentamiento, técnica, táctica y partido), las tareas, los objetivos de carga y los contenidos que verá el alumnado.</p>
+    ${(() => { const c = state.contenidos[key]; return c ? `<div class="text-[14px]"><strong>${esc(c.titulo)}</strong>${c.items.length ? `<ul class="text-muted mt-1">${c.items.map(i => `<li>· ${esc(i)}</li>`).join('')}</ul>` : ''}</div>` : ''; })()}
+    <button class="btn btn-primary self-start" data-go="plan:${key}">Diseñar la sesión</button></section>`;
+  const V = pl.versiones[0]; const dur = durClase(g); const real = realZ5(key);
+  return `<section class="panel p-5 flex flex-col gap-3 min-w-0">
+    <div class="flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Sesión ${esc(String(pl.n))}</h2><span class="chip chip-ok">Diseñada${pl.versiones.length > 1 ? ` · ${pl.versiones.length} pistas` : ''}</span></div>
+    ${pl.contenidos.length ? `<div class="flex flex-wrap gap-1.5">${pl.contenidos.map(c => `<span class="chip chip-neutral !text-[13px]">${esc(c)}</span>`).join('')}</div>` : ''}
+    ${barraTiempo(V, dur)}
+    <ul class="text-[14px] flex flex-col gap-1">${V.fases.filter(f => f.tareas.length).map(f => `<li class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:rgb(var(${FASES_TIPO[f.tipo]?.[1] || '--muted'}))"></span><span class="font-semibold">${esc(f.nombre)}</span><span class="text-muted">· ${f.tareas.length} ${f.tareas.length === 1 ? 'tarea' : 'tareas'}</span><span class="ml-auto num font-bold tnum">${minFase(f)}'</span></li>`).join('')}</ul>
+    <div class="text-[13.5px] text-muted">Objetivo: ${pl.z5 ?? '—'} min por encima del 90 %${real ? ` · real <strong class="${real.media >= (pl.z5 || 0) ? 'text-ok' : 'text-warn'}">${dec(real.media, 1)} min</strong>` : ''} · RPE ${pl.rpe ?? '—'}</div>
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary" data-go="plan:${key}">Editar la sesión</button><button class="btn btn-ghost" data-plan-print="${key}">Imprimir</button></div></section>`;
 }
 
 /* ---------- Sesión en vivo (Web Bluetooth) ---------- */
@@ -2102,7 +2366,7 @@ function vInicio() {
       ${estado(a) !== 'ok' ? `<div class="rounded-xl bg-warn/10 text-[14px] p-3">Para la próxima clase necesitas renovar. Bono de 4 clases: <strong>${fmtEur(tarifaDe(a).mes)}</strong> · de 10: <strong>${fmtEur(tarifaDe(a).trimestre)}</strong> · clase suelta: <strong>${fmtEur(precioDe(tarifaDe(a).id, 'suelta'))}</strong>.</div>` : ''}
     </div>
     <div class="panel p-5 lg:col-span-2 min-w-0"><h2 class="text-2xl font-bold mb-3">Próximas clases</h2>
-      ${prox.length ? '' : '<p class="text-muted">Aún no tienes grupo asignado.</p>'}<ol class="grid sm:grid-cols-3 gap-3">${prox.map((d, k) => { const c = contenido(g.id, d); return `<li class="rounded-2xl ${k === 0 ? 'bg-turf text-turfink' : 'bg-surface2'} p-4 flex flex-col gap-2"><div class="text-[13px] ${k === 0 ? 'opacity-80' : 'text-muted'}">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'short' })} · ${g.hora}</div><div class="font-display text-xl font-bold leading-tight">${esc(c.titulo)}</div><ul class="text-[13.5px] flex flex-col gap-1 ${k === 0 ? 'opacity-90' : 'text-muted'}">${c.items.map(i => `<li class="flex gap-2"><span aria-hidden="true">·</span>${esc(i)}</li>`).join('')}</ul></li>`; }).join('')}</ol>
+      ${prox.length ? '' : '<p class="text-muted">Aún no tienes grupo asignado.</p>'}<ol class="grid sm:grid-cols-3 gap-3">${prox.map((d, k) => { const c = contenido(g.id, d); return `<li class="rounded-2xl ${k === 0 ? 'bg-turf text-turfink' : 'bg-surface2'} p-4 flex flex-col gap-2"><div class="text-[13px] ${k === 0 ? 'opacity-80' : 'text-muted'}">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'short' })} · ${g.hora}</div><div class="font-display text-xl font-bold leading-tight">${esc(c.titulo)}</div><ul class="text-[13.5px] flex flex-col gap-1 ${k === 0 ? 'opacity-90' : 'text-muted'}">${c.items.map(i => `<li class="flex gap-2"><span aria-hidden="true">·</span>${esc(i)}</li>`).join('')}</ul>${(() => { const pk = `${g.id}|${d}`, pl = planDe(pk); return pl && pl.visible === 'completo' ? `<button class="mt-auto self-start text-[13px] font-semibold underline underline-offset-2 ${k === 0 ? '' : 'text-court'}" data-verplan="${pk}">Ver la sesión (${minVersion(pl.versiones[0])}')</button>` : ''; })()}</li>`; }).join('')}</ol>
     </div>
   </section>
   <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">Tus conclusiones</h2><span class="text-[13px] text-muted">Se actualizan con cada clase, pulso y partido</span></div>
@@ -2384,7 +2648,7 @@ async function loadAll(silencioso) {
     s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, uid: a.user_id || null, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
     const porId = {};
-    se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; });
+    se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; if (x.plan) (s.planes = s.planes || {})[k] = x.plan; });
     as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || {})[x.alumno_id] = { e: x.estado || 'presente', c: x.cobra ?? true }; });
     s.ajustesClases = ajc.map(x => ({ id: x.id, alumno: x.alumno_id, fecha: x.fecha, clases: x.clases, motivo: x.motivo }));
     s.gastos = ga.map(x => ({ id: x.id, fecha: x.fecha, concepto: x.concepto, categoria: x.categoria, importe: +x.importe, metodo: x.metodo, notas: x.notas }));
@@ -2518,6 +2782,7 @@ function render() {
   if (ui.role === 'admin') {
     if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
     else if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
+    else if (ui.view.startsWith('plan:')) { html = vPlan(ui.view.slice(5)); after = afterPlan; }
     else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
@@ -2594,7 +2859,7 @@ function animMarcador() {
   if (cur.oro && !pr.oro && !cur.fin) { setTimeout(() => celebra('oro', 'Punto de oro', 'Quien gane este punto se lleva el juego'), juego ? 650 : 0); navigator.vibrate?.([30, 50, 30]); }
 }
 function rerenderIf(v) { if (ui.view === v) render(); }
-function go(v) { ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
+function go(v) { if (ui.plan?.sucio && !v.startsWith('plan:')) guardarPlan(true); if (!v.startsWith('plan:')) ui.plan = null; ui.view = v; ui.pmodo = null; ui.pset = null; render(); window.scrollTo({ top: 0 }); }
 let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = `<div class="bg-ink text-bg rounded-full px-4 py-2.5 text-[14px] font-semibold shadow-lg max-w-[90vw] text-center">${esc(msg)}</div>`; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
 
 document.addEventListener('click', async e => {
@@ -2608,6 +2873,10 @@ document.addEventListener('click', async e => {
   if (e.target.closest('[data-wa-reset]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === WA_DEF.id); Object.assign(pl, WA_DEF); ui.wa.edId = null; return waGuardarConf(C, 'Texto original restaurado'); }
   if (e.target.closest('[data-wa-borrar]')) { const C = waConf(); C.plantillas = C.plantillas.filter(x => x.id !== ui.wa.edId); C.sel = WA_DEF.id; ui.wa.sel = WA_DEF.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje eliminado'); }
   const fcs = e.target.closest('[data-fcserie]'); if (fcs) { const k = fcs.dataset.fcserie; ui.fcSeries = ui.fcSeries || new Set(); ui.fcSeries.has(k) ? ui.fcSeries.delete(k) : ui.fcSeries.add(k); return render(); }
+  const pa = e.target.closest('[data-pa]'); if (pa && ui.plan && !pa.disabled) { e.preventDefault(); return planAccion(pa.dataset.pa, pa); }
+  const pac = e.target.closest('[data-pa-copia]'); if (pac && ui.plan) return aplicarCopia(pac.dataset.paCopia);
+  const ppr = e.target.closest('[data-plan-print]'); if (ppr) return imprimirPlan(planDe(ppr.dataset.planPrint), ppr.dataset.planPrint);
+  const vpl = e.target.closest('[data-verplan]'); if (vpl) return verPlanAlumno(vpl.dataset.verplan);
   const avc = e.target.closest('[data-avcat]'); if (avc) { ui.avCat = avc.dataset.avcat; return render(); }
   const ve = e.target.closest('[data-veremail]'); if (ve) return verEmail(ve.dataset.veremail);
   const pm = e.target.closest('[data-amodo]'); if (pm) { ui.amodo = pm.dataset.amodo; return render(); }
@@ -2718,7 +2987,7 @@ document.addEventListener('click', async e => {
     if (LIVE) { t.disabled = true; return P.enviar(true); }
     state.outbox.forEach(m => { if (m.estado === 'En cola') m.estado = 'Enviado (demo)'; }); save(); toast('Marcados como enviados. Con Supabase conectado salen de verdad.'); return render();
   }
-  if (d.reset !== undefined) { S.del(KEY); state = seed(); state.partidos = seedPartidos(state); state.pseed = true; state.statsAnon = []; ui.claseKey = null; toast('Datos de ejemplo restablecidos'); return render(); }
+  if (d.reset !== undefined) { S.del(KEY); state = seed(); state.partidos = seedPartidos(state); state.pseed = true; state.planes = planesDemo(state); state.statsAnon = []; ui.claseKey = null; toast('Datos de ejemplo restablecidos'); return render(); }
   if (d.fill) { $('#lCode').value = d.fill; return; }
   if (d.logout !== undefined) {
     if (LIVE) { await sb.auth.signOut(); state = emptyState(); ui = { ...ui, auth: 'login', role: 'admin', studentLogged: null, view: 'panel', authMsg: null }; return render(); }
@@ -2748,6 +3017,7 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset?.reusar !== undefined && ui.plan && e.target.value !== '') { const fi = +e.target.dataset.reusar; const V = ui.plan.d.versiones[ui.plan.v]; const t = bibliotecaTareas(V.fases[fi].tipo)[+e.target.value]; if (t) { V.fases[fi].tareas.push(clon(t)); planSucio(); render(); toast('Tarea añadida'); } return; }
   if (e.target.id === 'waSel') {
     if (e.target.value === '__nueva') { const C = waConf(); const n = { id: 'm' + Date.now(), nombre: 'Mensaje nuevo', texto: '{saludo}, equipo! 🎾\n\n' }; C.plantillas.push(n); C.sel = n.id; ui.wa.sel = n.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje nuevo creado: escríbelo y guárdalo'); }
     ui.wa.sel = e.target.value; ui.wa.edId = null; const C = waConf(); C.sel = ui.wa.sel; state.settings.wa = C; return render();
@@ -2877,14 +3147,17 @@ async function onSubmit(f) {
   }
 }
 document.addEventListener('input', e => {
+  if (e.target.dataset?.p && ui.plan) { planEditar(e.target.dataset.p, e.target.value); if (e.target.tagName === 'TEXTAREA' && e.target.classList.contains('auto')) { e.target.style.height = 'auto'; e.target.style.height = (e.target.scrollHeight + 2) + 'px'; } return; }
   if (!ui.wa || !['waTxt', 'waNom'].includes(e.target.id)) return;
   if (e.target.id === 'waTxt') { ui.wa.texto = e.target.value; const pv = $('#waPrev'); if (pv) pv.textContent = waRellenar(ui.wa.texto, ui.wa.gid); } else ui.wa.nombre = e.target.value;
   const C = waConf(); const pl = C.plantillas.find(x => x.id === ui.wa.edId); const b = $('#waGuardar'); if (b && pl) { const on = ui.wa.texto !== pl.texto || ui.wa.nombre !== pl.nombre; b.disabled = !on; b.style.opacity = on ? '' : '.5'; }
 });
+window.addEventListener('beforeunload', e => { if (ui.plan?.sucio) { e.preventDefault(); e.returnValue = ''; } });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => render());
 new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('resize', () => { if (ui.view === 'vivo') drawLive(); });
 if (!LIVE && !state.pseed) { state.partidos = seedPartidos(state); state.pseed = true; save(); }
+if (!LIVE && !state.planes) { state.planes = planesDemo(state); save(); }
 if (LIVE) {
   sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { ui.auth = 'nueva-clave'; render(); } });
   if (/type=recovery/.test(location.hash)) { ui.auth = 'nueva-clave'; render(); } else loadAll();
