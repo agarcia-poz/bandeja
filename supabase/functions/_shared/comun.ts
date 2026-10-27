@@ -14,8 +14,8 @@ export const servicio = (): SupabaseClient =>
 
 /** true si la petición viene de un administrador con sesión iniciada (o de la tarea programada con su secreto). */
 export async function esAdmin(req: Request): Promise<boolean> {
-  const cron = Deno.env.get('CRON_SECRET');
-  if (cron && req.headers.get('x-cron-secret') === cron) return true;
+  const cronHdr = req.headers.get('x-cron-secret');
+  if (cronHdr) { const cron = await config('CRON_TAREAS'); return !!cron && cronHdr === cron; }
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (!token) return false;
   const sb = servicio();

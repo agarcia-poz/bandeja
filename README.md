@@ -13,6 +13,7 @@ App de la escuela de pádel: pagos y bonos con emails automáticos, pulsómetros
 | `supabase/migrations/` | Supabase (proyecto `bandeja`, París) | Tablas, seguridad por filas y comparativa anónima |
 | `supabase/functions/activar-acceso` | Supabase Edge Functions | El alumno activa su cuenta con código + email |
 | `supabase/functions/enviar-emails` | Supabase Edge Functions | Envía la cola de emails a través de Gmail |
+| `supabase/functions/automatico` | Supabase Edge Functions + pg_cron | Cobra la clase al terminar y envía el aviso de pago una hora antes |
 | `supabase/functions/interpretar` | Supabase Edge Functions | Informes del alumno y lectura táctica del partido con IA gratuita (Groq y, si falla, Gemini), sin datos personales |
 | `apps-script/Code.gs` | Google Apps Script en escuelapadelag@gmail.com | Envía los emails desde la Gmail de la escuela |
 | `icon.svg`, `icon-*.png`, `og.png`, `manifest.webmanifest` | GitHub Pages | Icono de la app, miniatura al compartir el enlace e instalación en la pantalla de inicio |
@@ -27,10 +28,6 @@ La URL del script de Gmail, su secreto y las claves de IA (`GROQ_API_KEY`, `GEMI
 - **Inicio:** bono, asistencia, carga de la semana, partidos ganados y conclusiones automáticas (bono, asistencia, intensidad, carga, punto fuerte y aspecto a mejorar frente al grupo).
 - **Mi corazón:** gráfico con los datos a elegir (FC media, FC máxima, carga, calorías, minutos, media del grupo), carga semanal de las últimas 8 semanas y relación carga semanal / media del mes (Gabbett, 2016).
 - **Avisos:** emails recibidos y todo lo registrado (pagos, clases, pulso y partidos).
-
-## Recordatorio de WhatsApp
-
-En el panel hay un editor de mensajes de WhatsApp. El mensaje predeterminado saluda según la hora y recuerda la hora del entrenamiento del grupo elegido. Se elige el grupo con un botón y el texto se actualiza con su día y su hora. Se pueden crear y guardar otros mensajes; los datos entre llaves ({saludo}, {cuando}, {hora}, {hora_fin}, {grupo}, {contenido}…) se rellenan solos. «Enviar por WhatsApp» abre WhatsApp con el texto para elegir el grupo. WhatsApp no ofrece una forma gratuita de enviar mensajes automáticos a grupos: su API oficial para grupos es de pago, requiere cuenta de empresa verificada y admite como mucho 8 participantes.
 
 ## Pulsómetros
 
@@ -70,9 +67,17 @@ En *Clases*, cada sesión tiene un botón «Diseñar la sesión», con los mismo
 - **Pulsómetros:** si ese día hubo sesión de pulsómetros, se muestra el tiempo real por encima del 90 % junto al objetivo.
 - **Portal del alumno:** los contenidos aparecen en sus próximas clases. Si se marca «La sesión completa», el alumno también puede abrir la sesión con sus tareas.
 
+## Cobro automático y avisos de pago
+
+Una tarea programada en Supabase (pg_cron, cada 10 minutos) llama a la función `automatico`:
+- **Al terminar cada clase**, si no se ha pasado lista, se cobra la clase a los fijos del grupo (solo a quienes ya estaban dados de alta ese día). Si después pasas lista, cuenta lo que marques.
+- **Una hora antes de cada clase**, se envía el aviso de pago a los fijos del grupo a los que les queden las clases indicadas en *Emails* (o menos), con los precios de su tarifa.
+- El cobro automático cuenta desde el 27 de octubre de 2026 (`ajustes.auto_desde`). Las clases anteriores sin lista no se cobran.
+- Pasar lista ya no envía avisos. El botón «Enviar aviso» del panel sigue disponible para enviarlo a mano.
+
 ## Bonos, fijos y relevos
 
-- **Fijo del grupo:** se le cobra cada clase con lista pasada, aunque falte, salvo que le cubra un relevo.
+- **Fijo del grupo:** se le cobra cada clase automáticamente al terminar, aunque falte, salvo que le cubra un relevo (eso se marca pasando lista).
 - **Relevo:** pertenece a un grupo, pero solo se le cobra la clase cuando viene. Cualquier alumno puede añadirse a la lista de otro grupo.
 - **Ajustes:** desde la ficha del alumno se suman o restan clases con un motivo (por ejemplo, una clase que no hay que cobrarle).
 - Saldo = clases pagadas + ajustes − clases cobradas.

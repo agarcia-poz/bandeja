@@ -610,7 +610,19 @@ const tarifaDe = a => TARIFAS.find(t => t.id === grupo(a.grupo).tarifa) || TARIF
 const MODALIDAD = { fijo: 'Fijo', relevo: 'Relevo' };
 const esRelevo = a => (a.modalidad || 'fijo') === 'relevo';
 const cobraDe = (e, a) => e === 'presente' || (e === 'falta' && !esRelevo(a));
-const asistidas = a => Object.values(state.asistencia).reduce((n, o) => n + (o && o[a.id]?.c ? 1 : 0), 0);   // clases consumidas del bono
+/* Cobro automático: al terminar cada clase se cobra a los fijos del grupo aunque no se pase lista
+   (en el servidor lo hace la tarea programada; aquí se refleja al momento). */
+const AUTO_DESDE_DEF = '2026-10-27';
+const horaAhora = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const claseTerminada = (g, d) => d < TODAY_ISO || (d === TODAY_ISO && horaAhora() >= g.fin);
+function autoPendientes(g) {
+  if (!g?.id) return [];
+  const desde = state.settings.autoDesde || AUTO_DESDE_DEF; if (desde > TODAY_ISO) return [];
+  return sessionDates(g, desde, TODAY_ISO).filter(d => claseTerminada(g, d) && !state.asistencia[`${g.id}|${d}`]);
+}
+const altaDe = a => a.alta || SEASON_START;
+const autoDe = a => esRelevo(a) || !a.grupo || a.anon ? [] : autoPendientes(grupo(a.grupo)).filter(d => d >= altaDe(a));
+const asistidas = a => Object.values(state.asistencia).reduce((n, o) => n + (o && o[a.id]?.c ? 1 : 0), 0) + autoDe(a).length;   // clases consumidas del bono
 const ajusteDe = a => (state.ajustesClases || []).filter(x => x.alumno === a.id).reduce((s, x) => s + x.clases, 0);
 const compradas = a => state.pagos.filter(p => p.alumno === a.id).reduce((s, p) => s + p.clases, 0) + (a.inicial || 0);
 const saldo = a => compradas(a) + ajusteDe(a) - asistidas(a);
@@ -821,7 +833,6 @@ function vPanel() {
     ${stat('Avisos de pago', atencion.length, deuda ? `${fmtEur(Math.round(deuda))} en clases sin pagar` : 'Todo al día', atencion.length ? 'text-warn' : 'text-ok')}
     ${stat('Sesiones con sensor', state.sesionesFC.length, 'registros de frecuencia cardíaca')}
   </section>
-  ${vRecordatorioWA()}
   <section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0">
       <div class="flex items-center justify-between gap-3 mb-3"><h2 class="text-2xl font-bold">Requieren atención</h2><span class="text-[13px] text-muted">Aviso cuando quedan ${state.settings.umbral} o menos clases</span></div>
@@ -1057,14 +1068,15 @@ function vClases() {
   const extra = [...new Set([...reales().filter(a => a.grupo === gid && esRelevo(a)).map(a => a.id), ...Object.keys(lista || {}).filter(id => !fijos.some(f => f.id === id)), ...(ui.extraAsis?.[ui.claseKey] || [])])].map(alumno).filter(Boolean);
   const presentes = lista;
   const opts = state.grupos.map(gg => [...new Set([...ultimasClases(gg, 2), ...proximas(gg, 3)])].map(dd => ({ gg, dd }))).flat();
-  return pageHead('Clases', 'Diseña cada sesión y pasa lista al terminar. Se descuenta la clase del bono de quien corresponda y, si alguien llega al umbral, se prepara el aviso de pago.') + `
+  return pageHead('Clases', 'Diseña cada sesión. Al terminar cada clase se descuenta sola del bono de los fijos del grupo; pasa lista solo para corregir faltas cubiertas o alumnos de otros grupos.') + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
-  <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${dd < TODAY_ISO ? (done ? 'Lista pasada' : 'Sin lista') : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
+  <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${done ? 'Lista pasada' : claseTerminada(grupo(gid), dd) && (state.settings.autoDesde || AUTO_DESDE_DEF) <= dd ? 'Cobrada auto' : dd < TODAY_ISO ? 'Sin lista' : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
   <div class="flex flex-wrap items-center gap-2 -mt-2"><span class="text-[14px] font-semibold">${fechaLarga(d)} · ${g.hora}–${g.fin}</span>${(() => { const o = origenClase(g, d); return o.tipo === 'movida' ? `<span class="chip chip-warn">Movida desde el ${fmtDate(o.base)}</span>` : o.tipo === 'extra' ? '<span class="chip chip-neutral">Clase extra</span>' : ''; })()}<button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="mover" data-k="${ui.claseKey}">Cambiar fecha o anular</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="extra" data-k="${gid}">+ Añadir clase</button></div>
   <section class="grid lg:grid-cols-2 gap-4">
     <form class="panel p-5 flex flex-col gap-3" id="fAsis">
       <div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Asistencia</h2><span class="text-[13px] text-muted">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}</span></div>
-      <p class="text-[13px] text-muted -mt-1">A los fijos se les cobra la clase aunque falten, salvo que venga un relevo en su lugar. A relevos y alumnos de otros grupos solo se les cobra si vienen.</p>
+      ${(() => { const auto = !presentes && (state.settings.autoDesde || AUTO_DESDE_DEF) <= d; const term = claseTerminada(g, d);
+        return `<div class="rounded-xl ${auto && term ? 'bg-ok/10' : 'bg-surface2/70'} px-3 py-2.5 text-[13.5px] -mt-1">${presentes ? '<strong>Lista pasada.</strong> Cuenta lo que marques aquí.' : auto ? (term ? '<strong>Cobrada automáticamente</strong> a los fijos del grupo al terminar la clase.' : '<strong>No hace falta pasar lista:</strong> al terminar la clase se cobrará automáticamente a los fijos del grupo.') : '<strong>Sin lista.</strong> Esta clase es anterior al cobro automático.'} Pasa lista solo para corregir: una falta cubierta por un relevo o alguien de otro grupo que vino. A los fijos se les cobra aunque falten.</div>`; })()}
       ${fijos.length ? `<div class="flex flex-col gap-2">${fijos.map(a => { const e = lista?.[a.id]?.e || 'presente'; return `<div class="rounded-xl border border-line px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div class="flex-1 min-w-[10rem]"><div class="font-semibold">${esc(a.nombre)}</div><div class="mt-0.5">${estadoChip(a)}</div></div>
         <div class="seg" role="radiogroup" aria-label="Asistencia de ${esc(a.nombre)}">${[['presente', 'Vino'], ['falta', 'Faltó'], ['cubierta', 'Le cubre un relevo']].map(([v, l]) => `<label><input type="radio" name="st-${a.id}" value="${v}" data-fijo="${a.id}" ${e === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>`; }).join('')}</div>` : '<p class="text-muted text-[14px]">Este grupo no tiene alumnos fijos.</p>'}
@@ -2370,7 +2382,7 @@ function vEmails() {
       <div><label class="lbl" for="sEsc">Nombre de la escuela</label><input id="sEsc" class="field" value="${esc(s.escuela)}"></div>
       <div><label class="lbl" for="sRem">Remitente</label><input id="sRem" class="field" value="${esc(s.remitente)}"></div>
       <div><label class="lbl" for="sUmb">Avisar cuando queden</label><select id="sUmb" class="field">${[0, 1, 2].map(n => `<option value="${n}" ${s.umbral === n ? 'selected' : ''}>${n === 0 ? '0 clases (bono agotado)' : n + (n === 1 ? ' clase' : ' clases')}</option>`).join('')}</select></div>
-      <p class="text-[13px] text-muted">El aviso se prepara al pasar lista. La confirmación, al registrar un pago.</p>
+      <p class="text-[13px] text-muted">El aviso de pago se envía solo, una hora antes de cada clase, a los fijos del grupo a los que les queden esas clases o menos. La confirmación, al registrar un pago.</p>
       <button class="btn btn-ghost self-start" type="submit">Guardar reglas</button>
       ${LIVE ? '' : '<hr class="border-line"><button type="button" class="btn btn-ghost self-start text-bad" data-reset>Restablecer datos de ejemplo</button>'}
     </form>
@@ -2569,6 +2581,7 @@ function avisosDe(a) {
   state.outbox.filter(e => e.alumno === a.id && e.estado !== 'Error').forEach(e => out.push({ cat: 'emails', fecha: (e.fecha || '').slice(0, 10) || TODAY_ISO, ts: e.fecha || '', icono: 'emails', titulo: e.subject, sub: `Email · ${TIPO_EMAIL[e.tipo] || 'Mensaje'}${e.estado === 'En cola' ? ' · pendiente de envío' : ''}`, email: e.id }));
   state.pagos.filter(p => p.alumno === a.id).forEach(p => out.push({ cat: 'pagos', fecha: p.fecha, ts: p.fecha, icono: 'pagos', titulo: `Pago registrado: ${fmtEur(p.importe)}`, sub: `${conceptoTxt(p)} · ${p.metodo}${p.clases ? ` · +${p.clases} ${p.clases === 1 ? 'clase' : 'clases'}` : ''}` }));
   Object.entries(state.asistencia).forEach(([k, o]) => { const x = o?.[a.id]; if (!x) return; const [gid, f] = k.split('|'); const c = contenido(gid, f); out.push({ cat: 'clases', fecha: f, ts: f, icono: 'clases', titulo: x.e === 'presente' ? `Clase: ${c.titulo}` : 'Faltaste a clase', sub: `${grupo(gid).nombre}${x.c ? ' · se descuenta del bono' : ' · no se descuenta'}${x.e !== 'presente' && x.e !== 'falta' ? ` · ${x.e}` : ''}` }); });
+  autoDe(a).forEach(f => { const c = contenido(a.grupo, f); out.push({ cat: 'clases', fecha: f, ts: f, icono: 'clases', titulo: `Clase: ${c.titulo}`, sub: `${grupo(a.grupo).nombre} · se descuenta del bono` }); });
   sesionesDe(a.id).forEach(s => out.push({ cat: 'pulso', fecha: s.fecha, ts: s.fecha, icono: 'informe', titulo: s.tipo === 'partido' ? 'Pulso registrado en un partido' : 'Pulso registrado en clase', sub: `${s.duracion} min · FC media ${pct(s.fcMed / fcMaxTeo(a))} · carga ${etrimp(s.zonas)}` }));
   (state.partidos || []).filter(m => m.jugadores.some(j => j.id === a.id) && m.eventos.length).forEach(m => { const st = motor(m); const k = parDe(m.jugadores.findIndex(j => j.id === a.id)); out.push({ cat: 'partidos', fecha: m.fecha, ts: m.creado || m.fecha, icono: 'partidos', titulo: `${esTactico(m) ? 'Juego táctico' : 'Partido'}: ${resultadoTxt(st)}`, sub: `${nombrePar(m, 0)} vs ${nombrePar(m, 1)}${st.fin ? (st.empate ? ' · empate' : st.ganador === k ? ' · ganado' : ' · perdido') : ' · en juego'}`, partido: m.id }); });
   (state.ajustesClases || []).filter(x => x.alumno === a.id).forEach(x => out.push({ cat: 'clases', fecha: x.fecha, ts: x.fecha, icono: 'clases', titulo: `Ajuste del bono: ${x.clases > 0 ? '+' : ''}${x.clases} ${Math.abs(x.clases) === 1 ? 'clase' : 'clases'}`, sub: x.motivo || 'Ajuste de tu entrenador' }));
@@ -2747,11 +2760,11 @@ async function loadAll(silencioso) {
       q('ajustes_clases').order('fecha'), ui.isAdmin ? q('gastos').order('fecha') : vacio
     ])).map(r => { if (r.error) throw r.error; return r.data; });
     const s = emptyState();
-    if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico, wa: aj.whatsapp || null }; SEASON_START = aj.inicio_temporada; }
+    if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico, autoDesde: aj.auto_desde || null, wa: aj.whatsapp || null }; SEASON_START = aj.inicio_temporada; }
     if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre, suelta: t.precio_suelta == null ? null : +t.precio_suelta }));
     s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel, calendario: g.calendario || null }));
     s.bajas = Object.fromEntries(al.filter(a => !a.activo).map(a => [a.id, a.nombre]));
-    s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, uid: a.user_id || null, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
+    s.alumnos = al.filter(a => a.activo).map(a => ({ alta: a.creado ? String(a.creado).slice(0, 10) : null, id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, uid: a.user_id || null, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
     const porId = {};
     se.forEach(x => { const k = `${x.grupo_id}|${x.fecha}`; porId[x.id] = k; s.sesionIds[k] = x.id; if (x.titulo || x.contenidos?.length) s.contenidos[k] = { titulo: x.titulo || 'Contenido por definir', items: x.contenidos || [] }; if (x.plan) (s.planes = s.planes || {})[k] = x.plan; });
@@ -3192,9 +3205,7 @@ async function onSubmit(f) {
     f.querySelectorAll('input[name=ex]:checked').forEach(i => { lista[i.value] = { e: 'presente', c: true }; });
     state.asistencia[key] = lista; if (ui.extraAsis) delete ui.extraAsis[key]; ui.asisDraft = null;
     const cobrados = Object.entries(lista).filter(([, v]) => v.c).map(([id]) => id);
-    const nuevos = checkAvisos(cobrados);
-    return tras(async () => { await P.asistencia(key, lista); for (const { a, n, m } of nuevos) { await P.aviso(a, n); await P.email(m); } },
-      `Lista guardada: se cobra la clase a ${cobrados.length}${nuevos.length ? `. ${nuevos.length} ${nuevos.length === 1 ? 'aviso de pago' : 'avisos de pago'}` : ''}.`);
+    return tras(() => P.asistencia(key, lista), `Lista guardada: se cobra la clase a ${cobrados.length}.`);
   }
   if (f.id === 'fAjuste') {
     const a = alumno(f.dataset.id); const n = parseInt($('#ajN').value, 10);
