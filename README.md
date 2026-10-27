@@ -47,6 +47,15 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 - Gmail permite unos 100 emails al día desde una cuenta gratuita: la app no deja enviar más de 90 de una vez.
 - Al registrar un pago, el alumno recibe un email de agradecimiento con el pago y el estado de su bono.
 
+## Calendario de clases
+
+Las clases se generan a partir del día y la hora de cada grupo. En *Clases* (o desde el diseño de la sesión, con «Cambiar fecha») se puede:
+- **Mover una clase** a otra fecha. Su diseño, sus contenidos y la lista, si ya se pasó, se mueven con ella.
+- **Anular una clase.** No se celebra y no se cobra.
+- **Añadir una clase extra**, por ejemplo para recuperar una anulada.
+
+Cada cambio aparece en la lista «Cambios en el calendario» y se puede deshacer.
+
 ## Diseño de sesiones
 
 En *Clases*, cada sesión tiene un botón «Diseñar la sesión», con los mismos campos que la hoja de sesión de la escuela:
@@ -55,6 +64,7 @@ En *Clases*, cada sesión tiene un botón «Diseñar la sesión», con los mismo
 - **Fases:** calentamiento, técnica, táctica y partido, y opcionalmente físico o vuelta a la calma. Cada fase tiene tareas con minutos, descripción y, si hacen falta, físico, competición, variante, objetivo y puntuación. Las fases y las tareas se pueden reordenar, duplicar y borrar.
 - **Tiempo:** una barra muestra los minutos planificados frente a la duración de la clase.
 - **Varias pistas:** «Versión para otra pista» crea una copia de la sesión para cambiarla, como las dos mitades de la hoja.
+- **Aplicar a otras clases:** desde el diseño se eligen otras clases (de cualquier grupo; hay un botón para marcar la de esta semana de cada grupo). Al guardar reciben el mismo diseño, cada una con su nº de sesión y el nivel de su grupo, y se vuelven a actualizar cada vez que se guarda el original. Una copia se puede hacer independiente.
 - **Reutilizar:** se puede copiar la sesión anterior, copiar cualquier otra sesión o reutilizar tareas ya usadas en esa fase.
 - **Imprimir:** sale en A4 apaisado con el formato de la hoja de sesión (dos mitades; si hay una sola pista, se repite).
 - **Pulsómetros:** si ese día hubo sesión de pulsómetros, se muestra el tiempo real por encima del 90 % junto al objetivo.

@@ -349,6 +349,12 @@
   .rpe { height: 40px; border-radius: 10px; font-family: var(--f-display); font-weight: 800; font-size: 1.15rem; background: rgb(var(--rc) / .14); color: rgb(var(--ink)); transition: transform var(--t-fast) var(--ease-back), background-color var(--t-med) ease; }
   .rpe.on { background: rgb(var(--rc)); color: #fff; transform: scale(1.08); box-shadow: 0 6px 16px -8px rgb(var(--rc)); }
   textarea.auto { resize: none; overflow: hidden; }
+  .vchip input { position: absolute; opacity: 0; pointer-events: none; }
+  .vchip span { display: inline-block; border: 1px solid rgb(var(--line)); border-radius: 999px; padding: .35rem .8rem; font-size: 13.5px; cursor: pointer; transition: background-color var(--t-fast) ease, color var(--t-fast) ease, border-color var(--t-fast) ease; }
+  .vchip span em { font-style: normal; color: rgb(var(--warn)); font-weight: 600; }
+  .vchip input:checked + span { background: rgb(var(--court)); color: rgb(var(--court-ink)); border-color: rgb(var(--court)); }
+  .vchip input:checked + span em { color: inherit; opacity: .85; }
+  .vchip input:focus-visible + span { outline: 2px solid rgb(var(--court)); outline-offset: 2px; }
   #print { display: none; }
   @media print {
     @page { size: A4 landscape; margin: 7mm; }
@@ -459,10 +465,21 @@ const ALUMNOS_BASE = [
 const GASTO_CATS = ['Alquiler de pista', 'Material', 'Seguros', 'Formación', 'Publicidad', 'Transporte', 'Otros'];
 
 function sessionDates(g, fromISO, toISO) {
-  const out = []; const d = parseISO(fromISO); const end = parseISO(toISO);
+  const cal = g.calendario || {}; const mov = cal.mover || {}, anu = new Set(cal.anular || []), ext = cal.extra || [];
+  const d = parseISO(fromISO); d.setDate(d.getDate() - 60); const end = parseISO(toISO); end.setDate(end.getDate() + 60);
   while (d.getDay() !== g.dia) d.setDate(d.getDate() + 1);
-  while (d <= end) { out.push(iso(d)); d.setDate(d.getDate() + 7); }
-  return out;
+  const out = new Set();
+  while (d <= end) { const x = iso(d); if (!anu.has(x)) out.add(mov[x] || x); d.setDate(d.getDate() + 7); }
+  ext.forEach(x => out.add(x));
+  return [...out].filter(x => x >= fromISO && x <= toISO).sort();
+}
+/* Origen de una clase en el calendario: fecha habitual, movida o extra */
+function origenClase(g, fecha) {
+  const cal = g.calendario || {}; const mov = cal.mover || {};
+  const base = Object.keys(mov).find(k => mov[k] === fecha);
+  if (base) return { tipo: 'movida', base };
+  if ((cal.extra || []).includes(fecha)) return { tipo: 'extra' };
+  return { tipo: 'habitual', base: fecha };
 }
 
 function seed() {
@@ -1042,7 +1059,8 @@ function vClases() {
   const opts = state.grupos.map(gg => [...new Set([...ultimasClases(gg, 2), ...proximas(gg, 3)])].map(dd => ({ gg, dd }))).flat();
   return pageHead('Clases', 'Diseña cada sesión y pasa lista al terminar. Se descuenta la clase del bono de quien corresponda y, si alguien llega al umbral, se prepara el aviso de pago.') + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
-  <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${dd < TODAY_ISO ? (done ? 'Lista pasada' : 'Sin lista') : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
+  <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${dd < TODAY_ISO ? (done ? 'Lista pasada' : 'Sin lista') : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
+  <div class="flex flex-wrap items-center gap-2 -mt-2"><span class="text-[14px] font-semibold">${fechaLarga(d)} · ${g.hora}–${g.fin}</span>${(() => { const o = origenClase(g, d); return o.tipo === 'movida' ? `<span class="chip chip-warn">Movida desde el ${fmtDate(o.base)}</span>` : o.tipo === 'extra' ? '<span class="chip chip-neutral">Clase extra</span>' : ''; })()}<button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="mover" data-k="${ui.claseKey}">Cambiar fecha o anular</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="extra" data-k="${gid}">+ Añadir clase</button></div>
   <section class="grid lg:grid-cols-2 gap-4">
     <form class="panel p-5 flex flex-col gap-3" id="fAsis">
       <div class="flex items-center justify-between"><h2 class="text-2xl font-bold">Asistencia</h2><span class="text-[13px] text-muted">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}</span></div>
@@ -1132,7 +1150,14 @@ function vPlan(key) {
   return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="volver">${I.back}Clases</button>
       <div class="flex gap-1">${prev ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${prev}" aria-label="Sesión anterior">‹ ${fmtDate(prev, { day: 'numeric', month: 'short' })}</button>` : ''}${next ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${next}" aria-label="Sesión siguiente">${fmtDate(next, { day: 'numeric', month: 'short' })} ›</button>` : ''}</div>
       <div class="ml-auto flex flex-wrap gap-2">${anterior ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="copiarAnt" data-x="${gid}|${anterior}">Copiar la sesión anterior</button>` : ''}<button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="copiar">Copiar de otra sesión…</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="imprimir">Imprimir</button><button class="btn btn-primary !py-1.5 text-[13px]" data-pa="guardar" id="planGuardar">${ui.plan.sucio ? 'Guardar sesión' : 'Guardada'}</button></div></div>` +
-  pageHead(`Sesión ${esc(String(pl.n))}`, `${esc(g.nombre)} · ${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}–${g.fin}`) + `
+  pageHead(`Sesión ${esc(String(pl.n))}`, `${esc(g.nombre)} · ${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })} · ${g.hora}–${g.fin} <button class="ml-1 text-court font-semibold underline underline-offset-2 text-[14px]" data-cal="mover" data-k="${key}">Cambiar fecha</button>`) + `
+  ${pl.origen && planDe(pl.origen) ? `<div class="rounded-2xl bg-court/10 border border-court/30 px-4 py-3 text-[14px] flex flex-wrap items-center gap-2"><span class="flex-1 min-w-[14rem]">Esta clase usa el diseño de la <strong>sesión ${esc(String(planDe(pl.origen).n))} de ${esc(grupo(pl.origen.split('|')[0]).nombre)}</strong> (${fmtDate(pl.origen.split('|')[1])}). Si se cambia y guarda aquel diseño, esta clase se actualiza.</span><button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="ir" data-x="${pl.origen}">Ir al original</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="independizar">Hacerla independiente</button></div>` : ''}
+  <section class="panel p-4 flex flex-wrap items-center gap-2">
+    <span class="font-semibold text-[14.5px]">Aplicar también a:</span>
+    ${(pl.vinculadas || []).length ? pl.vinculadas.map(k => { const [g2, d2] = k.split('|'); return `<span class="chip chip-neutral !py-1.5 !pl-3 !pr-1.5 !text-[13px]">${esc(grupo(g2).nombre)} · ${fmtDate(d2, { day: 'numeric', month: 'short' })}<button class="ml-1 w-5 h-5 rounded-full hover:bg-line" data-pa="desvincular" data-x="${k}" aria-label="Quitar">✕</button></span>`; }).join('') : '<span class="text-[13.5px] text-muted">solo a esta clase</span>'}
+    <button class="btn btn-ghost !py-1.5 text-[13px]" data-pa="vincular">${(pl.vinculadas || []).length ? 'Cambiar clases' : 'Elegir otras clases…'}</button>
+    ${(pl.vinculadas || []).length ? `<span class="text-[12.5px] text-muted w-full">Al guardar, ${pl.vinculadas.length === 1 ? 'esa clase recibe' : `esas ${pl.vinculadas.length} clases reciben`} este mismo diseño.</span>` : ''}
+  </section>
   <section class="grid lg:grid-cols-3 gap-4">
     <div class="panel p-5 lg:col-span-2 grid sm:grid-cols-4 gap-3 min-w-0">
       <div><label class="lbl" for="pN">Nº de sesión</label><input id="pN" type="number" min="1" class="field tnum" value="${esc(String(pl.n))}" data-p="m:n"></div>
@@ -1181,10 +1206,17 @@ function planEditar(campo, valor) {
 async function guardarPlan(silencio) {
   const { key, d } = ui.plan; const pl = clon(d);
   pl.contenidos = (pl.contenidos || []).filter(Boolean);
+  pl.vinculadas = (pl.vinculadas || []).filter(k => k !== key && grupo(k.split('|')[0]).id);
   state.planes = state.planes || {}; state.planes[key] = pl;
   state.contenidos[key] = { titulo: tituloPlan(pl), items: pl.contenidos };
+  const copias = pl.vinculadas.map(k => {
+    const [g2, d2] = k.split('|'); const gg = grupo(g2); const prev = planDe(k);
+    const c = clon(pl); delete c.vinculadas; c.origen = key; c.n = prev?.n || numSesion(gg, d2); c.nivel = gg.nivel || pl.nivel;
+    state.planes[k] = c; state.contenidos[k] = { titulo: tituloPlan(c), items: c.contenidos }; return [k, c];
+  });
   ui.plan.sucio = false;
-  return tras(() => P.sesion(key, { titulo: tituloPlan(pl), contenidos: pl.contenidos, plan: pl }), silencio ? null : 'Sesión guardada');
+  return tras(async () => { await P.sesion(key, { titulo: tituloPlan(pl), contenidos: pl.contenidos, plan: pl }); for (const [k, c] of copias) await P.sesion(k, { titulo: tituloPlan(c), contenidos: c.contenidos, plan: c }); },
+    silencio ? null : copias.length ? `Sesión guardada y aplicada a ${copias.length} ${copias.length === 1 ? 'clase más' : 'clases más'}` : 'Sesión guardada');
 }
 function planAccion(a, el) {
   const pl = ui.plan.d; const V = pl.versiones[ui.plan.v]; const fi = +el.dataset.fi, ti = +el.dataset.ti, x = el.dataset.x;
@@ -1197,6 +1229,9 @@ function planAccion(a, el) {
     case 'copiar': return modalCopiarPlan();
     case 'copiarAnt': return aplicarCopia(x);
     case 'rpe': pl.rpe = +x; break;
+    case 'vincular': return modalVincular();
+    case 'desvincular': pl.vinculadas = (pl.vinculadas || []).filter(k => k !== x); break;
+    case 'independizar': { const ok = pl.origen, o = planDe(ok); if (o) { o.vinculadas = (o.vinculadas || []).filter(k => k !== ui.plan.key); if (LIVE) P.sesion(ok, { plan: o }).catch(fallo); else save(); } delete pl.origen; toast('Ahora es independiente: guarda para confirmarlo'); break; }
     case 'addT': V.fases[fi].tareas.push({ min: V.fases[fi].tipo === 'calentamiento' ? 10 : 20, desc: '' }); ui.plan.foco = `t:${fi}:${V.fases[fi].tareas.length - 1}:desc`; break;
     case 'delT': V.fases[fi].tareas.splice(ti, 1); break;
     case 'dupT': V.fases[fi].tareas.splice(ti + 1, 0, clon(V.fases[fi].tareas[ti])); break;
@@ -1283,6 +1318,77 @@ function planesDemo(st) {
   const sig = sessionDates(g, iso(new Date(TODAY.getTime() + 86400000)), iso(new Date(TODAY.getTime() + 8 * 86400000)))[0];
   if (sig) { const kn = `G1|${sig}`; out[kn] = { ...JSON.parse(JSON.stringify(s2)), n: fechas.length + 1, contenidos: ['Volea de derecha', 'Volea de revés'], visible: 'completo' }; st.contenidos[kn] = { titulo: 'Volea de derecha · Volea de revés', items: ['Volea de derecha', 'Volea de revés'] }; }
   return out;
+}
+/* ---------- Calendario: mover, anular y añadir clases ---------- */
+const fechaLarga = d => fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' });
+function moverClaves(gid, de, a) {
+  const k0 = `${gid}|${de}`, k1 = `${gid}|${a}`;
+  ['asistencia', 'contenidos', 'planes', 'sesionIds'].forEach(n => { const o = state[n]; if (o && o[k0] !== undefined) { o[k1] = o[k0]; delete o[k0]; } });
+  Object.values(state.planes || {}).forEach(pl => { if (pl.vinculadas) pl.vinculadas = pl.vinculadas.map(x => x === k0 ? k1 : x); if (pl.origen === k0) pl.origen = k1; });
+  if (ui.claseKey === k0) ui.claseKey = k1;
+  if (ui.plan?.key === k0) { ui.plan.key = k1; ui.view = 'plan:' + k1; }
+}
+function calDe(g) { const c = clon(g.calendario || {}); c.mover = c.mover || {}; c.anular = c.anular || []; c.extra = c.extra || []; return c; }
+function cambiarFechaClase(gid, de, a) {
+  const g = grupo(gid); if (!a || de === a) return;
+  if (sessionDates(g, a, a).length) return toast('Ese día ya hay una clase de este grupo');
+  const cal = calDe(g); const o = origenClase(g, de);
+  if (o.tipo === 'extra') cal.extra = cal.extra.map(x => (x === de ? a : x));
+  else if (o.base === a) delete cal.mover[o.base]; else cal.mover[o.base] = a;
+  g.calendario = cal; moverClaves(gid, de, a); closeModal();
+  return tras(async () => { await P.calendario(g); await P.moverSesion(gid, de, a); }, `Clase movida al ${fechaLarga(a)}`);
+}
+function anularClase(gid, fecha) {
+  const g = grupo(gid); const cal = calDe(g); const o = origenClase(g, fecha);
+  if (o.tipo === 'extra') cal.extra = cal.extra.filter(x => x !== fecha);
+  else { delete cal.mover[o.base]; if (!cal.anular.includes(o.base)) cal.anular.push(o.base); }
+  g.calendario = cal; closeModal();
+  if (ui.claseKey === `${gid}|${fecha}`) ui.claseKey = null;
+  return tras(() => P.calendario(g), `Clase del ${fechaLarga(fecha)} anulada`);
+}
+function claseExtra(gid, fecha) {
+  const g = grupo(gid); if (!fecha) return;
+  if (sessionDates(g, fecha, fecha).length) return toast('Ese día ya hay una clase de este grupo');
+  const cal = calDe(g); if (cal.anular.includes(fecha)) cal.anular = cal.anular.filter(x => x !== fecha); else cal.extra.push(fecha);
+  g.calendario = cal; ui.claseKey = `${gid}|${fecha}`; closeModal();
+  return tras(() => P.calendario(g), `Clase añadida el ${fechaLarga(fecha)}`);
+}
+function recuperarClase(gid, base) { const g = grupo(gid); const cal = calDe(g); cal.anular = cal.anular.filter(x => x !== base); g.calendario = cal; closeModal(); return tras(() => P.calendario(g), `Clase del ${fechaLarga(base)} recuperada`); }
+function cambiosCalendario(g) {
+  const cal = calDe(g); const out = [];
+  Object.entries(cal.mover).forEach(([b, a]) => out.push({ t: `${fmtDate(b)} → ${fmtDate(a)}`, d: 'Movida', btn: `<button class="btn btn-ghost !py-1 !px-3 text-[13px]" data-cal-deshacer="${g.id}|${a}|${b}">Volver a su día</button>` }));
+  cal.anular.forEach(b => out.push({ t: fmtDate(b), d: 'Anulada', btn: `<button class="btn btn-ghost !py-1 !px-3 text-[13px]" data-cal-recuperar="${g.id}|${b}">Recuperar</button>` }));
+  cal.extra.forEach(x => out.push({ t: fmtDate(x), d: 'Clase extra', btn: `<button class="btn btn-ghost !py-1 !px-3 text-[13px] text-bad" data-cal-anular-ok="${g.id}|${x}">Quitar</button>` }));
+  return out;
+}
+function modalFecha(key) {
+  const [gid, d] = key.split('|'); const g = grupo(gid); const o = origenClase(g, d); const lista = state.asistencia[key]; const cambios = cambiosCalendario(g);
+  openModal(`<div class="flex flex-col gap-4">${modalHead('Cambiar fecha')}
+    <p class="text-[14px] text-muted -mt-2">${esc(g.nombre)} · clase del <strong class="text-ink">${fechaLarga(d)}</strong>${o.tipo === 'movida' ? ` (movida desde el ${fmtDate(o.base)})` : o.tipo === 'extra' ? ' (clase extra)' : ''}. Se mueven también su diseño, sus contenidos y la lista si ya se pasó.</p>
+    <form id="fCalMover" data-k="${key}" class="flex flex-wrap items-end gap-2"><div class="flex-1 min-w-[10rem]"><label class="lbl" for="calNueva">Nueva fecha</label><input id="calNueva" type="date" class="field" value="${d}" required></div><button class="btn btn-primary" type="submit">Mover la clase</button></form>
+    <div class="rounded-2xl border border-line p-3 flex flex-wrap items-center gap-2"><div class="flex-1 min-w-[12rem] text-[14px]"><strong>Anular esta clase.</strong> <span class="text-muted">No se celebra y no se cobra a nadie.${lista ? ' Ojo: ya tiene la lista pasada; esas clases seguirán contando en los bonos.' : ''}</span></div><button class="btn btn-ghost text-bad" data-cal-anular-ok="${key}">Anular</button></div>
+    ${cambios.length ? `<div><h3 class="font-display text-lg font-bold mb-1">Cambios en el calendario de ${esc(g.nombre)}</h3><ul class="divide-y divide-line">${cambios.map(x => `<li class="py-2 flex flex-wrap items-center gap-2"><span class="chip chip-neutral">${x.d}</span><span class="text-[14px] flex-1">${x.t}</span>${x.btn}</li>`).join('')}</ul></div>` : ''}
+  </div>`);
+}
+function modalExtra(gid) {
+  const g = grupo(gid);
+  openModal(`<form id="fCalExtra" data-g="${gid}" class="flex flex-col gap-3">${modalHead('Añadir una clase')}
+    <p class="text-[14px] text-muted -mt-1">Una clase fuera del día habitual de ${esc(g.nombre)} (por ejemplo, para recuperar una que se anuló). Se cobra como cualquier otra al pasar lista.</p>
+    <div><label class="lbl" for="calExtra">Fecha</label><input id="calExtra" type="date" class="field" value="${TODAY_ISO}" required></div>
+    <button class="btn btn-primary self-start" type="submit">Añadir clase</button></form>`);
+}
+
+/* ---------- Aplicar un diseño a otras clases ---------- */
+function modalVincular() {
+  const { key, d: pl } = ui.plan; const [gid0, d0] = key.split('|'); const sel = new Set(pl.vinculadas || []);
+  const desde = iso(new Date(parseISO(d0).getTime() - 7 * 86400000)), hasta = iso(new Date(parseISO(d0).getTime() + 63 * 86400000));
+  const lunes = weekKey(d0), domingo = iso(new Date(parseISO(lunes).getTime() + 6 * 86400000));
+  openModal(`<form id="fVincular" class="flex flex-col gap-3">${modalHead('Aplicar a otras clases')}
+    <p class="text-[14px] text-muted -mt-1">Marca las clases que tendrán este mismo diseño. Al guardar, se copian contenidos, objetivos y tareas; cada clase conserva su nº de sesión y el nivel de su grupo. Si después cambias este diseño y guardas, se actualizan también.</p>
+    <button type="button" class="btn btn-ghost self-start !py-1.5 text-[13.5px]" data-vinc-semana="${lunes}|${domingo}">Marcar la clase de esta semana de cada grupo</button>
+    <div class="flex flex-col gap-3 max-h-[52vh] overflow-y-auto pr-1">${state.grupos.map(g => { const fs = sessionDates(g, desde, hasta).filter(x => `${g.id}|${x}` !== key); return fs.length ? `<fieldset><legend class="font-semibold mb-1.5">${esc(g.nombre)} <span class="text-muted font-normal text-[13px]">· ${DAYS[g.dia].toLowerCase()} ${g.hora}</span></legend><div class="flex flex-wrap gap-1.5">${fs.map(x => { const k = `${g.id}|${x}`; const otro = planDe(k); const propio = otro && otro.origen !== key && !sel.has(k); return `<label class="vchip"><input type="checkbox" name="vk" value="${k}" ${sel.has(k) ? 'checked' : ''}><span>${fmtDate(x, { weekday: 'short', day: 'numeric', month: 'short' })}${propio ? ' <em title="Ya tiene un diseño propio que se reemplazará">· diseñada</em>' : ''}</span></label>`; }).join('')}</div></fieldset>` : ''; }).join('')}</div>
+    <p class="text-[12.5px] text-muted">«diseñada»: esa clase ya tiene su propio diseño y se reemplazará.</p>
+    <button class="btn btn-primary self-start" type="submit">Aplicar</button></form>`);
 }
 /* ---------- Resumen en la pantalla de Clases ---------- */
 function vResumenPlan(key) {
@@ -2643,7 +2749,7 @@ async function loadAll(silencioso) {
     const s = emptyState();
     if (aj) { s.settings = { escuela: aj.escuela, remitente: aj.remitente, umbral: aj.umbral_aviso, temporada: aj.temporada, inicio: aj.inicio_temporada, auto: aj.envio_automatico, wa: aj.whatsapp || null }; SEASON_START = aj.inicio_temporada; }
     if (tar.length) TARIFAS = tar.map(t => ({ id: t.id, nombre: t.nombre, alumnos: t.alumnos_por_pista, horas: +t.horas, mes: +t.precio_mes, trimestre: +t.precio_trimestre, suelta: t.precio_suelta == null ? null : +t.precio_suelta }));
-    s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel }));
+    s.grupos = gr.map(g => ({ id: g.id, nombre: g.nombre, dia: g.dia_semana, hora: g.hora_inicio.slice(0, 5), fin: g.hora_fin.slice(0, 5), tarifa: g.tarifa_id, nivel: g.nivel, calendario: g.calendario || null }));
     s.bajas = Object.fromEntries(al.filter(a => !a.activo).map(a => [a.id, a.nombre]));
     s.alumnos = al.filter(a => a.activo).map(a => ({ id: a.id, nombre: a.nombre, grupo: a.grupo_id, sexo: a.sexo, fnac: a.fecha_nacimiento, edad: edadDe(a.fecha_nacimiento), peso: +a.peso_kg || 70, inicial: a.clases_iniciales, email: a.email, tlf: a.telefono || '', codigo: a.codigo_acceso, activado: !!a.user_id, uid: a.user_id || null, modalidad: a.modalidad || 'fijo', tutor: a.tutor_nombre, salud: a.consentimiento_salud, imagen: a.consentimiento_imagen }));
     s.pagos = pa.map(p => ({ id: p.id, alumno: p.alumno_id, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: +p.importe }));
@@ -2712,6 +2818,8 @@ const P = {
     const d = nuevo ? await need(sb.from('alumnos').insert(row).select('id, codigo_acceso').single()) : await need(sb.from('alumnos').update(row).eq('id', a.id).select('id, codigo_acceso').single());
     a.id = d.id; a.codigo = d.codigo_acceso;
   },
+  async calendario(g) { await need(sb.from('grupos').update({ calendario: g.calendario || null }).eq('id', g.id)); },
+  async moverSesion(gid, de, a) { const id = state.sesionIds[`${gid}|${a}`]; if (id) await need(sb.from('sesiones').update({ fecha: a }).eq('id', id)); },
   async grupo(g, nuevo) {
     const row = { nombre: g.nombre, dia_semana: g.dia, hora_inicio: g.hora, hora_fin: g.fin, tarifa_id: g.tarifa, nivel: g.nivel || null };
     const d = nuevo ? await need(sb.from('grupos').insert(row).select('id').single()) : await need(sb.from('grupos').update(row).eq('id', g.id).select('id').single());
@@ -2873,6 +2981,11 @@ document.addEventListener('click', async e => {
   if (e.target.closest('[data-wa-reset]')) { const C = waConf(); const pl = C.plantillas.find(x => x.id === WA_DEF.id); Object.assign(pl, WA_DEF); ui.wa.edId = null; return waGuardarConf(C, 'Texto original restaurado'); }
   if (e.target.closest('[data-wa-borrar]')) { const C = waConf(); C.plantillas = C.plantillas.filter(x => x.id !== ui.wa.edId); C.sel = WA_DEF.id; ui.wa.sel = WA_DEF.id; ui.wa.edId = null; return waGuardarConf(C, 'Mensaje eliminado'); }
   const fcs = e.target.closest('[data-fcserie]'); if (fcs) { const k = fcs.dataset.fcserie; ui.fcSeries = ui.fcSeries || new Set(); ui.fcSeries.has(k) ? ui.fcSeries.delete(k) : ui.fcSeries.add(k); return render(); }
+  const calB = e.target.closest('[data-cal]'); if (calB) return calB.dataset.cal === 'extra' ? modalExtra(calB.dataset.k) : modalFecha(calB.dataset.k);
+  const calA = e.target.closest('[data-cal-anular-ok]'); if (calA) { const [g1, f1] = calA.dataset.calAnularOk.split('|'); return anularClase(g1, f1); }
+  const calD = e.target.closest('[data-cal-deshacer]'); if (calD) { const [g1, a1, b1] = calD.dataset.calDeshacer.split('|'); return cambiarFechaClase(g1, a1, b1); }
+  const calR = e.target.closest('[data-cal-recuperar]'); if (calR) { const [g1, b1] = calR.dataset.calRecuperar.split('|'); return recuperarClase(g1, b1); }
+  const vsem = e.target.closest('[data-vinc-semana]'); if (vsem) { const [l, dmg] = vsem.dataset.vincSemana.split('|'); document.querySelectorAll('#fVincular input[name=vk]').forEach(i => { const f = i.value.split('|')[1]; if (f >= l && f <= dmg) i.checked = true; }); return; }
   const pa = e.target.closest('[data-pa]'); if (pa && ui.plan && !pa.disabled) { e.preventDefault(); return planAccion(pa.dataset.pa, pa); }
   const pac = e.target.closest('[data-pa-copia]'); if (pac && ui.plan) return aplicarCopia(pac.dataset.paCopia);
   const ppr = e.target.closest('[data-plan-print]'); if (ppr) return imprimirPlan(planDe(ppr.dataset.planPrint), ppr.dataset.planPrint);
@@ -3098,6 +3211,9 @@ async function onSubmit(f) {
     const g = { id: 'GA' + Date.now(), ...datos }; state.gastos.push(g);
     return tras(() => P.gasto(g, true), 'Gasto registrado');
   }
+  if (f.id === 'fCalMover') { const [g1, d1] = f.dataset.k.split('|'); return cambiarFechaClase(g1, d1, $('#calNueva').value); }
+  if (f.id === 'fCalExtra') return claseExtra(f.dataset.g, $('#calExtra').value);
+  if (f.id === 'fVincular') { ui.plan.d.vinculadas = [...f.querySelectorAll('input[name=vk]:checked')].map(i => i.value); closeModal(); planSucio(); render(); return toast(ui.plan.d.vinculadas.length ? 'Pulsa «Guardar sesión» para aplicarlo' : 'Sin otras clases'); }
   if (f.id === 'fCont') {
     const c = { titulo: $('#cTit').value.trim() || 'Sin título', items: $('#cItems').value.split('\n').map(s => s.trim()).filter(Boolean) };
     state.contenidos[ui.claseKey] = c; const key = ui.claseKey;
