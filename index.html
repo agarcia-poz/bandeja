@@ -381,6 +381,9 @@
   .rpe-b:hover { border-color: rgb(var(--rc)); } .rpe-b.on { background: rgb(var(--rc)); color: #fff; transform: scale(1.06); }
   @media (min-width: 640px) { .rpe-b { min-height: 92px; } }
   @media (prefers-reduced-motion: reduce) { .rpe-body { animation: none; } .rpe-b { transition: none; } .rpe-b.on { transform: none; } }
+  .seqrow { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; padding: .35rem .4rem; border-radius: 12px; background: rgb(var(--surface)); border: 1px solid rgb(var(--line)); animation: seqin var(--t-fast, .15s) ease-out; }
+  .seqn { width: 24px; height: 24px; border-radius: 999px; display: inline-grid; place-items: center; font-family: 'Saira Condensed', sans-serif; font-weight: 800; font-size: 14px; background: rgb(var(--fc, var(--court))); color: #fff; flex-shrink: 0; }
+  @media (prefers-reduced-motion: reduce) { .seqrow { animation: none; } }
   .seqchip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .25rem .2rem .55rem; border-radius: 999px; background: rgb(var(--fc, var(--court)) / .14); border: 1px solid rgb(var(--fc, var(--court)) / .35); font-size: 13px; font-weight: 600; animation: seqin var(--t-fast, .15s) ease-out; }
   .seqchip .dirb { width: auto; height: auto; padding: 1px 7px; font-size: 11px; font-weight: 700; border-radius: 999px; border: 1px dashed rgb(var(--line)); color: rgb(var(--muted)); }
   .seqchip .dirb.on { border-style: solid; border-color: transparent; background: rgb(var(--fc, var(--court))); color: #fff; }
@@ -1159,6 +1162,23 @@ function afterPagos() {
   ] }, options: baseOpts({ y: { title: '€', beginAtZero: true } }) });
 }
 
+const TRIM_TXT = { 1: '1.er trimestre · septiembre a diciembre', 2: '2.º trimestre · enero a marzo', 3: '3.er trimestre · abril a junio', 4: 'Verano · julio y agosto' };
+const trimDe = d => { const m = +d.slice(5, 7); return m >= 9 ? 1 : m <= 3 ? 2 : m <= 6 ? 3 : 4; };
+const cursoDe = d => (+d.slice(5, 7) >= 9 ? +d.slice(0, 4) : +d.slice(0, 4) - 1);
+const ctabSeg = () => { const n = Object.keys(state.planes || {}).filter(k => grupo(k.split('|')[0]).id).length; return `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start flex-wrap" role="tablist">${[['clase', 'Clase y asistencia'], ['sesiones', `Sesiones diseñadas${n ? ` (${n})` : ''}`]].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${(ui.ctab || 'clase') === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${(ui.ctab || 'clase') === k}" data-ctab="${k}">${l}</button>`).join('')}</div>`; };
+/* Todas las sesiones diseñadas, agrupadas por curso y trimestre */
+function vSesionesDisenadas() {
+  const fg = ui.sesGrupo || 'todos';
+  const L = Object.entries(state.planes || {}).map(([k, pl]) => { const [gid, d] = k.split('|'); return { k, pl, gid, d }; }).filter(x => grupo(x.gid).id && (fg === 'todos' || x.gid === fg)).sort((a, b) => a.d.localeCompare(b.d) || grupo(a.gid).nombre.localeCompare(grupo(b.gid).nombre));
+  const chips = `<div class="flex flex-wrap gap-2">${[['todos', 'Todos los grupos'], ...state.grupos.map(g => [g.id, g.nombre])].map(([id, n]) => `<button class="chip ${fg === id ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-ses-grupo="${id}">${esc(n)}</button>`).join('')}</div>`;
+  if (!L.length) return chips + `<div class="panel p-6"><h2 class="text-2xl font-bold">Aún no hay sesiones diseñadas</h2><p class="text-muted mt-1">En «Clase y asistencia», elige una clase y pulsa «Diseñar la sesión».</p></div>`;
+  const T = {}; L.forEach(x => { const key = `${cursoDe(x.d)}-${trimDe(x.d)}`; (T[key] = T[key] || []).push(x); });
+  const hoyK = `${cursoDe(TODAY_ISO)}-${trimDe(TODAY_ISO)}`;
+  return chips + Object.keys(T).sort((a, b) => b.localeCompare(a)).map(key => { const [cu, t] = key.split('-').map(Number), xs = T[key];
+    return `<details class="panel min-w-0" ${key === hoyK || Object.keys(T).length === 1 ? 'open' : ''}><summary class="px-5 py-4 cursor-pointer flex flex-wrap items-baseline justify-between gap-2"><span class="text-xl font-bold">${TRIM_TXT[t]} <span class="text-muted font-semibold">${cu}/${String(cu + 1).slice(2)}</span></span><span class="text-[13px] text-muted">${xs.length} ${xs.length === 1 ? 'sesión' : 'sesiones'}</span></summary>
+      <div class="scroll-x"><table class="data min-w-[640px]"><thead><tr><th>Fecha</th><th>Grupo</th><th class="text-right">Nº</th><th>Contenido</th><th class="text-right">Min</th><th class="text-right">Golpeos</th></tr></thead><tbody>
+      ${xs.map(({ k, pl, gid, d }) => { const g = golpeosPlan(pl), n = pl.versiones.length; return `<tr class="click" data-go="plan:${k}"><td class="whitespace-nowrap">${fmtDate(d, { weekday: 'short', day: 'numeric', month: 'short' })}${d === TODAY_ISO ? ' <span class="chip chip-ok">Hoy</span>' : d > TODAY_ISO ? ' <span class="chip chip-neutral">Próxima</span>' : ''}</td><td>${esc(grupo(gid).nombre)}</td><td class="text-right num text-lg font-bold">${esc(String(pl.n))}</td><td class="min-w-[14rem]">${esc(tituloPlan(pl))}${pl.origen ? ' <span class="chip chip-neutral">copia</span>' : ''}${n > 1 ? ` <span class="text-[12px] text-muted">${n} pistas</span>` : ''}</td><td class="text-right tnum">${minVersion(pl.versiones[0])}'</td><td class="text-right tnum">${g.t || g.pa ? g.t + (g.pa ? ` + ${Math.round(g.pa)}/al.` : '') : '—'}</td></tr>`; }).join('')}</tbody></table></div></details>`; }).join('');
+}
 function vClases() {
   if (!state.grupos.length) return pageHead('Clases', 'Aquí pasarás lista y prepararás los contenidos de cada sesión.') + `<div class="panel p-6"><h2 class="text-2xl font-bold">Primero crea un grupo</h2><p class="text-muted mt-1">Las clases se generan solas a partir del día y la hora de cada grupo.</p><button class="btn btn-primary mt-3" data-open="grupo">Crear grupo</button></div>`;
   if (ui.claseKey && !grupo(ui.claseKey.split('|')[0]).id) ui.claseKey = null;
@@ -1169,7 +1189,9 @@ function vClases() {
   const extra = [...new Set([...reales().filter(a => a.grupo === gid && esRelevo(a)).map(a => a.id), ...Object.keys(lista || {}).filter(id => !fijos.some(f => f.id === id)), ...(ui.extraAsis?.[ui.claseKey] || [])])].map(alumno).filter(Boolean);
   const presentes = lista;
   const opts = state.grupos.map(gg => [...new Set([...ultimasClases(gg, 2), ...proximas(gg, 3)])].map(dd => ({ gg, dd }))).flat();
-  return pageHead('Clases', 'Diseña cada sesión. Al terminar cada clase se descuenta sola del bono de los fijos del grupo; pasa lista solo para corregir faltas cubiertas o alumnos de otros grupos.', `<button class="btn btn-ghost" data-csv="golpeos" title="Golpeos de cada alumno en cada clase">Exportar golpeos (CSV)</button>`) + `
+  const cab = pageHead('Clases', 'Diseña cada sesión. Al terminar cada clase se descuenta sola del bono de los fijos del grupo; pasa lista solo para corregir faltas cubiertas o alumnos de otros grupos.', `<button class="btn btn-ghost" data-csv="golpeos" title="Golpeos de cada alumno en cada clase">Exportar golpeos (CSV)</button>`) + ctabSeg();
+  if (ui.ctab === 'sesiones') return cab + vSesionesDisenadas();
+  return cab + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
   <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${done ? 'Lista pasada' : claseTerminada(grupo(gid), dd) && (state.settings.autoDesde || AUTO_DESDE_DEF) <= dd ? 'Cobrada auto' : dd < TODAY_ISO ? 'Sin lista' : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
   <div class="flex flex-wrap items-center gap-2 -mt-2"><span class="text-[14px] font-semibold">${fechaLarga(d)} · ${g.hora}–${g.fin}</span>${(() => { const o = origenClase(g, d); return o.tipo === 'movida' ? `<span class="chip chip-warn">Movida desde el ${fmtDate(o.base)}</span>` : o.tipo === 'extra' ? '<span class="chip chip-neutral">Clase extra</span>' : ''; })()}<button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="mover" data-k="${ui.claseKey}">Cambiar fecha o anular</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="extra" data-k="${gid}">+ Añadir clase</button></div>
@@ -1201,10 +1223,15 @@ const minDe = h => { const [a, b] = String(h || '0:0').split(':').map(Number); r
 const durClase = g => Math.max(0, minDe(g.fin) - minDe(g.hora)) || 90;
 const planDe = key => (state.planes || {})[key] || null;
 const numSesion = (g, d) => sessionDates(g, SEASON_START, d).length || 1;
+/* Nº de sesión nueva: el de la última sesión diseñada antes en ese grupo + 1 (así respeta los cambios de orden); si no hay ninguna, se cuenta por fechas */
+function siguienteN(gid, d) {
+  const prev = Object.entries(state.planes || {}).filter(([k, pl]) => k.startsWith(gid + '|') && k.split('|')[1] < d && +pl.n).sort((a, b) => b[0].localeCompare(a[0]))[0];
+  return prev ? +prev[1].n + 1 : numSesion(grupo(gid), d);
+}
 const faseVacia = tipo => ({ tipo, nombre: FASES_TIPO[tipo]?.[0] || 'Fase', tareas: [] });
 function nuevoPlan(key) {
   const [gid, d] = key.split('|'); const g = grupo(gid); const c = state.contenidos[key];
-  return { n: numSesion(g, d), nivel: g.nivel || '', titulo: c && c.titulo !== 'Contenido por definir' ? c.titulo : '', contenidos: c?.items || [], z5: 4, rpe: 7, visible: 'contenidos', versiones: [{ nombre: 'Pista 1', fases: ['calentamiento', 'tecnica', 'tactica', 'partido'].map(faseVacia) }] };
+  return { n: siguienteN(gid, d), nivel: g.nivel || '', titulo: c && c.titulo !== 'Contenido por definir' ? c.titulo : '', contenidos: c?.items || [], z5: 4, rpe: 7, visible: 'contenidos', versiones: [{ nombre: 'Pista 1', fases: ['calentamiento', 'tecnica', 'tactica', 'partido'].map(faseVacia) }] };
 }
 const minVersion = v => v.fases.reduce((t, f) => t + f.tareas.reduce((u, x) => u + (+x.min || 0), 0), 0);
 const minFase = f => f.tareas.reduce((u, x) => u + (+x.min || 0), 0);
@@ -1217,8 +1244,10 @@ const gC = it => (typeof it === 'string' ? it : it?.g);                 // códi
 const gO = it => (typeof it === 'string' ? null : it?.o || null);       // objetivo / dirección del golpe
 const OBJ_G = { pa: 'paralelo', cr: 'cruzado', ce: 'al centro', pr: 'profundo', co: 'corto', pi: 'a la pared' };
 const OBJ_ORDEN = [null, 'pa', 'cr', 'ce', 'pr', 'co', 'pi'];
-const seqTxt = seq => (seq || []).filter(gC).map(it => `${GOLPE_TN[gC(it)] || gC(it)}${gO(it) ? ` ${OBJ_G[gO(it)]}` : ''}`).join(' → ');
-const seqClave = seq => (seq || []).filter(gC).map(it => gC(it) + (gO(it) ? ':' + gO(it) : '')).join('-');
+const LADO_G = { de: 'cuadro de derecha', re: 'cuadro de revés' };
+const gL = it => (typeof it === 'string' ? null : it?.l || null);   // lado del campo desde el que se golpea
+const seqTxt = seq => (seq || []).filter(gC).map(it => `${GOLPE_TN[gC(it)] || gC(it)}${gO(it) ? ` ${OBJ_G[gO(it)]}` : ''}${gL(it) ? ` (${LADO_G[gL(it)]})` : ''}`).join(' → ');
+const seqClave = seq => (seq || []).filter(gC).map(it => gC(it) + (gO(it) ? ':' + gO(it) : '') + (gL(it) ? '@' + gL(it) : '')).join('-');
 const claveTarea = t => (t.desc || '').trim() || (t.uno ? '1v1:' : '') + seqClave(t.seq) + (t.uno ? '|' + seqClave(t.rseq) : '');
 const rangoG = n => ({ min: Math.round(n * (1 - MARGEN_GOLPEO)), max: Math.round(n * (1 + MARGEN_GOLPEO)) });
 /* Bloques de golpeo de una tarea:
@@ -1318,9 +1347,11 @@ function vPlan(key) {
   const secuenciaUI = (fi, ti, t, modo = '') => { const K = modo === 'v' ? 'vseq' : modo === 'c' ? 'cseq' : modo === 'r' ? 'rseq' : 'seq', N = modo === 'v' ? 'vpelotas' : modo === 'c' ? 'cgolpes' : 'pelotas', seq = t[K] || [];
     const quien = modo === 'v' ? 'de la variante' : modo === 'c' ? 'de la competición' : modo === 'r' ? 'de respuesta del compañero' : t.uno ? 'de trabajo (defensa)' : 'de la tarea';
     return `<div class="flex flex-col gap-2">
-      <div class="flex flex-wrap items-center gap-1.5 min-h-[2.6rem] rounded-xl bg-surface px-2 py-1.5 border border-line" role="list" aria-label="Secuencia de golpes ${quien}">
-        ${seq.length ? seq.map((it, i) => `${i ? '<span class="text-muted" aria-hidden="true">→</span>' : ''}<span class="seqchip" role="listitem" title="${esc(GOLPE_TN[gC(it)] || gC(it))}"><b>${esc(gC(it))}</b><span class="hidden sm:inline">${esc(GOLPE_TN[gC(it)] || '')}</span><button type="button" class="dirb ${gO(it) ? 'on' : ''}" data-pa="dirG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" title="Cambiar el objetivo del golpe" aria-label="Objetivo: ${gO(it) ? OBJ_G[gO(it)] : 'sin indicar'}. Tocar para cambiarlo">${gO(it) ? esc(OBJ_G[gO(it)]) : '+ objetivo'}</button><button type="button" data-pa="delG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" aria-label="Quitar ${esc(GOLPE_TN[gC(it)] || gC(it))}">✕</button></span>`).join('') : `<span class="text-[13.5px] text-muted px-1">Secuencia de golpes ${quien}: toca los golpes de abajo en orden. Toca «+ objetivo» para marcar la dirección (paralelo, cruzado…).</span>`}
-      </div>
+      ${seq.length ? `<ol class="flex flex-col gap-1.5" aria-label="Secuencia de golpes ${quien}">${seq.map((it, i) => { const ds = c => `data-seq="${fi}:${ti}:${K}:${i}:${c}"`; return `<li class="seqrow"><span class="seqn" aria-hidden="true">${i + 1}</span>
+        <select class="field !py-1 !w-auto max-w-full text-[13.5px] font-semibold" ${ds('g')} aria-label="Golpe ${i + 1}">${GOLPES_T.map(([c, n]) => `<option value="${c}" ${gC(it) === c ? 'selected' : ''}>${c} · ${n}</option>`).join('')}</select>
+        <select class="field !py-1 !w-auto max-w-full text-[13.5px]" ${ds('o')} aria-label="Dirección del golpe ${i + 1}"><option value="">Dirección…</option>${Object.entries(OBJ_G).map(([k, l]) => `<option value="${k}" ${gO(it) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <select class="field !py-1 !w-auto max-w-full text-[13.5px]" ${ds('l')} aria-label="Lado del campo del golpe ${i + 1}"><option value="">Lado del campo…</option>${Object.entries(LADO_G).map(([k, l]) => `<option value="${k}" ${gL(it) === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <span class="ml-auto flex"><button type="button" class="ibtn" data-pa="upG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" ${i ? '' : 'disabled'} aria-label="Subir el golpe ${i + 1}">↑</button><button type="button" class="ibtn text-bad" data-pa="delG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" aria-label="Quitar el golpe ${i + 1}">✕</button></span></li>`; }).join('')}</ol>` : `<p class="text-[13.5px] text-muted px-1">Secuencia de golpes ${quien}: añade los golpes en orden con los botones de abajo. Cada golpe es una fila donde eliges su dirección y el lado del campo.</p>`}
       <div class="flex flex-wrap gap-1" role="group" aria-label="Añadir golpe a la secuencia ${quien}">${GOLPES_T.map(([c, n]) => `<button type="button" class="gchip" data-pa="addG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${c}" title="${esc(n)}" aria-label="Añadir ${esc(n)}">${c}</button>`).join('')}</div>
       ${modo === 'r' ? '' : `<div class="flex flex-wrap items-center gap-x-3 gap-y-1"><label class="flex items-center gap-2 text-[13.5px] font-semibold" for="${N}${fi}_${ti}">${modo === 'c' ? 'Golpeos por alumno' : 'Pelotas'}<input id="${N}${fi}_${ti}" type="number" min="0" max="2000" step="1" inputmode="numeric" class="field !w-24 text-center num text-lg font-bold !py-1" value="${t[N] ?? ''}" placeholder="${modo === 'c' ? 'p. ej. 40' : `${+pl.carro || CARRO}`}" data-p="t:${fi}:${ti}:${N}"></label>${modo === 'c' ? '' : '<span class="text-[12px] text-muted">vacío = el carro</span>'}<span class="text-[13.5px]" data-gt="${fi}:${ti}:${modo}">${golpeosTareaTxt(t, modo)}</span></div>`}
     </div>`; };
@@ -1457,7 +1488,7 @@ async function guardarPlan(silencio) {
   state.contenidos[key] = { titulo: tituloPlan(pl), items: pl.contenidos };
   const copias = pl.vinculadas.map(k => {
     const [g2, d2] = k.split('|'); const gg = grupo(g2); const prev = planDe(k);
-    const c = clon(pl); delete c.vinculadas; c.origen = key; c.n = prev?.n || numSesion(gg, d2); c.nivel = gg.nivel || pl.nivel;
+    const c = clon(pl); delete c.vinculadas; c.origen = key; c.n = prev?.n || siguienteN(g2, d2); c.nivel = gg.nivel || pl.nivel;
     state.planes[k] = c; state.contenidos[k] = { titulo: tituloPlan(c), items: c.contenidos }; return [k, c];
   });
   ui.plan.sucio = false;
@@ -1483,6 +1514,7 @@ function planAccion(a, el) {
     case 'addG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq'; (t[k] = t[k] || []).push(x); break; }
     case 'delG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq'; t[k].splice(+x, 1); break; }
     case 'uno': { const t = V.fases[fi].tareas[ti]; t.uno = x === '1'; if (t.uno && !t.rseq) t.rseq = []; break; }
+    case 'upG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq', i = +x; if (i > 0) [t[k][i - 1], t[k][i]] = [t[k][i], t[k][i - 1]]; break; }
     case 'dirG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq', it = t[k][+x], o = OBJ_ORDEN[(OBJ_ORDEN.indexOf(gO(it)) + 1) % OBJ_ORDEN.length]; t[k][+x] = o ? { g: gC(it), o } : gC(it); break; }
     case 'delT': V.fases[fi].tareas.splice(ti, 1); break;
     case 'dupT': V.fases[fi].tareas.splice(ti + 1, 0, clon(V.fases[fi].tareas[ti])); break;
@@ -1644,7 +1676,7 @@ function modalVincular() {
 /* ---------- Resumen en la pantalla de Clases ---------- */
 function vResumenPlan(key) {
   const pl = planDe(key); const [gid, d] = key.split('|'); const g = grupo(gid);
-  if (!pl) return `<section class="panel p-5 flex flex-col gap-3"><h2 class="text-2xl font-bold">Sesión ${numSesion(g, d)}</h2>
+  if (!pl) return `<section class="panel p-5 flex flex-col gap-3"><h2 class="text-2xl font-bold">Sesión ${siguienteN(g.id, d)}</h2>
     <p class="text-[14px] text-muted">Aún no está diseñada. Planifica las fases (calentamiento, técnica, táctica y partido), las tareas, los objetivos de carga y los contenidos que verá el alumnado.</p>
     ${(() => { const c = state.contenidos[key]; return c ? `<div class="text-[14px]"><strong>${esc(c.titulo)}</strong>${c.items.length ? `<ul class="text-muted mt-1">${c.items.map(i => `<li>· ${esc(i)}</li>`).join('')}</ul>` : ''}</div>` : ''; })()}
     <button class="btn btn-primary self-start" data-go="plan:${key}">Diseñar la sesión</button></section>`;
@@ -3746,7 +3778,7 @@ function render() {
     else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
   }
   app.innerHTML = shell(html);
-  const vk = [ui.role, ui.view, ui.pmodo || '', ui.ptab || '', ui.amodo || '', ui.avCat || ''].join('|');
+  const vk = [ui.role, ui.view, ui.pmodo || '', ui.ptab || '', ui.amodo || '', ui.avCat || '', ui.ctab || ''].join('|');
   const nueva = vk !== ui._vk; ui._vk = vk;
   app.classList.toggle('ve', nueva && !RM());
   if (nueva) { clearTimeout(ui._veT); ui._veT = setTimeout(() => app.classList.remove('ve'), 1200); prepararEntrada(app); }
@@ -3873,7 +3905,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok],[data-asig],[data-aviso-ir],[data-aviso-no],[data-est-amb],[data-est-sort],[data-est-ver],[data-est-grupo-ir]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok],[data-asig],[data-aviso-ir],[data-aviso-no],[data-ctab],[data-ses-grupo],[data-est-amb],[data-est-sort],[data-est-ver],[data-est-grupo-ir]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -3944,6 +3976,8 @@ document.addEventListener('click', async e => {
   if (d.rpeEdit) return modalRPE(d.rpeEdit);
   if (d.rpeSet) { const [id, n] = d.rpeSet.split(':'); const r = state.sesionesFC.find(s => s.id === id); if (!r) return; r.rpe = +n || null; closeModal(); return tras(() => P.rpe(r), r.rpe ? `RPE ${r.rpe} guardada` : 'RPE quitada'); }
   if (d.zona !== undefined) { const k = +d.zona; ui.zonaSel = ui.zonaSel === k ? null : k; document.querySelectorAll('[data-zona]').forEach(b => { const on = +b.dataset.zona === ui.zonaSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
+  if (d.ctab) { ui.ctab = d.ctab; return render(); }
+  if (d.sesGrupo) { ui.sesGrupo = d.sesGrupo; return render(); }
   if (d.asig) return asignarSensor(d.asig);
   if (d.avisoIr) { if (d.avisoIr === 'grabar' && !live.running) { toggleLive(); return; } return go('vivo'); }
   if (d.avisoNo) { try { localStorage.setItem(AVISO_KEY, JSON.stringify([...avisosDescartados(), ...d.avisoNo.split(',')].slice(-60))); } catch (e) {} document.getElementById('avisoGrab')?.remove(); return toast('De acuerdo: hoy no se avisará para esa clase'); }
@@ -4003,6 +4037,9 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  const sq = e.target.closest?.('[data-seq]');
+  if (sq && ui.plan) { const [fi, ti, K, i, campo] = sq.dataset.seq.split(':'); const t = ui.plan.d.versiones[ui.plan.v].fases[+fi].tareas[+ti], it = t[K][+i];
+    const o = { g: gC(it), o: gO(it), l: gL(it) }; o[campo] = sq.value || null; t[K][+i] = o.o || o.l ? Object.fromEntries(Object.entries(o).filter(([, v]) => v)) : o.g; planSucio(); planGolpeos(); return; }
   const vg = e.target.closest?.('[data-vivo-grupo]'); if (vg) { ui.vivoGrupo = vg.value; return render(); }
   const eg = e.target.closest?.('[data-est-grupo]'); if (eg) { ui.estGrupo = eg.value; return render(); }
   const ea = e.target.closest?.('[data-est-alumno]'); if (ea) { ui.estAlumno = ea.value; return render(); }
