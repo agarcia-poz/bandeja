@@ -58,7 +58,8 @@ Cada cambio aparece en la lista «Cambios en el calendario» y se puede deshacer
 En *Clases*, cada sesión tiene un botón «Diseñar la sesión», con los mismos campos que la hoja de sesión de la escuela:
 
 - **Cabecera:** número de sesión (se calcula solo), nivel, contenidos y objetivos de carga (minutos por encima del 90 % de la FC máxima y RPE objetivo).
-- **Fases:** calentamiento, técnica, táctica y partido, y opcionalmente físico o vuelta a la calma. Cada fase tiene tareas con minutos, descripción y, si hacen falta, físico, competición, variante, objetivo y puntuación. Las fases y las tareas se pueden reordenar, duplicar y borrar.
+- **Fases:** calentamiento, técnica, táctica y partido, y opcionalmente físico o vuelta a la calma. Cada fase tiene tareas con minutos, **secuencia de golpes** y nº de pelotas y, si hacen falta, descripción, físico, competición, variante, objetivo y puntuación. Las fases y las tareas se pueden reordenar, duplicar y borrar.
+- **Golpeos:** en cada tarea se toca la secuencia de golpes (D, R, B, VD… se pueden repetir) y se indica el nº de pelotas lanzadas. La app calcula los golpeos de la tarea (pelotas × golpes de la secuencia, con un margen del ±5 % por el lanzamiento), el total de la sesión, el reparto por tipo de golpe, los golpeos por minuto y los que le tocan a cada alumno (total ÷ asistentes). Los asistentes salen de la lista confirmada (o de los fijos del grupo cuando se cobra sola la clase). Cada alumno ve sus golpeos acumulados en *Mi corazón* y en su inicio, con un gráfico por clase y el reparto por golpe; Andrés los ve en la ficha del alumno. También van en el email de resumen de sesión. «Exportar golpeos (CSV)» en *Clases* los saca a Excel.
 - **Tiempo:** una barra muestra los minutos planificados frente a la duración de la clase.
 - **Varias pistas:** «Versión para otra pista» crea una copia de la sesión para cambiarla, como las dos mitades de la hoja.
 - **Aplicar a otras clases:** desde el diseño se eligen otras clases (de cualquier grupo; hay un botón para marcar la de esta semana de cada grupo). Al guardar reciben el mismo diseño, cada una con su nº de sesión y el nivel de su grupo, y se vuelven a actualizar cada vez que se guarda el original. Una copia se puede hacer independiente.
@@ -96,6 +97,11 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 
 - **Juego táctico:** por defecto, 2 rondas a 15 puntos (se puede cambiar, y elegir si hay que ganar por 2). No hay sorteo: se elige qué pareja saca la primera ronda. En cada ronda saca siempre la misma pareja; en la siguiente, la otra (2, 4 o 6 rondas). Gana la pareja con mejor balance de puntos (ganados − perdidos) al terminar todas las rondas; si el balance es igual, empate. Sus estadísticas se guardan aparte de las de los partidos.
 - **Punto doble:** antes de anotar el punto se pulsa «×2». En partido cuenta como dos puntos; si la pareja que lo gana iba 30-40, pasa a ventaja/40, y si pierde esa ventaja se vuelve a 40-40 con punto de oro. En juego táctico suma 2 al marcador.
+- **Juego táctico 2 vs 1:** para clases con 3 alumnos. En cada ronda uno juega solo contra los otros dos y en 3 rondas todos juegan solos una vez (también 6). Se puede elegir que saquen los dos (alternando como en un tie-break) o el que está solo. Gana el mejor balance individual.
+- **Saque en el juego táctico:** «Ataca una pareja» (saca siempre la misma pareja en la ronda y, entre compañeros, el saque va en modo tie-break: 1 punto el primero y 2 el otro, sin cambiar de pareja), «Saque tie-break» (1 punto el primero y después 2 cada jugador, alternando parejas) o «Saque clásico» (cada jugador saca un bloque de 4 puntos, como un juego). Así se registran los puntos al saque de cada persona.
+- **Partidos y juegos tácticos por separado:** las estadísticas, medias por grupo y comparativas de los partidos son independientes de las de los juegos tácticos, porque sus winners y errores no son equivalentes. Un interruptor «Partidos · Juegos tácticos · Conjunto» (en *Marcador*, en la ficha del alumno y en *Mis partidos*) permite verlos juntos.
+- **Frecuencia cardíaca en winners y errores:** con los pulsómetros conectados (y cada uno asignado a su jugador) mientras se marca, en cada winner o error no forzado se anota la FC del jugador (media de los últimos 5 s). Si el pulso se grabó en otro dispositivo, se cruza por la hora al guardar su sesión. El informe del partido muestra, por jugador, la FC media en winners y en errores y cuántos hay en cada zona de FC; la ficha del alumno y *Mis partidos* suman todos sus partidos («Corazón y táctica») con la relación FC–error (correlación). «Exportar puntos (CSV)» saca cada punto con su FC para estudiarlo en Excel.
+- **Informe por email:** al pulsar «Terminar partido» o «Terminar juego», cada jugador que sea alumno con email recibe sus datos, los de todos los jugadores, su comparativa y las claves del partido (y su FC si hay). Se puede reenviar con «Enviar informe por email» en el informe.
 - El alumnado también puede registrar partidos desde su portal (por ejemplo, un familiar con su móvil). Aparecen en el marcador con «Registrado por».
 
 - Cada punto se registra como winner o error no forzado de un jugador con su golpe (S, D, R, PD, PR, CP, VD, VR, B, RMP, RML), o como punto sin winner ni error.
@@ -106,6 +112,10 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 - % ENF = errores del jugador / puntos perdidos por su pareja. % WIN = winners del jugador / puntos ganados por su pareja.
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
 - En *Mis partidos* el alumno ve sus estadísticas agrupadas en Resultado, Ataque, Errores no forzados, Saque, Resto y Momentos clave, cada una comparada con su grupo y con la escuela; su perfil de golpes, su evolución partido a partido y una tabla con cada pareja con la que ha jugado.
+
+## Unir sesiones de pulsómetro
+
+Si un pulsómetro se queda sin batería y se sigue con el móvil, al finalizar la grabación la app avisa de que el alumno ya tiene una sesión hoy y ofrece **unirlas**: se suman minutos, zonas y calorías, la media se pondera y el máximo es el mayor. También se pueden unir sesiones ya guardadas desde la ficha del alumno marcando dos o más del mismo día (se borran las originales, con confirmación).
 
 ## Cálculos de pulsómetro (hoja GESTIÓN ESCUELA)
 
