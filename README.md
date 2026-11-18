@@ -113,6 +113,14 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
 - En *Mis partidos* el alumno ve sus estadísticas agrupadas en Resultado, Ataque, Errores no forzados, Saque, Resto y Momentos clave, cada una comparada con su grupo y con la escuela; su perfil de golpes, su evolución partido a partido y una tabla con cada pareja con la que ha jugado.
 
+## Esfuerzo percibido (RPE) tras la sesión
+
+Al pulsar «Finalizar y guardar» en *Pulsómetros*, se abre una pantalla personal para cada alumno registrado («Pasa el móvil a Lucía»): toca un número del 1 al 10 (escala de Borg CR-10 de Foster) y pasa al siguiente. Se puede saltar a alguien o terminar sin valorar. Con la RPE se calcula la carga de la sesión de Foster (sRPE = RPE × minutos). El resumen por email sale después, con su RPE; el diseño de la sesión muestra la RPE real media frente a la objetivo; *Mi corazón* puede dibujar la RPE y la carga sRPE; y en la ficha del alumno se puede añadir o corregir la RPE de cada sesión.
+
+## Mapa de calor
+
+Al marcar un winner o un error, antes del golpe se puede tocar (opcional) la zona de la media pista desde la que se golpeó: red, media pista o fondo, en el lado de revés o de derecha. El informe del partido muestra por jugador de dónde salen sus winners (verde) y sus errores (rojo); la ficha del alumno y *Mis partidos* suman todos sus partidos. La zona también sale en «Exportar puntos (CSV)».
+
 ## Unir sesiones de pulsómetro
 
 Si un pulsómetro se queda sin batería y se sigue con el móvil, al finalizar la grabación la app avisa de que el alumno ya tiene una sesión hoy y ofrece **unirlas**: se suman minutos, zonas y calorías, la media se pondera y el máximo es el mayor. También se pueden unir sesiones ya guardadas desde la ficha del alumno marcando dos o más del mismo día (se borran las originales, con confirmación).

@@ -347,6 +347,22 @@
   .ibtn { width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 10px; color: rgb(var(--muted)); font-weight: 700; transition: background-color var(--t-fast) ease, color var(--t-fast) ease; }
   .ibtn:hover:not(:disabled) { background: rgb(var(--surface2)); color: rgb(var(--ink)); } .ibtn:disabled { opacity: .3; }
   .ibtn.text-bad { color: rgb(var(--bad)); }
+  .zpista, .hm { position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); gap: 3px; padding: 10px 3px 3px; border-radius: 10px; background: rgb(var(--turf, var(--court)) / .9); width: 100%; max-width: 200px; aspect-ratio: 10 / 9; }
+  .hm { max-width: 170px; }
+  .zred { position: absolute; left: 0; right: 0; top: 0; height: 7px; border-radius: 10px 10px 0 0; background: rgb(255 255 255 / .85); font-size: 0; }
+  .zcel { border-radius: 6px; background: rgb(255 255 255 / .14); color: #fff; font-size: 11.5px; font-weight: 700; display: flex; align-items: flex-start; justify-content: flex-start; padding: 4px 6px; border: 2px solid transparent; transition: background-color var(--t-fast, .15s) ease; }
+  .zcel:hover { background: rgb(255 255 255 / .26); } .zcel.on { background: rgb(var(--ball)); color: rgb(var(--ball-ink)); border-color: #fff; }
+  .hmc { border-radius: 6px; display: grid; place-items: center; font-family: 'Saira Condensed', sans-serif; font-weight: 800; font-size: 18px; background: rgb(255 255 255 / .1); }
+  #rpeov { position: fixed; inset: 0; z-index: 80; background: rgb(var(--bg)); overflow-y: auto; }
+  .rpe-ov { min-height: 100%; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px); }
+  .rpe-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .rpe-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; text-align: center; animation: seqin var(--t-med, .25s) ease-out; }
+  .rpe-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .5rem; width: 100%; max-width: 640px; margin: 1rem 0; }
+  .rpe-b { min-height: 76px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgb(var(--rc) / .16); color: rgb(var(--ink)); border: 2px solid transparent; transition: transform var(--t-fast, .15s) ease, background-color var(--t-fast, .15s) ease; }
+  .rpe-b .num { font-size: 2rem; font-weight: 800; line-height: 1; } .rpe-b small { font-size: 11px; font-weight: 600; opacity: .8; line-height: 1.15; padding: 0 2px; }
+  .rpe-b:hover { border-color: rgb(var(--rc)); } .rpe-b.on { background: rgb(var(--rc)); color: #fff; transform: scale(1.06); }
+  @media (min-width: 640px) { .rpe-b { min-height: 92px; } }
+  @media (prefers-reduced-motion: reduce) { .rpe-body { animation: none; } .rpe-b { transition: none; } .rpe-b.on { transform: none; } }
   .seqchip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .25rem .2rem .55rem; border-radius: 999px; background: rgb(var(--fc, var(--court)) / .14); border: 1px solid rgb(var(--fc, var(--court)) / .35); font-size: 13px; font-weight: 600; animation: seqin var(--t-fast, .15s) ease-out; }
   .seqchip b { font-family: 'Saira Condensed', sans-serif; font-size: 15px; letter-spacing: .02em; }
   .seqchip button { width: 20px; height: 20px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 11px; color: rgb(var(--muted)); }
@@ -557,7 +573,7 @@ function seedPartidos(st) {
   const r = rng(77); const out = [];
   const golpe = () => GOLPES[Math.floor(r() * GOLPES.length)][0];
   /* FC de ejemplo: los errores llegan con el pulso algo más alto que los winners */
-  const conFC = (m, ev) => { if (ev.tipo === 'p') return; ev.f = m.jugadores.map((p, q) => { const a = p.id && st.alumnos.find(x => x.id === p.id); return a ? Math.round(fcMaxTeo(a) * (.62 + r() * .22 + (ev.tipo === 'e' && ev.j === q ? .07 : 0))) : null; }); };
+  const conFC = (m, ev) => { if (ev.tipo === 'p') return; if (r() < .8) ev.z = ev.tipo === 'w' ? [0, 1, 0, 1, 2, 3, 4, 5][Math.floor(r() * 8)] : [0, 1, 2, 3, 4, 5, 4, 5][Math.floor(r() * 8)]; ev.f = m.jugadores.map((p, q) => { const a = p.id && st.alumnos.find(x => x.id === p.id); return a ? Math.round(fcMaxTeo(a) * (.62 + r() * .22 + (ev.tipo === 'e' && ev.j === q ? .07 : 0))) : null; }); };
   const planes = [['G1', '1set', 6], ['G2', '3sets', 13], ['G3', '1set', 13], ['G1', '1set', 13], ['G2', '1set', 6]];
   planes.forEach(([gid, formato, dd], n) => {
     const miembros = st.alumnos.filter(a => a.grupo === gid);
@@ -988,12 +1004,13 @@ function vAlumnoDetalle(id) {
     <div class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">${MODO_TXT[modoA]} frente a grupo y escuela</h2>${modoSeg(modoA)}</div>${Pm.alumno(a.id) ? cmpTabla(METRICAS_P, Pm.alumno(a.id), Pm.grupo(a.grupo), Pm.escuela, 'Alumno') : '<p class="text-muted">Sin datos registrados.</p>'}</div>
   </section>`; })()}
   <section class="grid lg:grid-cols-2 gap-4">
-    <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2>${ss.length > 1 ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-fc-unir title="Marca dos o más sesiones del mismo día">Unir sesiones marcadas</button>` : ''}</div><table class="data min-w-[560px]"><thead><tr><th class="w-8"></th><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th></tr></thead><tbody>
-      ${[...ss].reverse().map(s => `<tr><td><input type="checkbox" class="w-4 h-4" data-fc-sel="${s.id}" ${ui.fcSel?.has(s.id) ? 'checked' : ''} aria-label="Seleccionar la sesión del ${fmtDate(s.fecha)}"></td><td>${fmtDate(s.fecha)}${s.fuente ? `<div class="text-[11.5px] text-muted">${esc(s.fuente)} · ${s.duracion} min</div>` : ''}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
+    <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2>${ss.length > 1 ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-fc-unir title="Marca dos o más sesiones del mismo día">Unir sesiones marcadas</button>` : ''}</div><table class="data min-w-[600px]"><thead><tr><th class="w-8"></th><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th><th title="Esfuerzo percibido (1-10) y carga sRPE (RPE × min)">RPE</th></tr></thead><tbody>
+      ${[...ss].reverse().map(s => `<tr><td><input type="checkbox" class="w-4 h-4" data-fc-sel="${s.id}" ${ui.fcSel?.has(s.id) ? 'checked' : ''} aria-label="Seleccionar la sesión del ${fmtDate(s.fecha)}"></td><td>${fmtDate(s.fecha)}${s.fuente ? `<div class="text-[11.5px] text-muted">${esc(s.fuente)} · ${s.duracion} min</div>` : ''}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td><td><button class="chip ${s.rpe ? '' : 'chip-neutral'} tnum" style="${s.rpe ? `background:rgb(var(${rpeColor(s.rpe)}) / .18)` : ''}" data-rpe-edit="${s.id}" title="${s.rpe ? `${RPE_TXT[s.rpe]} · carga sRPE ${srpe(s)}` : 'Añadir la RPE'}">${s.rpe ?? '+'}</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
       ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${conceptoTxt(p)}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
   ${vFisioAlumno(a.id)}
+  ${vMapaAlumno(a.id, ui.amodo || 'todo')}
   ${vGolpeosAlumno(a)}
   ${vPerfilGolpes(a.id)}
   ${iaPanel(a)}`;
@@ -1222,6 +1239,11 @@ function golpeosChart(id) {
     { type: 'line', label: 'Acumulado', data: G.lista.map(x => x.acc), borderColor: cv('--z4'), backgroundColor: cv('--z4'), tension: .3, pointRadius: 3, yAxisID: 'y1' }] }, options: o });
 }
 /* Minutos reales por encima del 90 % de la FC máxima (zona 5) de los alumnos del grupo ese día */
+function realRPE(key) {
+  const [gid, d] = key.split('|');
+  const v = state.sesionesFC.filter(s => s.fecha === d && s.tipo !== 'partido' && s.rpe && alumno(s.alumno)?.grupo === gid).map(s => s.rpe);
+  return v.length ? { media: media(v), n: v.length } : null;
+}
 function realZ5(key) {
   const [gid, d] = key.split('|');
   const ss = state.sesionesFC.filter(s => s.fecha === d && s.tipo !== 'partido' && alumno(s.alumno)?.grupo === gid);
@@ -1304,7 +1326,7 @@ function vPlan(key) {
     <div class="panel p-5 flex flex-col gap-3 min-w-0">
       <h2 class="text-xl font-bold">Objetivos de carga</h2>
       <div><label class="lbl" for="pZ5">Minutos por encima del 90 % de la FC máx.</label><div class="flex items-center gap-2"><input id="pZ5" type="number" min="0" max="60" class="field !w-24 tnum text-center num text-xl font-bold" value="${pl.z5 ?? ''}" data-p="m:z5"><span class="text-[13.5px] text-muted">${real ? `Real: <strong class="${real.media >= (pl.z5 || 0) ? 'text-ok' : 'text-warn'}">${dec(real.media, 1)} min</strong> de media (${real.n} ${real.n === 1 ? 'alumno' : 'alumnos'})` : 'El dato real aparecerá al guardar la sesión de pulsómetros'}</span></div></div>
-      <div><span class="lbl">RPE objetivo (esfuerzo percibido, 1–10)</span><div class="grid grid-cols-10 gap-1">${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button type="button" class="rpe ${+pl.rpe === n ? 'on' : ''}" style="--rc: var(${n <= 3 ? '--z2' : n <= 5 ? '--z3' : n <= 7 ? '--z4' : '--z5'})" data-pa="rpe" data-x="${n}" aria-pressed="${+pl.rpe === n}">${n}</button>`).join('')}</div></div>
+      <div><span class="lbl">RPE objetivo (esfuerzo percibido, 1–10)${(() => { const r = realRPE(key); return r ? ` · <span class="font-normal">real: <strong class="${Math.abs(r.media - (+pl.rpe || 0)) <= 1 ? 'text-ok' : 'text-warn'}">${dec(r.media, 1)}</strong> de media (${r.n})</span>` : ''; })()}</span><div class="grid grid-cols-10 gap-1">${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button type="button" class="rpe ${+pl.rpe === n ? 'on' : ''}" style="--rc: var(${n <= 3 ? '--z2' : n <= 5 ? '--z3' : n <= 7 ? '--z4' : '--z5'})" data-pa="rpe" data-x="${n}" aria-pressed="${+pl.rpe === n}">${n}</button>`).join('')}</div></div>
     </div>
   </section>
   <div id="planGolpeos">${golpeosCard(pl, nAl)}</div>
@@ -1797,7 +1819,7 @@ function fusionarFC(rs) {
   const fc = [], segs = [];
   rs.forEach(r => { const M = r.muestras; if (!M?.fc?.length) return; (M.segs || [{ t0: M.t0 ?? null, n: M.fc.length }]).forEach(s => segs.push({ ...s })); fc.push(...M.fc); });
   return { id: 'F' + Date.now() + 'u', alumno: rs[0].alumno, fecha: rs[0].fecha, duracion: rs.reduce((t, r) => t + r.duracion, 0), fcMed: Math.round(rs.reduce((t, r) => t + r.fcMed * peso(r), 0) / W), fcMax: Math.max(...rs.map(r => r.fcMax)),
-    zonas: [0, 1, 2, 3, 4].map(i => rs.reduce((t, r) => t + (r.zonas[i] || 0), 0)), kcal: rs.reduce((t, r) => t + (r.kcal || 0), 0), fuente: [...new Set(rs.flatMap(r => String(r.fuente || 'Sensor').split(' + ')))].join(' + '), tipo: rs[0].tipo || 'entrenamiento',
+    zonas: [0, 1, 2, 3, 4].map(i => rs.reduce((t, r) => t + (r.zonas[i] || 0), 0)), kcal: rs.reduce((t, r) => t + (r.kcal || 0), 0), fuente: [...new Set(rs.flatMap(r => String(r.fuente || 'Sensor').split(' + ')))].join(' + '), tipo: rs[0].tipo || 'entrenamiento', rpe: [...rs].reverse().find(r => r.rpe)?.rpe ?? null,
     muestras: fc.length ? { hz: 1, t0: segs.find(s => s.t0)?.t0 ?? null, fc, segs } : null };
 }
 /* Guarda las sesiones de la grabación; las marcadas en «unir» se funden con las que ya había ese día */
@@ -1808,10 +1830,52 @@ function guardarLive(nuevos, unir) {
     if (!prev.length) { state.sesionesFC.push(r); finales.push(r); return; }
     const f = fusionarFC([...prev, r]); state.sesionesFC = state.sesionesFC.filter(x => !prev.includes(x)); state.sesionesFC.push(f); finales.push(f); borrar.push(...prev.map(p => p.id));
   });
-  const n = finales.length;
-  const correos = ui.resumenEmail === false ? [] : finales.map(r => { const a = alumno(r.alumno); return a && a.email && a.salud !== false ? queueEmail(a, 'sesion', { registro: r }) : null; }).filter(Boolean);
-  const unidas = borrar.length;
-  tras(async () => { for (const r of finales) await P.fc(r); for (const id of borrar) await P.borrarFC(id); for (const m of correos) await P.email(m); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}${unidas ? ' (unida con la anterior)' : ''}${correos.length ? ` · ${correos.length} ${correos.length === 1 ? 'resumen' : 'resúmenes'} por email` : ''}`);
+  const n = finales.length, unidas = borrar.length;
+  const guardado = tras(async () => { for (const r of finales) await P.fc(r); for (const id of borrar) await P.borrarFC(id); }, `Sesión guardada para ${n} ${n === 1 ? 'alumno' : 'alumnos'}${unidas ? ' (unida con la anterior)' : ''}`);
+  abrirRPE(finales, guardado);   // cada alumno valora su esfuerzo; los resúmenes por email salen después, con su RPE
+}
+/* ---------- RPE: esfuerzo percibido (escala de Borg CR-10 modificada por Foster) ---------- */
+const RPE_TXT = ['', 'Muy, muy suave', 'Suave', 'Moderado', 'Algo duro', 'Duro', 'Duro +', 'Muy duro', 'Muy duro +', 'Casi máximo', 'Máximo'];
+const rpeColor = n => (n <= 3 ? '--z2' : n <= 5 ? '--z3' : n <= 7 ? '--z4' : '--z5');
+const srpe = r => (r.rpe ? r.rpe * r.duracion : null);   // carga de la sesión según Foster: RPE × minutos (unidades arbitrarias)
+function abrirRPE(finales, guardado) {
+  const lista = finales.filter(r => alumno(r.alumno));
+  if (!lista.length) return;
+  ui.rpe = { lista, i: 0, guardado };
+  let el = document.getElementById('rpeov'); if (!el) { el = document.createElement('div'); el.id = 'rpeov'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Valoración del esfuerzo'); document.body.appendChild(el); }
+  document.body.style.overflow = 'hidden'; pintarRPE();
+}
+function pintarRPE() {
+  const R = ui.rpe, el = document.getElementById('rpeov'); if (!R || !el) return;
+  const r = R.lista[R.i], a = alumno(r.alumno);
+  el.innerHTML = `<div class="rpe-ov"><div class="rpe-top"><span class="text-[13px] font-semibold opacity-80">${R.lista.length > 1 ? `Alumno ${R.i + 1} de ${R.lista.length}` : 'Esfuerzo de la sesión'}</span><button class="btn btn-ghost !py-1.5 text-[13px]" data-rpe-fin>Terminar sin valorar</button></div>
+    <div class="rpe-body"><p class="text-[15px] text-muted">Pasa el móvil a</p><h2 class="font-display text-5xl sm:text-6xl font-bold leading-none">${esc(a.nombre.split(' ')[0])}</h2>
+      <p class="text-[17px] sm:text-xl font-semibold mt-3 max-w-md">¿Cómo de dura ha sido la clase para ti?</p><p class="text-[13.5px] text-muted">${r.duracion} min registrados · toca un número del 1 al 10</p>
+      <div class="rpe-grid">${Array.from({ length: 10 }, (_, k) => k + 1).map(n => `<button class="rpe-b ${r.rpe === n ? 'on' : ''}" style="--rc: var(${rpeColor(n)})" data-rpe="${n}" aria-pressed="${r.rpe === n}"><span class="num">${n}</span><small>${RPE_TXT[n]}</small></button>`).join('')}</div>
+      <div class="flex gap-2 justify-center">${R.i ? '<button class="btn btn-ghost" data-rpe-atras>Anterior</button>' : ''}<button class="btn btn-ghost" data-rpe-saltar>${R.i < R.lista.length - 1 ? 'Saltar' : 'Saltar y terminar'}</button></div></div></div>`;
+  el.querySelector('[data-rpe]')?.focus();
+}
+function rpeAccion(d) {
+  const R = ui.rpe; if (!R) return;
+  if (d.rpe) { R.lista[R.i].rpe = +d.rpe; pintarRPE(); return setTimeout(() => { if (ui.rpe !== R) return; if (R.i < R.lista.length - 1) { R.i++; pintarRPE(); } else finalizarRPE(); }, RM() ? 0 : 260); }
+  if (d.rpeAtras !== undefined) { R.i = Math.max(0, R.i - 1); return pintarRPE(); }
+  if (d.rpeSaltar !== undefined) { if (R.i < R.lista.length - 1) { R.i++; return pintarRPE(); } return finalizarRPE(); }
+  if (d.rpeFin !== undefined) return finalizarRPE();
+}
+async function finalizarRPE() {
+  const R = ui.rpe; if (!R) return; ui.rpe = null;
+  document.getElementById('rpeov')?.remove(); document.body.style.overflow = '';
+  const con = R.lista.filter(r => r.rpe);
+  const correos = ui.resumenEmail === false ? [] : R.lista.map(r => { const a = alumno(r.alumno); return a && a.email && a.salud !== false ? queueEmail(a, 'sesion', { registro: r }) : null; }).filter(Boolean);
+  await R.guardado;
+  tras(async () => { for (const r of con) await P.rpe(r); for (const m of correos) await P.email(m); }, [con.length ? `RPE guardada de ${con.length} ${con.length === 1 ? 'alumno' : 'alumnos'}` : '', correos.length ? `${correos.length} ${correos.length === 1 ? 'resumen' : 'resúmenes'} por email` : ''].filter(Boolean).join(' · ') || null);
+}
+/* Corregir la RPE de una sesión desde la ficha del alumno */
+function modalRPE(id) {
+  const r = state.sesionesFC.find(s => s.id === id); if (!r) return;
+  openModal(`<div class="flex flex-col gap-3">${modalHead('Esfuerzo percibido')}<p class="text-[14px] text-muted -mt-1">${esc(nombreAl(r.alumno))} · ${fmtDate(r.fecha)} · ${r.duracion} min</p>
+    <div class="grid grid-cols-5 gap-2">${Array.from({ length: 10 }, (_, k) => k + 1).map(n => `<button class="rpe ${r.rpe === n ? 'on' : ''}" style="--rc: var(${rpeColor(n)})" data-rpe-set="${id}:${n}" title="${RPE_TXT[n]}">${n}</button>`).join('')}</div>
+    ${r.rpe ? `<button class="btn btn-ghost self-start" data-rpe-set="${id}:0">Quitar la RPE</button>` : ''}</div>`);
 }
 /* Unir sesiones ya guardadas desde la ficha del alumno */
 function modalUnirFC() {
@@ -2101,10 +2165,10 @@ const METRICAS_P = [
 ];
 const METRICAS_FC = [
   ['med', 'FC media (% máx.)', v => pct(v), null], ['mx', 'FC máxima (% máx.)', v => pct(v), null],
-  ['rec', 'Índice de recuperación', v => pct(v), false], ['tmin', 'Carga por minuto (eTRIMP)', v => dec(v, 2), null], ['kmin', 'kcal por minuto', v => dec(v, 1), null]
+  ['rec', 'Índice de recuperación', v => pct(v), false], ['tmin', 'Carga por minuto (eTRIMP)', v => dec(v, 2), null], ['kmin', 'kcal por minuto', v => dec(v, 1), null], ['rpe', 'Esfuerzo percibido (RPE)', v => dec(v, 1), null]
 ];
 function filasFC() {
-  return state.sesionesFC.filter(s => s.tipo !== 'partido').map(s => { const a = alumno(s.alumno); if (!a) return null; const m = metrics(s, a); return { alumno: a.id, grupo: a.grupo, med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (s.duracion || 1), kmin: s.kcal / (s.duracion || 1) }; }).filter(Boolean);
+  return state.sesionesFC.filter(s => s.tipo !== 'partido').map(s => { const a = alumno(s.alumno); if (!a) return null; const m = metrics(s, a); return { alumno: a.id, grupo: a.grupo, med: m.med, mx: m.mx, rec: m.rec, tmin: m.trimp / (s.duracion || 1), kmin: s.kcal / (s.duracion || 1), rpe: s.rpe ?? null }; }).filter(Boolean);
 }
 /* Media por alumno primero (para que nadie pese más por jugar más), luego por grupo y escuela */
 function mediasPor(filas, metricas) {
@@ -2131,9 +2195,9 @@ function exportarCSV(tipo) {
     const filas = [];
     (state.partidos || []).forEach(m => { if (!m.eventos.length) return; const st = motor(m); const modo = esT21(m) ? 'Juego táctico 2 vs 1' : esTactico(m) ? 'Juego táctico 2 vs 2' : 'Partido';
       st.puntos.forEach((p, i) => { const e = p.ev, j = e.j, id = j != null ? m.jugadores[j]?.id : null, al = id ? alumno(id) : null, bpm = j != null && (e.tipo === 'w' || e.tipo === 'e') ? fcEvento(m, e, j) : null;
-        filas.push([m.fecha, m.id.slice(0, 8), modo, i + 1, (esTactico(m) ? 'Ronda ' : 'Set ') + (p.set + 1), j != null ? nombreJ(m, j) : '', e.tipo === 'w' ? 'Winner' : e.tipo === 'e' ? 'Error no forzado' : 'Punto sin winner ni error', e.g ? (GOLPE_N[e.g] || e.g) : '', p.sj != null ? nombreJ(m, p.sj) : '', e.d ? 'sí' : '', bpm ?? '', bpm != null && al ? Math.round(bpm / fcMaxTeo(al) * 1000) / 10 : '', bpm != null && al ? ZONA_FC[zoneOf(bpm, fcMaxTeo(al))] : '']); }); });
+        filas.push([m.fecha, m.id.slice(0, 8), modo, i + 1, (esTactico(m) ? 'Ronda ' : 'Set ') + (p.set + 1), j != null ? nombreJ(m, j) : '', e.tipo === 'w' ? 'Winner' : e.tipo === 'e' ? 'Error no forzado' : 'Punto sin winner ni error', e.g ? (GOLPE_N[e.g] || e.g) : '', p.sj != null ? nombreJ(m, p.sj) : '', e.d ? 'sí' : '', bpm ?? '', bpm != null && al ? Math.round(bpm / fcMaxTeo(al) * 1000) / 10 : '', bpm != null && al ? ZONA_FC[zoneOf(bpm, fcMaxTeo(al))] : '', e.z != null ? ZONAS_P[e.z] : '']); }); });
     if (!filas.length) return toast('Todavía no hay puntos marcados');
-    return descargarCSV(`bandeja-puntos-${TODAY_ISO}.csv`, ['Fecha', 'Partido', 'Modo', 'Nº de punto', 'Set/ronda', 'Jugador', 'Tipo de punto', 'Golpe', 'Sacador', 'Punto doble', 'FC (ppm)', 'FC (% máx.)', 'Zona de FC'], filas);
+    return descargarCSV(`bandeja-puntos-${TODAY_ISO}.csv`, ['Fecha', 'Partido', 'Modo', 'Nº de punto', 'Set/ronda', 'Jugador', 'Tipo de punto', 'Golpe', 'Sacador', 'Punto doble', 'FC (ppm)', 'FC (% máx.)', 'Zona de FC', 'Zona de pista'], filas);
   }
   if (tipo === 'golpeos') {
     const filas = [];
@@ -2257,13 +2321,56 @@ function lanzarMoneda(m) {
 }
 function descPunto(m, p) {
   const e = p.ev;
-  if (e.tipo === 'w') return `Winner de ${esc(corto(nombreJ(m, e.j)))}${e.g ? ` (${GOLPE_N[e.g].toLowerCase()})` : ''}`;
-  if (e.tipo === 'e') return `Error no forzado de ${esc(corto(nombreJ(m, e.j)))}${e.g ? ` (${GOLPE_N[e.g].toLowerCase()})` : ''}`;
+  const det = [e.g ? GOLPE_N[e.g].toLowerCase() : '', e.z != null ? ZONAS_P[e.z].toLowerCase() : ''].filter(Boolean).join(', ');
+  if (e.tipo === 'w') return `Winner de ${esc(corto(nombreJ(m, e.j)))}${det ? ` (${det})` : ''}`;
+  if (e.tipo === 'e') return `Error no forzado de ${esc(corto(nombreJ(m, e.j)))}${det ? ` (${det})` : ''}`;
   return 'Punto sin winner ni error no forzado';
 }
+/* Media pista del jugador que golpea, vista con la red arriba: 3 filas (red, media, fondo) × 2 lados (revés a la izquierda, derecha a la derecha) */
+const ZONAS_P = ['Red · revés', 'Red · derecha', 'Media pista · revés', 'Media pista · derecha', 'Fondo · revés', 'Fondo · derecha'];
+const FILAS_P = ['Red', 'Media', 'Fondo'];
+function pistaZonas() {
+  return `<div class="flex flex-col gap-1"><span class="text-[12.5px] font-semibold text-muted">¿Desde dónde golpeó? <span class="font-normal">(opcional: toca la zona y después el golpe)</span></span>
+    <div class="zpista" role="group" aria-label="Zona de la pista"><div class="zred" aria-hidden="true">red</div>${ZONAS_P.map((n, k) => `<button type="button" class="zcel" data-zona="${k}" aria-pressed="false" aria-label="${n}">${k % 2 ? '' : FILAS_P[k >> 1]}</button>`).join('')}</div>
+    <div class="flex justify-between text-[11px] text-muted max-w-[200px] w-full px-1"><span>lado de revés</span><span>lado de derecha</span></div></div>`;
+}
+/* Mapa de calor: una media pista coloreada según cuántos winners (verde) o errores (rojo) salen de cada zona */
+function mapaCalor(cnt, tipo, titulo) {
+  const mx = Math.max(1, ...cnt), tot = cnt.reduce((a, b) => a + b, 0), col = tipo === 'w' ? '--ok' : '--bad';
+  return `<figure class="flex flex-col items-center gap-1 min-w-0"><figcaption class="text-[13px] font-semibold">${titulo} <span class="text-muted font-normal">(${tot})</span></figcaption>
+    <div class="hm" role="img" aria-label="${titulo}: ${ZONAS_P.map((n, k) => `${n} ${cnt[k]}`).join(', ')}"><div class="zred" aria-hidden="true"></div>${cnt.map(v => { const al = v ? .14 + .76 * v / mx : 0; return `<div class="hmc" style="background:linear-gradient(rgb(var(${col}) / ${al.toFixed(2)}), rgb(var(${col}) / ${al.toFixed(2)})), rgb(var(--surface));color:${al > .5 ? '#fff' : 'rgb(var(--ink))'}">${v || ''}</div>`; }).join('')}</div></figure>`;
+}
+function cuentaZonas(evs) { const w = [0, 0, 0, 0, 0, 0], e = [0, 0, 0, 0, 0, 0]; evs.forEach(ev => { if (ev.z == null) return; if (ev.tipo === 'w') w[ev.z]++; else if (ev.tipo === 'e') e[ev.z]++; }); return { w, e, n: w.reduce((a, b) => a + b, 0) + e.reduce((a, b) => a + b, 0) }; }
+function resumenZonas(Z) {
+  const out = [], top = (arr) => { const mx = Math.max(...arr); return mx ? arr.indexOf(mx) : null; };
+  const zw = top(Z.w), ze = top(Z.e);
+  if (zw != null) out.push(`Más winners desde ${ZONAS_P[zw].toLowerCase()} (${Z.w[zw]}).`);
+  if (ze != null) out.push(`Más errores desde ${ZONAS_P[ze].toLowerCase()} (${Z.e[ze]}).`);
+  const red = [0, 1].reduce((t, k) => t + Z.w[k] + Z.e[k], 0), fondo = [4, 5].reduce((t, k) => t + Z.w[k] + Z.e[k], 0);
+  if (red >= 4 && fondo >= 4) { const er = (Z.e[0] + Z.e[1]) / red, ef = (Z.e[4] + Z.e[5]) / fondo; out.push(`En la red el ${pct(er)} de sus puntos decisivos son errores; desde el fondo, el ${pct(ef)}.`); }
+  return out;
+}
+function vMapaPartido(m, S, sel) {
+  const P = S.st.puntos.filter(p => sel == null || p.set === sel);
+  const js = S.jug.map(x => ({ x, Z: cuentaZonas(P.filter(p => p.ev.j === x.j).map(p => p.ev)) })).filter(o => o.Z.n);
+  if (!js.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Mapa de calor</h2><p class="text-[13.5px] text-muted max-w-2xl">Al marcar un winner o un error, toca primero la zona de la pista desde la que se golpeó (red, media o fondo, lado de derecha o de revés) y después el golpe. Aquí verás de dónde salen los winners y los errores de cada jugador.</p></section>`;
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Mapa de calor</h2><p class="text-[13px] text-muted mb-3">Desde qué zona de su media pista golpea cada jugador sus winners y sus errores no forzados (la red, arriba).</p>
+    <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">${js.map(({ x, Z }) => `<div class="min-w-0"><div class="font-semibold mb-2">${esc(nombreJ(m, x.j))}</div><div class="grid grid-cols-2 gap-3">${mapaCalor(Z.w, 'w', 'Winners')}${mapaCalor(Z.e, 'e', 'Errores')}</div>${resumenZonas(Z).map(t => `<p class="text-[13px] text-muted mt-2">${esc(t)}</p>`).join('')}</div>`).join('')}</div></section>`;
+}
+function vMapaAlumno(id, modo = 'todo', titulo = 'Mapa de calor') {
+  const evs = [];
+  (state.partidos || []).forEach(m => { if (modo !== 'todo' && (esTactico(m) ? 'tactico' : 'partido') !== modo) return; const j = m.jugadores.findIndex(x => x.id === id); if (j < 0) return; m.eventos.forEach(ev => { if (ev.j === j) evs.push(ev); }); });
+  const Z = cuentaZonas(evs);
+  if (!Z.n) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13.5px] text-muted max-w-2xl">Se rellena cuando al marcar un winner o un error se indica la zona de la pista desde la que se golpeó.</p></section>`;
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13px] text-muted mb-3">De dónde salen los winners y los errores no forzados (${MODO_TXT[modo].toLowerCase()}). La red está arriba.</p>
+    <div class="grid sm:grid-cols-[auto_1fr] gap-5 items-start"><div class="grid grid-cols-2 gap-4 max-w-[440px]">${mapaCalor(Z.w, 'w', 'Winners')}${mapaCalor(Z.e, 'e', 'Errores')}</div>
+    <div class="min-w-0 scroll-x"><table class="data min-w-[300px]"><thead><tr><th>Zona</th><th class="text-right">Winners</th><th class="text-right">Errores</th><th class="text-right">% errores</th></tr></thead><tbody>${ZONAS_P.map((n, k) => ({ n, w: Z.w[k], e: Z.e[k] })).filter(r => r.w + r.e).map(r => `<tr><td>${esc(r.n)}</td><td class="text-right tnum text-ok">${r.w}</td><td class="text-right tnum text-bad">${r.e}</td><td class="text-right num text-lg font-bold">${pct(r.e / (r.w + r.e))}</td></tr>`).join('')}</tbody></table>${resumenZonas(Z).map(t => `<p class="text-[13px] text-muted mt-2">${esc(t)}</p>`).join('')}</div></div></section>`;
+}
 function pickGolpe(m, j, tipo) {
+  ui.zonaSel = null;
   openModal(`<div class="flex flex-col gap-3">${modalHead(`${tipo === 'w' ? 'Winner' : 'Error no forzado'} de ${esc(corto(nombreJ(m, j)))}`)}
     <p class="text-[13.5px] text-muted -mt-1">¿Con qué golpe? El punto se suma a ${(() => { const st = motor(m), lj = ladoAct(m, j), k = tipo === 'w' ? lj : 1 - lj; return st.t21 ? esc(nombreLado(m, st, k)) : `la pareja ${k + 1}`; })()}.</p>
+    ${pistaZonas()}
     <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">${GOLPES.map(([c, n]) => `<button class="gbtn ${tipo === 'w' ? 'gbtn-w' : 'gbtn-e'}" data-golpe="${c}" data-j="${j}" data-tipo="${tipo}"><span class="num text-2xl font-bold">${c}</span><span class="text-[12px] leading-tight">${n}</span></button>`).join('')}
       <button class="gbtn" data-golpe="" data-j="${j}" data-tipo="${tipo}"><span class="num text-2xl font-bold">?</span><span class="text-[12px] leading-tight">Sin indicar</span></button></div></div>`);
 }
@@ -2437,6 +2544,7 @@ function vInformePartido(m) {
     <table class="data min-w-[760px]"><thead><tr><th>Jugador</th>${GOLPES.map(([c, n]) => `<th class="text-center" title="${n}">${c}</th>`).join('')}</tr></thead><tbody>
     ${S.jug.map(x => `<tr><td class="font-semibold whitespace-nowrap">${esc(corto(nombreJ(m, x.j)))}</td>${GOLPES.map(([c]) => { const e = x.ge[c] || 0, w = x.gw[c] || 0; return `<td class="text-center tnum">${e || w ? `<span class="text-bad">${e}</span>/<span class="text-ok">${w}</span>` : '<span class="text-muted">·</span>'}</td>`; }).join('')}</tr>`).join('')}
     </tbody></table></section>
+  ${vMapaPartido(m, S, sel)}
   ${vFisioPartido(m, S)}
   ${misJ.length ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Comparado con su grupo y la escuela</h2><p class="text-[13px] text-muted mb-3">Este partido frente a la media de todos los partidos registrados.</p>
     <div class="grid lg:grid-cols-2 gap-5">${misJ.map(j => { const a = alumno(m.jugadores[j].id); const x = statsDe(m).jug[j]; return `<div class="min-w-0"><div class="font-semibold mb-1">${esc(a.anon ? 'Tú' : a.nombre)}</div>${cmpTabla(METRICAS_P, x, M.grupo(a.grupo), M.escuela, 'Este partido')}</div>`; }).join('')}</div></section>` : ''}`;
@@ -2609,6 +2717,7 @@ function vPartidosAlumno() {
       ${c.id === 'ataque' || c.id === 'errores' ? (() => { const { filas } = perfilGolpes(a.id); const f = [...filas].sort((p, q) => c.id === 'ataque' ? q.w - p.w : q.e - p.e)[0]; return f && (c.id === 'ataque' ? f.w : f.e) ? `<div class="pt-2.5 text-[14px]">${c.id === 'ataque' ? 'Golpe con más winners' : 'Golpe con más errores'}: <strong>${f.nom.toLowerCase()}</strong> (${c.id === 'ataque' ? f.w : f.e})</div>` : ''; })() : ''}</article>`).join('')}
   </section>
   ${vFisioAlumno(a.id)}
+  ${vMapaAlumno(a.id, modo, 'Tu mapa de calor')}
   ${vPerfilGolpes(a.id, 'Tus golpes esta temporada')}
   <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Tu evolución</h2><p class="text-[13px] text-muted mb-2">Partido a partido. La línea discontinua es la media de tu grupo.</p><div class="h-64"><canvas id="chEvo" aria-label="Evolución de winners y errores por partido"></canvas></div></section>
   ${prs.length ? `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Con tus parejas</h2><p class="text-[13px] text-muted">Cómo os va juntos, ordenado por puntos ganados.</p></div>
@@ -2675,6 +2784,8 @@ function emailSesion(a, r) {
   // Golpeos de la clase (diseño de la sesión ÷ asistentes) y acumulado de la temporada
   const gk = golpeosClase(`${a.grupo}|${r.fecha}`, a, true), acum = gk ? golpeosAcum(a, r.fecha, gk) : null;
   if (gk) parrafos.push(`Golpeos: en esta clase has hecho unos ${gk.t} (entre ${gk.min} y ${gk.max}), ${dec(gk.t / (r.duracion || 1), 1)} por minuto${Object.keys(gk.d).length ? `: ${Object.entries(gk.d).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([c, v]) => `${(GOLPE_TN[c] || c).toLowerCase()} ${v}`).join(', ')}` : ''}. Llevas ${acum.toLocaleString('es-ES')} golpeos acumulados esta temporada. Es una estimación: pelotas lanzadas × golpes de la secuencia ÷ ${gk.n} asistentes, con un margen del 5 %.`);
+  if (r.rpe) { const obj = planDe(`${a.grupo}|${r.fecha}`)?.rpe; parrafos.push(`Valoraste el esfuerzo de la clase con un ${r.rpe} sobre 10 («${RPE_TXT[r.rpe].toLowerCase()}»)${obj ? `; el objetivo de la sesión era ${obj}` : ''}. Multiplicado por los minutos da una carga de ${srpe(r)} (método de Foster), que sirve para comparar tus sesiones entre sí.`); }
+  const filaRPE = r.rpe ? `<tr><td style="padding:0 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${emCel('Esfuerzo percibido', `${r.rpe}/10`, RPE_TXT[r.rpe], null, 50)}${emCel('Carga sRPE', srpe(r), 'RPE × minutos', null, 50)}</tr></table></td></tr>` : '';
   const filaGolpes = gk ? `<tr><td style="padding:0 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${emCel('Golpeos hoy', gk.t, `entre ${gk.min} y ${gk.max}`, null, 34)}${emCel('Golpeos/min', dec(gk.t / (r.duracion || 1), 1), 'ritmo de golpeo', null, 33)}${emCel('Acumulado', acum.toLocaleString('es-ES'), 'golpeos de la temporada', null, 33)}</tr></table></td></tr>` : '';
   const html = `<!doctype html><html lang="es"><body style="margin:0;background:${EC.bg};font-family:Helvetica,Arial,sans-serif;color:${EC.ink}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${EC.bg};padding:20px 10px"><tr><td align="center">
@@ -2684,7 +2795,7 @@ function emailSesion(a, r) {
     <tr><td style="padding:14px 18px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
       ${cel('FC media', pct(m.med), `${r.fcMed} ppm`, zi(r.fcMed))}${cel('FC máxima', pct(m.mx), `${r.fcMax} ppm`, zi(r.fcMax))}${cel('Calorías', r.kcal, 'kcal', null)}${cel('Carga', etrimp(r.zonas), 'eTRIMP', null)}
     </tr></table></td></tr>
-    ${filaGolpes}
+    ${filaRPE}${filaGolpes}
     <tr><td style="padding:18px 24px 6px"><div style="font-size:17px;font-weight:800">Tiempo en cada fase</div></td></tr>
     <tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden"><tr>${r.zonas.map((v, i) => v ? `<td width="${Math.max(1, Math.round(v / tot * 100))}%" style="height:16px;background:${EC.z[i]}"></td>` : '').join('')}</tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px">${r.zonas.map((v, i) => `<tr><td style="padding:4px 0;font-size:13.5px;width:44%"><span style="display:inline-block;width:10px;height:10px;border-radius:5px;background:${EC.z[i]};margin-right:6px"></span>Fase ${i + 1} · ${ZONA_CORTA[i]}</td><td style="padding:4px 8px;width:42%"><div style="background:${EC.bg};border-radius:6px;height:10px"><div style="width:${Math.round(v / tot * 100)}%;height:10px;border-radius:6px;background:${EC.z[i]}"></div></div></td><td align="right" style="padding:4px 0;font-size:13.5px;font-weight:700;white-space:nowrap">${v} min</td></tr>`).join('')}</table></td></tr>
@@ -2931,7 +3042,7 @@ function interpretacion(a) {
   return out;
 }
 /* ---------- Mi corazón: evolución con series a elegir, carga y registros propios ---------- */
-const SERIES_FC = [['med', 'FC media', '--court'], ['max', 'FC máxima', '--heart'], ['carga', 'Carga (eTRIMP)', '--z4'], ['kcal', 'Calorías', '--z3'], ['dur', 'Minutos', '--muted'], ['grupo', 'Media del grupo', '--z2']];
+const SERIES_FC = [['med', 'FC media', '--court'], ['max', 'FC máxima', '--heart'], ['carga', 'Carga (eTRIMP)', '--z4'], ['kcal', 'Calorías', '--z3'], ['dur', 'Minutos', '--muted'], ['rpe', 'Esfuerzo (RPE)', '--z5'], ['srpe', 'Carga sRPE', '--z1'], ['grupo', 'Media del grupo', '--z2']];
 function vInforme() {
   const a = alumno(ui.studentLogged); const tipo = 'todo';
   const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
@@ -2977,10 +3088,13 @@ function afterInforme() {
   if (S.has('carga')) ds.push({ type: 'bar', label: 'Carga (eTRIMP)', data: ss.map(s => etrimp(s.zonas)), backgroundColor: cv('--z4', .45), borderRadius: 4, maxBarThickness: 26, yAxisID: 'y2', order: 9 });
   if (S.has('kcal')) ds.push({ label: 'Calorías', data: ss.map(s => s.kcal), borderColor: cv('--z3'), backgroundColor: cv('--z3'), tension: .3, pointRadius: 3, pointStyle: forma, yAxisID: 'y2' });
   if (S.has('dur')) ds.push({ label: 'Minutos', data: ss.map(s => s.duracion), borderColor: cv('--muted'), backgroundColor: cv('--muted'), borderDash: [3, 3], tension: .3, pointRadius: 3, yAxisID: 'y2' });
-  const derecha = ['carga', 'kcal', 'dur'].some(k => S.has(k)), izquierda = ['max', 'med', 'grupo'].some(k => S.has(k));
+  if (S.has('srpe')) ds.push({ type: 'bar', label: 'Carga sRPE (RPE × min)', data: ss.map(s => srpe(s)), backgroundColor: cv('--z1', .55), borderRadius: 4, maxBarThickness: 26, yAxisID: 'y2', order: 8 });
+  if (S.has('rpe')) ds.push({ label: 'Esfuerzo (RPE 1-10)', data: ss.map(s => s.rpe ?? null), borderColor: cv('--z5'), backgroundColor: cv('--z5'), tension: .3, pointRadius: 5, spanGaps: true, yAxisID: 'y3' });
+  const derecha = ['carga', 'kcal', 'dur', 'srpe'].some(k => S.has(k)), izquierda = ['max', 'med', 'grupo'].some(k => S.has(k));
   const o = baseOpts({ y: { title: '% FC máx.' } });
   o.scales.y.display = izquierda;
   o.scales.y2 = { position: 'right', display: derecha, beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { ...o.scales.y.ticks }, title: { display: true, text: 'carga · kcal · min', color: cv('--muted') } };
+  o.scales.y3 = { display: false, min: 0, max: 10.5 };
   mkChart('chFCs', { type: 'line', data: { labels: ss.map(s => fmtDate(s.fecha, { day: 'numeric', month: 'short' })), datasets: ds }, options: o });
   const C = cargaDe(a.id);
   mkChart('chCarga', { type: 'bar', data: { labels: C.semanas.map(w => fmtDate(w, { day: 'numeric', month: 'short' })), datasets: [
@@ -3187,7 +3301,7 @@ async function loadAll(silencioso) {
     as.forEach(x => { const k = porId[x.sesion_id]; if (k) (s.asistencia[k] = s.asistencia[k] || {})[x.alumno_id] = { e: x.estado || 'presente', c: x.cobra ?? true }; });
     s.ajustesClases = ajc.map(x => ({ id: x.id, alumno: x.alumno_id, fecha: x.fecha, clases: x.clases, motivo: x.motivo }));
     s.gastos = ga.map(x => ({ id: x.id, fecha: x.fecha, concepto: x.concepto, categoria: x.categoria, importe: +x.importe, metodo: x.metodo, notas: x.notas }));
-    s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor, tipo: r.tipo || 'entrenamiento', muestras: r.muestras || null }));
+    s.sesionesFC = fc.map(r => ({ id: r.id, alumno: r.alumno_id, fecha: r.fecha, duracion: r.duracion_min, fcMed: r.fc_media, fcMax: r.fc_max, zonas: r.zonas_min, kcal: r.kcal || 0, fuente: r.sensor, tipo: r.tipo || 'entrenamiento', muestras: r.muestras || null, rpe: r.rpe ?? null }));
     s.partidos = te.map(x => ({ id: x.id, fecha: x.fecha, tipo: x.tipo, grupo: x.grupo_id, jugadores: x.jugadores, formato: x.formato, oro: x.punto_oro, saque: x.saque_inicial, sacadores: x.extra?.sacadores || null, sorteo: x.extra?.sorteo ?? null, ladoInv: !!x.extra?.ladoInv, tactico: x.extra?.tactico || null, saqueOk: !!x.extra?.saqueOk, emailsEnviados: !!x.extra?.emails, creadoPor: x.creado_por || null, eventos: x.eventos || [], estado: x.estado, resultado: x.resultado, creado: x.creado }));
     s.outbox = em.map(m => ({ id: m.id, alumno: m.alumno_id, to: m.destinatario, toName: m.nombre_destinatario, tipo: m.tipo, subject: m.asunto, body: m.cuerpo, html: m.html, fecha: m.creado, estado: ESTADO_EMAIL[m.estado], error: m.error }));
     av.forEach(x => { s.warned[`${x.alumno_id}|${x.clases_recibidas}`] = true; });
@@ -3198,7 +3312,7 @@ async function loadAll(silencioso) {
       if (!me) { ui.auth = 'sin-ficha'; return render(); }
       const comp = await need(sb.rpc('comparativa'));
       (comp?.alumnos || []).forEach(x => state.alumnos.push({ id: x.k, anon: true, nombre: 'Compañero', grupo: x.grupo, edad: x.edad, sexo: x.sexo, peso: 70, inicial: 0, email: '' }));
-      (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0, tipo: x.tipo || 'entrenamiento' }));
+      (comp?.sesiones || []).forEach(x => state.sesionesFC.push({ id: x.k + x.fecha, alumno: x.k, fecha: x.fecha, duracion: x.duracion, fcMed: x.fcMed, fcMax: x.fcMax, zonas: x.zonas, kcal: x.kcal || 0, tipo: x.tipo || 'entrenamiento', rpe: x.rpe ?? null }));
       try { state.companeros = (await need(sb.rpc('companeros'))).map(x => ({ id: x.id, nombre: x.nombre, grupo: x.grupo_id })); } catch (e) { state.companeros = []; }
       const num = v => v == null ? null : +v;
       state.statsAnon = (comp?.partidos || []).map(x => ({ modo: x.modo || 'partido', alumno: x.k, grupo: x.grupo, partido: x.p, fecha: x.fecha, enf: x.enf, win: x.win, dif: x.win - x.enf, pctEnf: num(x.pct_enf), pctWin: num(x.pct_win), pctOro: num(x.pct_oro), pctBreak: num(x.pct_break), ppj: num(x.ppj), indice: num(x.indice), ganado: x.ganado, gan: x.ganado == null ? null : x.ganado ? 1 : 0, pctPts: num(x.pct_puntos), pctSrv: num(x.pct_saque), pctSvPar: num(x.pct_saque_pareja), pctRsPar: num(x.pct_resto_pareja), pctHold: num(x.pct_juegos_saque), pctOroR: num(x.pct_oro_resto), fcWin: num(x.fc_win), fcEnf: num(x.fc_enf) }));
@@ -3233,7 +3347,8 @@ const P = {
   },
   async borrarGasto(id) { await need(sb.from('gastos').delete().eq('id', id)); },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
-  async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null, tipo: r.tipo || 'entrenamiento' }).select('id').single()); r.id = d.id; },
+  async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null, tipo: r.tipo || 'entrenamiento', rpe: r.rpe || null }).select('id').single()); r.id = d.id; },
+  async rpe(r) { if (!/^[0-9a-f-]{36}$/i.test(String(r.id))) return; await need(sb.from('registros_fc').update({ rpe: r.rpe || null }).eq('id', r.id)); },
   async borrarFC(id) { await need(sb.from('registros_fc').delete().eq('id', id)); },
   async borrarPartido(id) { await need(sb.from('partidos').delete().eq('id', id)); },
   async tarifa(t) { await need(sb.from('tarifas').update({ nombre: t.nombre, precio_mes: t.mes, precio_trimestre: t.trimestre, precio_suelta: t.suelta }).eq('id', t.id)); },
@@ -3453,7 +3568,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -3502,7 +3617,7 @@ document.addEventListener('click', async e => {
     if (m && d.plado !== undefined) { m.ladoInv = !m.ladoInv; guardarPartido(m); return render(); }
     if (m && d.pia !== undefined) return pedirLecturaIA(m, t);
     if (m && d.pmail !== undefined) { const correos = emailsPartido(m); if (!correos.length) return toast('Ningún jugador es alumno con email'); m.emailsEnviados = true; guardarPartido(m, true); return tras(async () => { for (const c of correos) await P.email(c); }, `${correos.length} ${correos.length === 1 ? 'informe preparado' : 'informes preparados'} por email`); }
-    if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; const lj = ladoAct(m, j); return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? lj : 1 - lj }); }
+    if (m && d.golpe !== undefined) { closeModal(); const j = +d.j; const tipo = d.tipo; const lj = ladoAct(m, j); const z = ui.zonaSel; ui.zonaSel = null; return anotar(m, { tipo, j, g: d.golpe || null, par: tipo === 'w' ? lj : 1 - lj, ...(z != null ? { z } : {}) }); }
     if (m && d.ppunto !== undefined) return anotar(m, { tipo: 'p', j: null, g: null, par: +d.ppunto });
     if (m && d.undo !== undefined) { m.eventos.pop(); delete m.oroSel; const st2 = motor(m);
       if (m.sacadores) { Object.keys(m.sacadores).forEach(k => { if (+k > st2.sets.length) delete m.sacadores[k]; }); const sc = m.sacadores[st2.sets.length]; if (sc && sc[1] != null && st2.games[0] + st2.games[1] < 1) sc[1] = null; } if (m.estado === 'terminado') m.estado = 'en_juego'; m.resultado = resultadoTxt(motor(m)); guardarPartido(m); toast('Último punto deshecho'); return render(); }
@@ -3520,6 +3635,10 @@ document.addEventListener('click', async e => {
     }
   }
   if (d.close !== undefined) return closeModal();
+  if (ui.rpe && (d.rpe || d.rpeAtras !== undefined || d.rpeSaltar !== undefined || d.rpeFin !== undefined)) return rpeAccion(d);
+  if (d.rpeEdit) return modalRPE(d.rpeEdit);
+  if (d.rpeSet) { const [id, n] = d.rpeSet.split(':'); const r = state.sesionesFC.find(s => s.id === id); if (!r) return; r.rpe = +n || null; closeModal(); return tras(() => P.rpe(r), r.rpe ? `RPE ${r.rpe} guardada` : 'RPE quitada'); }
+  if (d.zona !== undefined) { const k = +d.zona; ui.zonaSel = ui.zonaSel === k ? null : k; document.querySelectorAll('[data-zona]').forEach(b => { const on = +b.dataset.zona === ui.zonaSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
   if (d.fcUnir !== undefined) return modalUnirFC();
   if (d.fcUnirOk !== undefined) return unirFC();
   if (d.csv) return exportarCSV(d.csv);
