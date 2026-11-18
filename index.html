@@ -365,6 +365,10 @@
     .hf-grid .hf-meta { font-size: min(4.6cqh, 3.6cqw); margin-top: 0; }
     .hf-grid .hf-panel .zmeter { height: min(2.6cqh, 16px); margin: .6cqh auto; width: 86%; }
   }
+  #avisoGrab { position: fixed; z-index: 95; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 10px); width: min(680px, calc(100% - 32px)); }
+  .aviso-grab { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .9rem; padding: .8rem 1rem; border-radius: 18px; background: rgb(var(--bad)); color: #fff; box-shadow: 0 14px 34px -14px rgb(0 0 0 / .55); animation: seqin var(--t-med, .25s) ease-out; }
+  .aviso-grab .btn-ghost { color: #fff; border-color: rgb(255 255 255 / .5); }
+  @media (prefers-reduced-motion: reduce) { .aviso-grab { animation: none; } }
   .hf-sel { min-height: 48px; max-width: min(46vw, 420px); border-radius: 999px; background: rgb(255 255 255 / .14); color: #fff; font-weight: 700; padding: 0 1rem; border: 0; }
   .hf-sel option, .hf-sel optgroup { color: #0c1b38; }
   #rpeov { position: fixed; inset: 0; z-index: 80; background: rgb(var(--bg)); overflow-y: auto; }
@@ -794,12 +798,13 @@ const I = {
   out: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l4-4-4-4M14 12H4"/></svg>',
   expand: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   partidos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14M3 12h18"/></svg>',
+  estadisticas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20.5h18"/><rect x="5" y="11" width="3.2" height="7" rx="1"/><rect x="10.4" y="6" width="3.2" height="12" rx="1"/><rect x="15.8" y="9" width="3.2" height="9" rx="1"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>'
 };
 const LOGO = `<svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="rgb(var(--ball))"/><path d="M9 26c6-1 13-6 18-15" stroke="rgb(var(--ball-ink))" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="29" cy="27" r="4" fill="rgb(var(--ball-ink))"/></svg>`;
 
 /* ---------- Shell ---------- */
-const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Pulsómetros'], ['partidos', 'Marcador'], ['emails', 'Emails']];
+const ADMIN_NAV = [['panel', 'Panel'], ['alumnos', 'Alumnos'], ['pagos', 'Pagos'], ['clases', 'Clases'], ['vivo', 'Pulsómetros'], ['partidos', 'Marcador'], ['estadisticas', 'Estadísticas'], ['emails', 'Emails']];
 const ALUMNO_NAV = [['inicio', 'Inicio'], ['informe', 'Mi corazón'], ['partidos', 'Mis partidos'], ['pagos', 'Mis pagos'], ['avisos', 'Avisos']];
 
 function shell(content) {
@@ -1664,10 +1669,34 @@ const ZONA_TXT = ['Por debajo de zona', 'Zona 1 · Recuperación', 'Zona 2 · Ae
 const conectados = () => live.slots.filter(s => s.device || s.sim);
 function slotInfo(s) { const a = s.alumno ? alumno(s.alumno) : null; const max = a ? fcMaxTeo(a) : 190; return { a, max, z: s.hr ? zoneOf(s.hr, max) : 0, nombre: a ? a.nombre.split(' ')[0] : `Sensor ${s.i + 1}` }; }
 
+/* Grabaciones de pulsómetro en clase de cada alumno esta temporada (para ir rotando a quién se le pone) */
+const nGrab = id => state.sesionesFC.filter(s => s.alumno === id && (s.tipo || 'entrenamiento') === 'entrenamiento' && s.fecha >= SEASON_START).length;
+const tsHoy = h => { const [a, b] = String(h).split(':').map(Number); const d = new Date(); d.setHours(a || 0, b || 0, 0, 0); return d.getTime(); };
+const clasesHoy = () => state.grupos.filter(g => sessionDates(g, TODAY_ISO, TODAY_ISO).length);
+function grupoVivoDef() {
+  const ahora = minDe(horaAhora()), hoy = clasesHoy().sort((a, b) => Math.abs(minDe(a.hora) - ahora) - Math.abs(minDe(b.hora) - ahora));
+  return (hoy[0] || state.grupos[0])?.id || null;
+}
+function asignarSensor(id) {
+  const ya = live.slots.find(s => s.alumno === id);
+  if (ya) { ya.alumno = null; return rerenderIf('vivo'), updateFull(); }
+  const libre = live.slots.find(s => !s.alumno && (s.device || s.sim)) || live.slots.find(s => !s.alumno);
+  if (libre) libre.alumno = id;
+  else if (live.slots.length < MAX_SENSORES) { const s = mkSlot(live.slots.length); s.alumno = id; live.slots.push(s); }
+  else return toast(`Ya hay ${MAX_SENSORES} sensores con alumno: toca uno asignado para quitarlo`);
+  rerenderIf('vivo'); updateFull();
+}
 function vVivo() {
-  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  if (!ui.vivoGrupo || !grupo(ui.vivoGrupo).id) ui.vivoGrupo = grupoVivoDef();
+  const gs = [...state.grupos].sort((a, b) => (a.id === ui.vivoGrupo ? -1 : b.id === ui.vivoGrupo ? 1 : 0));
+  const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${gs.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).sort((x, y) => nGrab(x.id) - nGrab(y.id)).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)} (${nGrab(a.id)})</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const delGrupo = reales().filter(a => a.grupo === ui.vivoGrupo).map(a => ({ a, n: nGrab(a.id), k: live.slots.findIndex(s => s.alumno === a.id) })).sort((x, y) => x.n - y.n || x.a.nombre.localeCompare(y.a.nombre));
+  const minN = delGrupo.length ? delGrupo[0].n : 0;
+  const bloqueGrupo = `<section class="panel p-4 flex flex-col gap-2 min-w-0"><div class="flex flex-wrap items-center gap-2"><label class="font-semibold text-[15px]" for="vivoGrupo">Grupo</label><select id="vivoGrupo" class="field !w-auto max-w-full" data-vivo-grupo>${state.grupos.map(g => `<option value="${g.id}" ${g.id === ui.vivoGrupo ? 'selected' : ''}>${esc(g.nombre)} · ${DAYS[g.dia]} ${g.hora}${clasesHoy().includes(g) ? ' · hoy' : ''}</option>`).join('')}</select><span class="text-[13px] text-muted">De menos a más grabaciones esta temporada. Toca un alumno para ponerle el siguiente sensor libre.</span></div>
+    <div class="flex flex-wrap gap-2">${delGrupo.map(({ a, n, k }) => `<button class="chip !py-1.5 !px-3 !text-[13.5px] ${k >= 0 ? 'bg-court text-courtink' : n === minN ? 'bg-ok/15 border border-ok/40' : 'chip-neutral'}" data-asig="${a.id}" aria-pressed="${k >= 0}">${esc(a.nombre.split(' ').slice(0, 2).join(' '))} · <b class="tnum">${n}</b>${k >= 0 ? ` · sensor ${k + 1}` : ''}</button>`).join('') || '<span class="text-[13.5px] text-muted">Este grupo no tiene alumnos.</span>'}</div></section>`;
   return pageHead('Sesión en vivo', 'Conecta los pulsómetros, asigna cada uno a un alumno e inicia la sesión. Puedes cambiar de pestaña (por ejemplo, al marcador de partidos): el registro sigue y lo verás en la barra de abajo.',
     `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
+  ${bloqueGrupo}
   <section class="panel p-4 flex flex-col gap-2 min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-[15px]">Actividad${live.running ? ' en curso' : ' al empezar'}:</span>${actSelect('field !w-auto max-w-full flex-1 min-w-[12rem]')}<button class="btn btn-primary" data-act-sig>Siguiente actividad ›</button></div>
     ${live.marcas.length ? `<div class="flex flex-wrap gap-1.5">${live.marcas.map(m => `<span class="chip chip-neutral !text-[12.5px]"><b class="tnum mr-1">${mmss((m.t - live.start) / 1000)}</b>${esc(m.n.slice(0, 40))}</span>`).join('')}</div>` : '<p class="text-[13px] text-muted">Marca qué se está haciendo para tener la FC y los minutos de cada actividad. Si se te olvida, lo puedes corregir después sobre la gráfica.</p>'}
     ${(() => { const hoy = {}; state.sesionesFC.filter(s => s.fecha === TODAY_ISO && s.muestras?.grab).forEach(s => { (hoy[s.muestras.grab] = hoy[s.muestras.grab] || []).push(s); }); const G = Object.entries(hoy); return G.length ? `<div class="flex flex-wrap items-center gap-2 pt-1 border-t border-line"><span class="text-[13px] text-muted">Grabaciones de hoy:</span>${G.map(([g, L]) => `<button class="btn btn-ghost !py-1 text-[13px]" data-act-ed="${L[0].id}">${new Date(+g).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${L.length} ${L.length === 1 ? 'alumno' : 'alumnos'} · revisar actividades</button>`).join('')}</div>` : ''; })()}</section>
@@ -1858,7 +1887,7 @@ function toggleLive() {
     live.running = true; live.start = Date.now(); live.slots.forEach(s => { s.z = [0, 0, 0, 0, 0]; s.kcal = 0; s.rec = []; s.segs = []; s.ult = 0; });
     live.marcas = live.act ? [{ t: live.start, id: live.act.id, n: live.act.n, tipo: live.act.tipo }] : [];
     live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
-    mantenerPantalla(); rerenderIf('vivo'); updateFull(); return;
+    mantenerPantalla(); rerenderIf('vivo'); updateFull(); pintarAvisoGrab(); return;
   }
   live.running = false; clearInterval(live.timer);
   const nuevos = [];
@@ -2010,23 +2039,22 @@ function porActividad(r) {
 }
 /* Todas las sesiones de un alumno agrupadas por tipo de actividad y por tarea */
 function actividadesAlumno(a) {
-  const tipos = {}, serie = [];
-  sesionesDe(a.id).forEach(r => { const L = porActividad(r).filter(x => x.tipo); if (!L.length) return; const fila = { fecha: r.fecha };
+  const lista = Array.isArray(a) ? a : [a], tipos = {}, porFecha = {};
+  lista.forEach(al => sesionesDe(al.id).forEach(r => { const L = porActividad(r).filter(x => x.tipo); if (!L.length) return; const fila = porFecha[r.fecha] = porFecha[r.fecha] || { fecha: r.fecha };
     L.forEach(x => { const T = tipos[x.tipo] = tipos[x.tipo] || { tipo: x.tipo, s: 0, sum: 0, z45: 0, trimp: 0, ses: new Set() }; T.s += x.s; T.sum += x.med * x.s; T.z45 += x.z45 * x.s; T.trimp += x.trimp; T.ses.add(r.id);
-      const f = fila[x.tipo] = fila[x.tipo] || { s: 0, sum: 0 }; f.s += x.s; f.sum += x.med * x.s; });
-    serie.push(fila); });
-  return { tipos: Object.values(tipos).map(T => ({ ...T, min: T.s / 60, med: T.sum / T.s, z45: T.z45 / T.s, tmin: T.trimp / (T.s / 60), n: T.ses.size })).sort((x, y) => y.min - x.min), serie };
+      const f = fila[x.tipo] = fila[x.tipo] || { s: 0, sum: 0 }; f.s += x.s; f.sum += x.med * x.s; }); }));
+  return { tipos: Object.values(tipos).map(T => ({ ...T, min: T.s / 60, med: T.sum / T.s, z45: T.z45 / T.s, tmin: T.trimp / (T.s / 60), n: T.ses.size })).sort((x, y) => y.min - x.min), serie: Object.values(porFecha).sort((x, y) => x.fecha.localeCompare(y.fecha)) };
 }
-function vActividadesAlumno(a) {
+function vActividadesAlumno(a, titulo = 'Frecuencia cardíaca por actividad') {
   const A = actividadesAlumno(a);
-  if (!A.tipos.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Frecuencia cardíaca por actividad</h2><p class="text-[13.5px] text-muted max-w-2xl">Mientras grabas el pulsómetro, elige en «Actividad» la tarea que se está haciendo (o pulsa «Siguiente actividad»). Aquí saldrán los minutos y la FC de cada tipo de actividad para comparar sesiones. Si se te olvidó cambiarla, puedes corregirlo después sobre la gráfica.</p></section>`;
-  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Frecuencia cardíaca por actividad</h2><p class="text-[13px] text-muted mb-3">Minutos y respuesta cardíaca en cada tipo de actividad, sumando todas las sesiones con actividades marcadas.</p>
+  if (!A.tipos.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13.5px] text-muted max-w-2xl">Mientras grabas el pulsómetro, elige en «Actividad» la tarea que se está haciendo (o pulsa «Siguiente actividad»). Aquí saldrán los minutos y la FC de cada tipo de actividad para comparar sesiones. Si se te olvidó cambiarla, puedes corregirlo después sobre la gráfica.</p></section>`;
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13px] text-muted mb-3">Minutos y respuesta cardíaca en cada tipo de actividad, sumando todas las sesiones con actividades marcadas.</p>
     <div class="grid lg:grid-cols-5 gap-5"><div class="lg:col-span-3 min-w-0 scroll-x"><table class="data min-w-[480px]"><thead><tr><th>Tipo</th><th class="text-right">Minutos</th><th class="text-right">Sesiones</th><th class="text-right">FC media</th><th class="text-right" title="Tiempo por encima del 80 % de la FC máxima">Z4-5</th><th class="text-right">eTRIMP/min</th></tr></thead><tbody>
       ${A.tipos.map(T => `<tr><td class="font-semibold"><span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background:rgb(var(${TIPO_ACT[T.tipo]?.c || '--muted'}))"></span>${esc(TIPO_ACT[T.tipo]?.l || T.tipo)}</td><td class="text-right tnum">${Math.round(T.min)}</td><td class="text-right tnum">${T.n}</td><td class="text-right num text-lg font-bold">${pct(T.med)}</td><td class="text-right tnum">${pct(T.z45)}</td><td class="text-right tnum">${dec(T.tmin, 2)}</td></tr>`).join('')}</tbody></table></div>
       <div class="lg:col-span-2 h-60 min-w-0"><canvas id="chActTipo" aria-label="FC media por tipo de actividad en cada sesión"></canvas></div></div></section>`;
 }
 function actividadesChart(id) {
-  const a = alumno(id); if (!a) return; const A = actividadesAlumno(a); if (!A.serie.length) return;
+  const a = Array.isArray(id) ? id.map(alumno).filter(Boolean) : alumno(id); if (!a || (Array.isArray(a) && !a.length)) return; const A = actividadesAlumno(a); if (!A.serie.length) return;
   mkChart('chActTipo', { type: 'line', data: { labels: A.serie.map(f => fmtDate(f.fecha, { day: 'numeric', month: 'short' })), datasets: A.tipos.map(T => ({ label: TIPO_ACT[T.tipo]?.l || T.tipo, data: A.serie.map(f => f[T.tipo] ? +(f[T.tipo].sum / f[T.tipo].s * 100).toFixed(1) : null), borderColor: cv(TIPO_ACT[T.tipo]?.c || '--muted'), backgroundColor: cv(TIPO_ACT[T.tipo]?.c || '--muted'), spanGaps: true, tension: .3, pointRadius: 4 })) }, options: baseOpts({ y: { title: '% FC máx.' } }) });
 }
 /* Dato real de una tarea del diseño (media de los alumnos del grupo ese día) */
@@ -2073,6 +2101,26 @@ function guardarActEd() {
   closeModal();
   return tras(async () => { for (const r of recs) await P.muestras(r); }, `Actividades guardadas en ${recs.length} ${recs.length === 1 ? 'sesión' : 'sesiones'}`);
 }
+
+/* ---------- Aviso si la clase empezó hace más de 5 minutos y no se está grabando la FC ---------- */
+const AVISO_KEY = 'bandeja-aviso-grabacion';
+const avisosDescartados = () => { try { return JSON.parse(localStorage.getItem(AVISO_KEY) || '[]'); } catch (e) { return []; } };
+function clasesSinGrabar() {
+  if (ui.role !== 'admin' || (LIVE && ui.auth !== 'ok') || live.running) return [];
+  const ahora = minDe(horaAhora()), no = avisosDescartados();
+  return clasesHoy().filter(g => ahora >= minDe(g.hora) + 5 && ahora < minDe(g.fin) && !no.includes(`${g.id}|${TODAY_ISO}`)
+    && !state.sesionesFC.some(s => s.fecha === TODAY_ISO && alumno(s.alumno)?.grupo === g.id && (s.muestras?.grab || 0) >= tsHoy(g.hora) - 15 * 60000));
+}
+function pintarAvisoGrab() {
+  const L = clasesSinGrabar(); let el = document.getElementById('avisoGrab');
+  if (!L.length) { el?.remove(); return; }
+  const nCon = conectados().filter(s => s.alumno).length, firma = L.map(g => g.id).join() + '|' + nCon;
+  if (!el) { el = document.createElement('div'); el.id = 'avisoGrab'; el.setAttribute('role', 'alert'); document.body.appendChild(el); try { if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.([250, 120, 250]); } catch (e) {} }
+  if (el.dataset.f === firma) return; el.dataset.f = firma;
+  el.innerHTML = `<div class="aviso-grab"><span class="hf-rec on shrink-0" aria-hidden="true"></span><div class="flex-1 min-w-[13rem]"><strong>No se está grabando la frecuencia cardíaca</strong><div class="text-[13px] opacity-90">${L.map(g => `${esc(g.nombre)} empezó a las ${g.hora}`).join(' · ')}${nCon ? ` · hay ${nCon} ${nCon === 1 ? 'pulsómetro conectado' : 'pulsómetros conectados'} sin grabar` : ''}.</div></div>
+    <div class="flex gap-2 flex-wrap">${nCon ? '<button class="btn btn-primary !py-1.5 text-[13px]" data-aviso-ir="grabar">Iniciar grabación</button>' : '<button class="btn btn-primary !py-1.5 text-[13px]" data-aviso-ir="ir">Ir a pulsómetros</button>'}<button class="btn btn-ghost !py-1.5 text-[13px]" data-aviso-no="${L.map(g => `${g.id}|${TODAY_ISO}`).join(',')}">Hoy no se graba</button></div></div>`;
+}
+setInterval(pintarAvisoGrab, 20000);
 
 /* Pantalla completa: un panel por sensor, fondo del color de la zona */
 function openFull() {
@@ -2361,6 +2409,76 @@ function cmpTabla(metricas, yo, grp, esc, etiquetaYo = 'Tú') {
   </tbody></table></div><p class="text-[12.5px] text-muted mt-2">▲ mejor que la media de su grupo · ▼ peor. En FC media y máxima no hay mejor ni peor: depende del objetivo de la sesión.</p>`;
 }
 
+/* ==========================================================
+   ESTADÍSTICAS: un alumno, un grupo o toda la escuela
+   ========================================================== */
+function resumenAlumno(a, FP, FT) {
+  const as = asistenciaDe(a.id), ss = sesionesDe(a.id).filter(s => s.tipo !== 'partido'), max = fcMaxTeo(a), G = golpeosAlumno(a);
+  const fp = FP.filter(f => f.alumno === a.id), ft = FT.filter(f => f.alumno === a.id);
+  return { id: a.id, nombre: a.nombre, grupo: a.grupo, asis: as.tot ? as.pres / as.tot : null, nFC: ss.length, min: ss.reduce((t, s) => t + s.duracion, 0), fcm: media(ss.map(s => s.fcMed / max)), tr: media(ss.map(s => etrimp(s.zonas))), rpe: media(ss.map(s => s.rpe ?? null)), golpes: G.lista.length ? G.total : null,
+    par: fp.length, tac: ft.length, win: media(fp.map(f => f.pctWin)), enf: media(fp.map(f => f.pctEnf)), fcE: media([...fp, ...ft].map(f => f.fcE ?? f.fcEnf ?? null)) };
+}
+const COLS_EST = [['nombre', 'Alumno', null], ['asis', 'Asistencia', v => pct(v)], ['nFC', 'Sesiones FC', v => v], ['fcm', 'FC media', v => pct(v)], ['tr', 'eTRIMP/sesión', v => Math.round(v)], ['rpe', 'RPE', v => dec(v, 1)], ['golpes', 'Golpeos', v => v.toLocaleString('es-ES')], ['par', 'Partidos', v => v], ['tac', 'Juegos tácticos', v => v], ['win', '% winners', v => pct(v)], ['enf', '% errores', v => pct(v)], ['fcE', 'FC en errores', v => pct(v)]];
+function vEstadisticas() {
+  const amb = ui.estAmb || 'escuela', grupos = state.grupos, als = reales();
+  if (!ui.estGrupo || !grupo(ui.estGrupo).id) ui.estGrupo = grupos[0]?.id; if (!ui.estAlumno || !alumno(ui.estAlumno)) ui.estAlumno = als[0]?.id;
+  const ctr = `<section class="panel p-4 flex flex-wrap items-center gap-3"><div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold flex-wrap" role="tablist">${[['escuela', 'Escuela'], ['grupo', 'Grupo'], ['alumno', 'Alumno']].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full ${amb === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${amb === k}" data-est-amb="${k}">${l}</button>`).join('')}</div>
+    ${amb === 'grupo' ? `<select class="field !w-auto max-w-full" data-est-grupo aria-label="Grupo">${grupos.map(g => `<option value="${g.id}" ${g.id === ui.estGrupo ? 'selected' : ''}>${esc(g.nombre)}</option>`).join('')}</select>` : ''}
+    ${amb === 'alumno' ? `<select class="field !w-auto max-w-full" data-est-alumno aria-label="Alumno">${grupos.map(g => `<optgroup label="${esc(g.nombre)}">${als.filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${a.id === ui.estAlumno ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select><button class="btn btn-ghost !py-1.5 text-[13px]" data-go="alumno:${ui.estAlumno}">Abrir su ficha</button>` : ''}
+    <span class="text-[13px] text-muted">Temporada ${esc(state.settings.temporada || '')}</span></section>`;
+  const cab = pageHead('Estadísticas', 'Todos los datos de la temporada juntos: asistencia, pulsómetro, esfuerzo, golpeos, partidos y juegos tácticos. Por alumno, por grupo o de toda la escuela.');
+  if (!als.length) return cab + '<div class="panel p-6 text-muted">Aún no hay alumnos.</div>';
+  if (amb === 'alumno') return cab + ctr + vEstAlumno(alumno(ui.estAlumno));
+  const lista = als.filter(a => amb === 'escuela' || a.grupo === ui.estGrupo);
+  return cab + ctr + vEstGrupo(lista, amb === 'escuela' ? null : ui.estGrupo);
+}
+function vEstAlumno(a) {
+  const FP = filasPartidos('partido'), FT = filasPartidos('tactico'), R = resumenAlumno(a, FP, FT), F = mediasPor(filasFC(), METRICAS_FC), Pm = mediasPor(filasPartidos(ui.amodo || 'partido'), METRICAS_P), modo = ui.amodo || 'partido';
+  const f = (v, fn) => v == null ? '—' : fn(v);
+  return `<section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Asistencia', f(R.asis, pct), `${asistenciaDe(a.id).pres} clases`)}${stat('Sesiones de pulsómetro', R.nFC, `${R.min} min registrados`)}${stat('FC media', f(R.fcm, pct), `eTRIMP medio ${f(R.tr, Math.round)}`)}${stat('Esfuerzo (RPE)', f(R.rpe, v => dec(v, 1)), 'media de sus valoraciones')}${stat('Golpeos', f(R.golpes, v => v.toLocaleString('es-ES')), 'acumulados')}${stat('Partidos', R.par, `${R.tac} juegos tácticos`)}${stat('% winners', f(R.win, pct), 'en partidos')}${stat('% errores', f(R.enf, pct), 'en partidos')}</section>
+  <section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h2 class="text-2xl font-bold">Frecuencia cardíaca por sesión</h2><span class="text-[13px] text-muted">% sobre su FC máxima teórica</span></div><div class="h-64"><canvas id="chFC"></canvas></div></section>
+  <section class="grid xl:grid-cols-2 gap-4"><div class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-3">Pulsómetro frente a grupo y escuela</h2>${F.alumno(a.id) ? cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela, 'Alumno') : '<p class="text-muted">Sin sesiones con pulsómetro.</p>'}</div>
+    <div class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-3"><h2 class="text-2xl font-bold">${MODO_TXT[modo]} frente a grupo y escuela</h2>${modoSeg(modo)}</div>${Pm.alumno(a.id) ? cmpTabla(METRICAS_P, Pm.alumno(a.id), Pm.grupo(a.grupo), Pm.escuela, 'Alumno') : '<p class="text-muted">Sin datos registrados.</p>'}</div></section>
+  ${vActividadesAlumno(a)}${vGolpeosAlumno(a)}${vFisioAlumno(a.id)}${vMapaAlumno(a.id, modo)}${vPerfilGolpes(a.id)}`;
+}
+function vEstGrupo(lista, gid) {
+  const FP = filasPartidos('partido'), FT = filasPartidos('tactico'), R = lista.map(a => resumenAlumno(a, FP, FT)), ids = lista.map(a => a.id), f = (v, fn) => v == null ? '—' : fn(v);
+  const ss = lista.flatMap(a => sesionesDe(a.id).filter(s => s.tipo !== 'partido'));
+  const parts = (state.partidos || []).filter(m => m.eventos.length && m.jugadores.some(j => j.id && ids.includes(j.id)));
+  const golpes = R.reduce((t, x) => t + (x.golpes || 0), 0), conG = R.filter(x => x.golpes != null).length;
+  const Pm = mediasPor(FP, METRICAS_P), pm = gid ? Pm.grupo(gid) : Pm.escuela;
+  const k = ui.estSort || 'nombre', dir = ui.estDir || 1;
+  const orden = [...R].sort((x, y) => { const a = x[k], b = y[k]; if (a == null && b == null) return 0; if (a == null) return 1; if (b == null) return -1; return (typeof a === 'string' ? a.localeCompare(b) : a - b) * (k === 'nombre' ? -dir : dir); });
+  const gd = {}; lista.forEach(a => Object.entries(golpeosAlumno(a).d).forEach(([c, v]) => { gd[c] = (gd[c] || 0) + v; }));
+  const quien = gid ? 'del grupo' : 'de la escuela';
+  return `<section class="grid grid-cols-2 lg:grid-cols-4 gap-3">${stat('Alumnos', lista.length, gid ? esc(grupo(gid).nombre) : `${state.grupos.length} grupos`)}${stat('Asistencia media', f(media(R.map(x => x.asis)), pct), 'de las listas pasadas')}${stat('Sesiones de pulsómetro', ss.length, `${Math.round(ss.reduce((t, s) => t + s.duracion, 0) / 60)} h registradas`)}${stat('FC media', f(media(R.map(x => x.fcm)), pct), `eTRIMP medio ${f(media(R.map(x => x.tr)), Math.round)} por sesión`)}
+    ${stat('Esfuerzo (RPE)', f(media(R.map(x => x.rpe)), v => dec(v, 1)), `${ss.filter(s => s.rpe).length} valoraciones`)}${stat('Golpeos', golpes.toLocaleString('es-ES'), conG ? `≈ ${Math.round(golpes / conG).toLocaleString('es-ES')} por alumno` : 'sin diseño con secuencias')}${stat('Partidos', parts.filter(m => !esTactico(m)).length, `${parts.filter(esTactico).length} juegos tácticos`)}${stat('Winners / errores', pm.pctWin == null ? '—' : `${pct(pm.pctWin)} / ${pct(pm.pctEnf)}`, 'media en partidos')}</section>
+  <section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Semana a semana</h2><p class="text-[13px] text-muted mb-2">Golpeos ${quien} (barras) y carga media por sesión de pulsómetro (línea).</p><div class="h-64"><canvas id="chEstSem" aria-label="Golpeos y carga por semana"></canvas></div></section>
+  <section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Alumnos</h2><p class="text-[13px] text-muted">Toca una columna para ordenar y un alumno para ver todos sus datos.</p></div>
+    <table class="data min-w-[1060px]"><thead><tr>${COLS_EST.map(([c, l]) => `<th class="${c === 'nombre' ? '' : 'text-right'}"><button class="font-semibold ${k === c ? 'text-court' : ''}" data-est-sort="${c}">${l}${k === c ? (dir > 0 ? ' ▲' : ' ▼') : ''}</button></th>`).join('')}</tr></thead><tbody>
+    ${orden.map(x => `<tr class="click" data-est-ver="${x.id}">${COLS_EST.map(([c, , fn]) => c === 'nombre' ? `<td class="font-semibold">${esc(x.nombre)}${gid ? '' : `<div class="text-[12px] text-muted font-normal">${esc(grupo(x.grupo).nombre)}</div>`}</td>` : `<td class="text-right tnum">${x[c] == null || (c !== 'asis' && x[c] === 0 && ['par', 'tac', 'nFC'].includes(c) === false) ? '—' : fn(x[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></section>
+  ${gid ? '' : `<section class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Grupos</h2></div><table class="data min-w-[760px]"><thead><tr><th>Grupo</th><th class="text-right">Alumnos</th><th class="text-right">Asistencia</th><th class="text-right">FC media</th><th class="text-right">eTRIMP/sesión</th><th class="text-right">RPE</th><th class="text-right">Golpeos/alumno</th><th class="text-right">% winners</th><th class="text-right">% errores</th></tr></thead><tbody>
+    ${state.grupos.map(g => { const r = R.filter(x => x.grupo === g.id); if (!r.length) return ''; const gg = r.filter(x => x.golpes != null), pg = Pm.grupo(g.id); return `<tr class="click" data-est-grupo-ir="${g.id}"><td class="font-semibold">${esc(g.nombre)}</td><td class="text-right tnum">${r.length}</td><td class="text-right tnum">${f(media(r.map(x => x.asis)), pct)}</td><td class="text-right tnum">${f(media(r.map(x => x.fcm)), pct)}</td><td class="text-right tnum">${f(media(r.map(x => x.tr)), Math.round)}</td><td class="text-right tnum">${f(media(r.map(x => x.rpe)), v => dec(v, 1))}</td><td class="text-right tnum">${gg.length ? Math.round(gg.reduce((t, x) => t + x.golpes, 0) / gg.length) : '—'}</td><td class="text-right tnum">${f(pg.pctWin, pct)}</td><td class="text-right tnum">${f(pg.pctEnf, pct)}</td></tr>`; }).join('')}</tbody></table></section>`}
+  ${Object.keys(gd).length ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-2">Golpeos por tipo de golpe</h2><div class="flex flex-wrap gap-2">${Object.entries(gd).sort((x, y) => y[1] - x[1]).map(([c, v]) => `<span class="chip chip-neutral !py-1.5 !px-3 !text-[13.5px]"><b class="mr-1">${esc(c)}</b>${esc(GOLPE_TN[c] || '')} · ${v.toLocaleString('es-ES')} <span class="text-muted ml-1">(${pct(v / golpes)})</span></span>`).join('')}</div></section>` : ''}
+  ${vActividadesAlumno(lista, `Frecuencia cardíaca por actividad ${quien}`)}
+  ${vFisioAlumno(null, fisioVarios(ids), `Corazón y táctica ${quien}`)}
+  ${vMapaAlumno(ids, ui.amodo || 'todo', `Mapa de calor ${quien}`)}`;
+}
+function afterEstadisticas() {
+  const amb = ui.estAmb || 'escuela';
+  if (amb === 'alumno') { const id = ui.estAlumno; fcChart('chFC', id); fisioChart(id); golpeosChart(id); actividadesChart(id); return; }
+  const lista = reales().filter(a => amb === 'escuela' || a.grupo === ui.estGrupo), ids = lista.map(a => a.id);
+  fisioChart(null, fisioVarios(ids)); actividadesChart(ids);
+  const sem = {}, add = (d, k, v) => { if (d > TODAY_ISO || d < SEASON_START) return; const w = weekKey(d); (sem[w] = sem[w] || { g: 0, t: 0, n: 0 })[k] += v; if (k === 't') sem[w].n++; };
+  lista.forEach(a => { golpeosAlumno(a).lista.forEach(x => add(x.fecha, 'g', x.t)); sesionesDe(a.id).filter(s => s.tipo !== 'partido').forEach(s => add(s.fecha, 't', etrimp(s.zonas))); });
+  const W = Object.keys(sem).sort(); if (!W.length) return;
+  const o = baseOpts({ y: { title: 'Golpeos', beginAtZero: true } });
+  o.scales.y1 = { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: o.scales.y.ticks, border: { display: false }, title: { display: true, text: 'eTRIMP por sesión', color: cv('--muted') } };
+  mkChart('chEstSem', { data: { labels: W.map(w => fmtDate(w, { day: 'numeric', month: 'short' })), datasets: [
+    { type: 'bar', label: 'Golpeos', data: W.map(w => sem[w].g || null), backgroundColor: cv('--court', .7), borderRadius: 5, maxBarThickness: 34 },
+    { type: 'line', label: 'Carga media por sesión (eTRIMP)', data: W.map(w => sem[w].n ? Math.round(sem[w].t / sem[w].n) : null), borderColor: cv('--z4'), backgroundColor: cv('--z4'), spanGaps: true, tension: .3, pointRadius: 4, yAxisID: 'y1' }] }, options: o });
+}
+
 /* ---------- Exportar datos (CSV con punto y coma y acentos, listo para Excel) ---------- */
 function descargarCSV(nombre, cab, filas) {
   const celda = v => { const s = v == null ? '' : typeof v === 'number' ? String(v).replace('.', ',') : String(v); return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -2535,8 +2653,8 @@ function vMapaPartido(m, S, sel) {
     <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">${js.map(({ x, Z }) => `<div class="min-w-0"><div class="font-semibold mb-2">${esc(nombreJ(m, x.j))}</div><div class="grid grid-cols-2 gap-3">${mapaCalor(Z.w, 'w', 'Winners')}${mapaCalor(Z.e, 'e', 'Errores')}</div>${resumenZonas(Z).map(t => `<p class="text-[13px] text-muted mt-2">${esc(t)}</p>`).join('')}</div>`).join('')}</div></section>`;
 }
 function vMapaAlumno(id, modo = 'todo', titulo = 'Mapa de calor') {
-  const evs = [];
-  (state.partidos || []).forEach(m => { if (modo !== 'todo' && (esTactico(m) ? 'tactico' : 'partido') !== modo) return; const j = m.jugadores.findIndex(x => x.id === id); if (j < 0) return; m.eventos.forEach(ev => { if (ev.j === j) evs.push(ev); }); });
+  const evs = [], ids = new Set(Array.isArray(id) ? id : [id]);
+  (state.partidos || []).forEach(m => { if (modo !== 'todo' && (esTactico(m) ? 'tactico' : 'partido') !== modo) return; m.jugadores.forEach((x, j) => { if (x?.id && ids.has(x.id)) m.eventos.forEach(ev => { if (ev.j === j) evs.push(ev); }); }); });
   const Z = cuentaZonas(evs);
   if (!Z.n) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13.5px] text-muted max-w-2xl">Se rellena cuando al marcar un winner o un error se indica la zona de la pista desde la que se golpeó.</p></section>`;
   return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13px] text-muted mb-3">De dónde salen los winners y los errores no forzados (${MODO_TXT[modo].toLowerCase()}). La red está arriba.</p>
@@ -2762,6 +2880,13 @@ function correl(xs, ys) {
   return sxx && syy ? sxy / Math.sqrt(sxx * syy) : null;
 }
 /* Todos los partidos de un alumno: FC en winners y errores, reparto por zonas y correlación FC–error */
+function fisioVarios(ids) {
+  const out = { n: 0, w: 0, e: 0, zf: Array.from({ length: 6 }, () => ({ w: 0, e: 0 })), pares: [] };
+  ids.forEach(id => { const F = fisioTactica(id); out.n += F.n; out.w += F.w; out.e += F.e; F.zf.forEach((z, i) => { out.zf[i].w += z.w; out.zf[i].e += z.e; }); out.pares.push(...F.pares); });
+  out.fcW = out.w ? media(out.pares.filter(x => x[1] === 0).map(x => x[0])) : null; out.fcE = out.e ? media(out.pares.filter(x => x[1] === 1).map(x => x[0])) : null;
+  out.r = correl(out.pares.map(x => x[0]), out.pares.map(x => x[1]));
+  return out;
+}
 function fisioTactica(id, modo = 'todo') {
   const out = { n: 0, w: 0, e: 0, zf: Array.from({ length: 6 }, () => ({ w: 0, e: 0 })), pares: [] };
   const a = alumno(id); if (!a) return out; const max = fcMaxTeo(a);
@@ -2775,15 +2900,13 @@ function fisioTactica(id, modo = 'todo') {
   out.r = correl(out.pares.map(x => x[0]), out.pares.map(x => x[1]));
   return out;
 }
-function vFisioAlumno(id) {
-  const F = fisioTactica(id);
-  if (!F.n) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Corazón y táctica</h2><p class="text-[13.5px] text-muted max-w-2xl">Aquí se verá cómo se relaciona la frecuencia cardíaca con los winners y los errores no forzados. Se rellena cuando el pulsómetro está conectado mientras se marca un partido o un juego táctico.</p></section>`;
-  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Corazón y táctica</h2><p class="text-[13px] text-muted mb-3">Frecuencia cardíaca en el momento de cada winner y error no forzado, en todos los partidos y juegos tácticos.</p>
+function vFisioAlumno(id, F = fisioTactica(id), titulo = 'Corazón y táctica') {
+  if (!F.n) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13.5px] text-muted max-w-2xl">Aquí se verá cómo se relaciona la frecuencia cardíaca con los winners y los errores no forzados. Se rellena cuando el pulsómetro está conectado mientras se marca un partido o un juego táctico.</p></section>`;
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">${titulo}</h2><p class="text-[13px] text-muted mb-3">Frecuencia cardíaca en el momento de cada winner y error no forzado, en todos los partidos y juegos tácticos.</p>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">${stat('Puntos con FC', F.n, `${F.w} winners · ${F.e} errores`)}${stat('FC en winners', F.fcW == null ? '—' : pct(F.fcW), 'media, % de su máxima')}${stat('FC en errores', F.fcE == null ? '—' : pct(F.fcE), 'media, % de su máxima')}${stat('Relación FC–error', F.r == null ? '—' : dec(F.r, 2), F.r == null ? 'faltan datos (mín. 8 puntos)' : Math.abs(F.r) < .1 ? 'sin relación apreciable' : Math.abs(F.r) < .3 ? 'débil' : Math.abs(F.r) < .5 ? 'moderada' : 'fuerte')}</div>
     <div class="grid lg:grid-cols-2 gap-5"><div class="h-56 min-w-0"><canvas id="chFisio" aria-label="Winners y errores por zona de frecuencia cardíaca"></canvas></div><div class="min-w-0">${tablaZonasFC(F.zf)}${fisioResumen(F.zf, F.fcW, F.fcE, null).map(t => `<p class="text-[13.5px] text-muted mt-2">${esc(t)}</p>`).join('')}</div></div></section>`;
 }
-function fisioChart(id) {
-  const F = fisioTactica(id); if (!F.n) return;
+function fisioChart(id, F = fisioTactica(id)) { if (!F.n) return;
   const ejes = F.zf.map((z, i) => ({ z, i })).filter(({ z }) => z.w + z.e);
   mkChart('chFisio', { type: 'bar', data: { labels: ejes.map(({ i }) => i ? `Z${i}` : '<50 %'), datasets: [{ label: 'Winners', data: ejes.map(({ z }) => z.w), backgroundColor: cv('--ok') }, { label: 'Errores no forzados', data: ejes.map(({ z }) => z.e), backgroundColor: cv('--bad') }] }, options: baseOpts({ y: { title: 'Puntos', beginAtZero: true } }) });
 }
@@ -3617,7 +3740,7 @@ function render() {
     if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
     else if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
     else if (ui.view.startsWith('plan:')) { html = vPlan(ui.view.slice(5)); after = afterPlan; }
-    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
+    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, estadisticas: () => { html = vEstadisticas(); after = afterEstadisticas; }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
     else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
@@ -3629,7 +3752,7 @@ function render() {
   if (nueva) { clearTimeout(ui._veT); ui._veT = setTimeout(() => app.classList.remove('ve'), 1200); prepararEntrada(app); }
   if (after) after();
   if (ui.view.startsWith('partido:')) animMarcador(); else ui.sbPrev = null;
-  updateDock();
+  updateDock(); pintarAvisoGrab();
 }
 /* ---------- Movimiento: entrada de pantalla, cifras que cuentan, pulso y marcador ---------- */
 const RM = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -3750,7 +3873,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok],[data-asig],[data-aviso-ir],[data-aviso-no],[data-est-amb],[data-est-sort],[data-est-ver],[data-est-grupo-ir]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -3821,6 +3944,13 @@ document.addEventListener('click', async e => {
   if (d.rpeEdit) return modalRPE(d.rpeEdit);
   if (d.rpeSet) { const [id, n] = d.rpeSet.split(':'); const r = state.sesionesFC.find(s => s.id === id); if (!r) return; r.rpe = +n || null; closeModal(); return tras(() => P.rpe(r), r.rpe ? `RPE ${r.rpe} guardada` : 'RPE quitada'); }
   if (d.zona !== undefined) { const k = +d.zona; ui.zonaSel = ui.zonaSel === k ? null : k; document.querySelectorAll('[data-zona]').forEach(b => { const on = +b.dataset.zona === ui.zonaSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
+  if (d.asig) return asignarSensor(d.asig);
+  if (d.avisoIr) { if (d.avisoIr === 'grabar' && !live.running) { toggleLive(); return; } return go('vivo'); }
+  if (d.avisoNo) { try { localStorage.setItem(AVISO_KEY, JSON.stringify([...avisosDescartados(), ...d.avisoNo.split(',')].slice(-60))); } catch (e) {} document.getElementById('avisoGrab')?.remove(); return toast('De acuerdo: hoy no se avisará para esa clase'); }
+  if (d.estAmb) { ui.estAmb = d.estAmb; return render(); }
+  if (d.estSort) { ui.estDir = ui.estSort === d.estSort ? -(ui.estDir || -1) : -1; ui.estSort = d.estSort; return render(); }
+  if (d.estGrupoIr) { ui.estAmb = 'grupo'; ui.estGrupo = d.estGrupoIr; render(); return window.scrollTo({ top: 0 }); }
+  if (d.estVer) { ui.estAmb = 'alumno'; ui.estAlumno = d.estVer; render(); return window.scrollTo({ top: 0 }); }
   if (d.actSig !== undefined) return siguienteActividad();
   if (d.actEd) return modalActividadesFC(d.actEd);
   if (d.actOk !== undefined) return guardarActEd();
@@ -3873,6 +4003,9 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  const vg = e.target.closest?.('[data-vivo-grupo]'); if (vg) { ui.vivoGrupo = vg.value; return render(); }
+  const eg = e.target.closest?.('[data-est-grupo]'); if (eg) { ui.estGrupo = eg.value; return render(); }
+  const ea = e.target.closest?.('[data-est-alumno]'); if (ea) { ui.estAlumno = ea.value; return render(); }
   const as = e.target.closest?.('[data-act-sel]'); if (as) { if (as.value) cambiarActividad(as.value); return; }
   const am = e.target.closest?.('[data-act-mk]'); if (am && ui.actEd) { const x = ui.actEd.lista.find(a => a.id === am.value), m = ui.actEd.marcas[+am.dataset.actMk]; if (m) Object.assign(m, x ? { id: x.id, n: x.n, tipo: x.tipo } : { id: '', n: '', tipo: null }); return pintarActEd(); }
   const av = e.target.closest?.('[data-act-ver]'); if (av && ui.actEd) { ui.actEd.r = av.value; return pintarActEd(true); }

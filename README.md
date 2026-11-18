@@ -113,6 +113,17 @@ En *Pagos* hay cuatro pestañas: cobros, gastos (por categoría), balance mensua
 - Índice win = media de % puntos de oro ganados y % roturas conseguidas.
 - En *Mis partidos* el alumno ve sus estadísticas agrupadas en Resultado, Ataque, Errores no forzados, Saque, Resto y Momentos clave, cada una comparada con su grupo y con la escuela; su perfil de golpes, su evolución partido a partido y una tabla con cada pareja con la que ha jugado.
 
+## Estadísticas
+
+Pestaña *Estadísticas* con todos los datos de la temporada, para la **escuela**, un **grupo** o un **alumno**:
+- **Escuela y grupo:** cifras clave (asistencia media, sesiones y horas de pulsómetro, FC media y carga, RPE, golpeos, partidos y juegos tácticos, % winners y errores), gráfico semana a semana de golpeos y carga, tabla de alumnos que se ordena tocando cada columna, comparación entre grupos (en la escuela), golpeos por tipo de golpe, FC por actividad, corazón y táctica y mapa de calor de todo el conjunto.
+- **Alumno:** sus cifras, su evolución de FC, comparativas con su grupo y la escuela (pulsómetro y partidos/juegos tácticos/conjunto), FC por actividad, golpeos, corazón y táctica, mapa de calor y perfil de golpes. Tocar un alumno en la tabla abre sus estadísticas.
+
+## Pulsómetros: grupo y aviso de grabación
+
+- Al preparar la sesión se elige el **grupo** (sale el que tiene clase a esta hora). Sus alumnos aparecen ordenados de **menos a más grabaciones** esta temporada; tocando uno se le asigna el siguiente sensor libre. En la lista de cada sensor también se ve el nº de grabaciones entre paréntesis.
+- **Aviso:** si una clase empezó hace más de 5 minutos (según la hora del grupo) y no se está grabando, sale un aviso rojo arriba (también en pantalla completa) que dice si hay pulsómetros conectados sin grabar, con botón para empezar a grabar o ir a *Pulsómetros*. «Hoy no se graba» lo quita para esa clase. Funciona con la app abierta en ese dispositivo.
+
 ## Frecuencia cardíaca por actividad
 
 Mientras se graba en *Pulsómetros* (también en pantalla completa) se elige la actividad en curso: las tareas del diseño de la sesión de hoy o un tipo genérico (calentamiento, técnica, táctica, partido, físico, vuelta a la calma, pausa). «Siguiente actividad» pasa a la siguiente tarea del diseño. Si se olvidó cambiarla, en «Grabaciones de hoy» (o en la ficha del alumno, «marcar actividades») se abre la gráfica de FC coloreada por actividad y se mueve cada cambio hasta donde cambia la tendencia; se aplica a todos los alumnos de esa grabación. Con eso salen los minutos, la FC media y máxima, el tiempo en zonas 4-5 y la carga de cada actividad: en la ficha del alumno y en *Mi corazón* («Frecuencia cardíaca por actividad», con su evolución por sesión), en cada tarea del diseño («Real: 18' · FC 76 %») y en el email de la sesión.
