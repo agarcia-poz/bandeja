@@ -353,6 +353,20 @@
   .zcel { border-radius: 6px; background: rgb(255 255 255 / .14); color: #fff; font-size: 11.5px; font-weight: 700; display: flex; align-items: flex-start; justify-content: flex-start; padding: 4px 6px; border: 2px solid transparent; transition: background-color var(--t-fast, .15s) ease; }
   .zcel:hover { background: rgb(255 255 255 / .26); } .zcel.on { background: rgb(var(--ball)); color: rgb(var(--ball-ink)); border-color: #fff; }
   .hmc { border-radius: 6px; display: grid; place-items: center; font-family: 'Saira Condensed', sans-serif; font-weight: 800; font-size: 18px; background: rgb(255 255 255 / .1); }
+  /* Pantalla completa: nombre y % tan grandes como permita cada recuadro (se ajusta al tamaño del panel) */
+  @supports (font-size: 1cqh) {
+    .hf-grid .hf-panel { container-type: size; padding: 2.5cqh 3cqw; justify-content: space-evenly; gap: 0; }
+    .hf-grid .hf-name { font-size: min(23cqh, 15cqw); line-height: .95; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
+    .hf-grid .hf-figs { flex-direction: column; align-items: center; gap: 0; }
+    .hf-grid[class] .hf-pct { font-size: min(58cqh, 44cqw); line-height: .8; letter-spacing: -.03em; }
+    .hf-grid[class] .hf-bpm { font-size: min(8.5cqh, 7cqw); }
+    .hf-grid .hf-meta:empty { display: none; }
+    .hf-grid .hf-zone { font-size: min(6cqh, 4.6cqw); }
+    .hf-grid .hf-meta { font-size: min(4.6cqh, 3.6cqw); margin-top: 0; }
+    .hf-grid .hf-panel .zmeter { height: min(2.6cqh, 16px); margin: .6cqh auto; width: 86%; }
+  }
+  .hf-sel { min-height: 48px; max-width: min(46vw, 420px); border-radius: 999px; background: rgb(255 255 255 / .14); color: #fff; font-weight: 700; padding: 0 1rem; border: 0; }
+  .hf-sel option, .hf-sel optgroup { color: #0c1b38; }
   #rpeov { position: fixed; inset: 0; z-index: 80; background: rgb(var(--bg)); overflow-y: auto; }
   .rpe-ov { min-height: 100%; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px); }
   .rpe-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
@@ -364,6 +378,8 @@
   @media (min-width: 640px) { .rpe-b { min-height: 92px; } }
   @media (prefers-reduced-motion: reduce) { .rpe-body { animation: none; } .rpe-b { transition: none; } .rpe-b.on { transform: none; } }
   .seqchip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .25rem .2rem .55rem; border-radius: 999px; background: rgb(var(--fc, var(--court)) / .14); border: 1px solid rgb(var(--fc, var(--court)) / .35); font-size: 13px; font-weight: 600; animation: seqin var(--t-fast, .15s) ease-out; }
+  .seqchip .dirb { width: auto; height: auto; padding: 1px 7px; font-size: 11px; font-weight: 700; border-radius: 999px; border: 1px dashed rgb(var(--line)); color: rgb(var(--muted)); }
+  .seqchip .dirb.on { border-style: solid; border-color: transparent; background: rgb(var(--fc, var(--court))); color: #fff; }
   .seqchip b { font-family: 'Saira Condensed', sans-serif; font-size: 15px; letter-spacing: .02em; }
   .seqchip button { width: 20px; height: 20px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 11px; color: rgb(var(--muted)); }
   .seqchip button:hover { background: rgb(var(--line)); color: rgb(var(--ink)); }
@@ -1005,13 +1021,14 @@ function vAlumnoDetalle(id) {
   </section>`; })()}
   <section class="grid lg:grid-cols-2 gap-4">
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2>${ss.length > 1 ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-fc-unir title="Marca dos o más sesiones del mismo día">Unir sesiones marcadas</button>` : ''}</div><table class="data min-w-[600px]"><thead><tr><th class="w-8"></th><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th><th title="Esfuerzo percibido (1-10) y carga sRPE (RPE × min)">RPE</th></tr></thead><tbody>
-      ${[...ss].reverse().map(s => `<tr><td><input type="checkbox" class="w-4 h-4" data-fc-sel="${s.id}" ${ui.fcSel?.has(s.id) ? 'checked' : ''} aria-label="Seleccionar la sesión del ${fmtDate(s.fecha)}"></td><td>${fmtDate(s.fecha)}${s.fuente ? `<div class="text-[11.5px] text-muted">${esc(s.fuente)} · ${s.duracion} min</div>` : ''}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td><td><button class="chip ${s.rpe ? '' : 'chip-neutral'} tnum" style="${s.rpe ? `background:rgb(var(${rpeColor(s.rpe)}) / .18)` : ''}" data-rpe-edit="${s.id}" title="${s.rpe ? `${RPE_TXT[s.rpe]} · carga sRPE ${srpe(s)}` : 'Añadir la RPE'}">${s.rpe ?? '+'}</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
+      ${[...ss].reverse().map(s => `<tr><td><input type="checkbox" class="w-4 h-4" data-fc-sel="${s.id}" ${ui.fcSel?.has(s.id) ? 'checked' : ''} aria-label="Seleccionar la sesión del ${fmtDate(s.fecha)}"></td><td>${fmtDate(s.fecha)}${s.fuente ? `<div class="text-[11.5px] text-muted">${esc(s.fuente)} · ${s.duracion} min</div>` : ''}${s.muestras?.fc?.length && (s.muestras.segs || s.muestras.t0) ? `<button class="text-court font-semibold underline underline-offset-2 text-[12px]" data-act-ed="${s.id}">${s.muestras.act?.length ? `${new Set(s.muestras.act.map(m => m.id)).size} actividades` : 'marcar actividades'}</button>` : ''}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td><td><button class="chip ${s.rpe ? '' : 'chip-neutral'} tnum" style="${s.rpe ? `background:rgb(var(${rpeColor(s.rpe)}) / .18)` : ''}" data-rpe-edit="${s.id}" title="${s.rpe ? `${RPE_TXT[s.rpe]} · carga sRPE ${srpe(s)}` : 'Añadir la RPE'}">${s.rpe ?? '+'}</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
       ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${conceptoTxt(p)}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
   ${vFisioAlumno(a.id)}
   ${vMapaAlumno(a.id, ui.amodo || 'todo')}
   ${vGolpeosAlumno(a)}
+  ${vActividadesAlumno(a)}
   ${vPerfilGolpes(a.id)}
   ${iaPanel(a)}`;
 }
@@ -1036,7 +1053,7 @@ function iaPanel(a) {
   </section>`;
 }
 function zoneBar(z) { const tot = z.reduce((s, x) => s + x, 0) || 1; return `<div class="zbar" title="${z.map((m, i) => `Z${i + 1}: ${m} min`).join(' · ')}">${z.map((m, i) => `<span class="z${i + 1}" style="width:${m / tot * 100}%"></span>`).join('')}</div>`; }
-function afterAlumnoDetalle(id) { fcChart('chFC', id); fisioChart(id); golpeosChart(id); }
+function afterAlumnoDetalle(id) { fcChart('chFC', id); fisioChart(id); golpeosChart(id); actividadesChart(id); }
 function fcChart(canvasId, id) {
   const a = alumno(id); const ss = sesionesDe(id);
   const M = mediasPor(filasFC(), METRICAS_FC); const gm = M.grupo(a.grupo).med, em = M.escuela.med;
@@ -1190,14 +1207,38 @@ const tituloPlan = pl => (pl.titulo || '').trim() || pl.contenidos.join(' · ') 
 
 /* ---------- Golpeos: secuencia de golpes × pelotas, con un margen del 5 % por el lanzamiento ---------- */
 const MARGEN_GOLPEO = 0.05;
-const seqTxt = t => (t.seq || []).map(c => GOLPE_TN[c] || c).join(' → ');
+const CARRO = 75;   // pelotas del carro: cada pelota lanzada es un golpe, agrupadas en secuencias
+const gC = it => (typeof it === 'string' ? it : it?.g);                 // código del golpe de un paso de la secuencia
+const gO = it => (typeof it === 'string' ? null : it?.o || null);       // objetivo / dirección del golpe
+const OBJ_G = { pa: 'paralelo', cr: 'cruzado', ce: 'al centro', pr: 'profundo', co: 'corto', pi: 'a la pared' };
+const OBJ_ORDEN = [null, 'pa', 'cr', 'ce', 'pr', 'co', 'pi'];
+const seqTxt = seq => (seq || []).filter(gC).map(it => `${GOLPE_TN[gC(it)] || gC(it)}${gO(it) ? ` ${OBJ_G[gO(it)]}` : ''}`).join(' → ');
+const seqClave = seq => (seq || []).filter(gC).map(it => gC(it) + (gO(it) ? ':' + gO(it) : '')).join('-');
+const claveTarea = t => (t.desc || '').trim() || (t.uno ? '1v1:' : '') + seqClave(t.seq) + (t.uno ? '|' + seqClave(t.rseq) : '');
 const rangoG = n => ({ min: Math.round(n * (1 - MARGEN_GOLPEO)), max: Math.round(n * (1 + MARGEN_GOLPEO)) });
-function golpesTarea(t) { const seq = Array.isArray(t.seq) ? t.seq : [], p = Math.max(0, +t.pelotas || 0), d = {}; seq.forEach(c => { d[c] = (d[c] || 0) + p; }); return { t: p * seq.length, d }; }
-/* Golpeos de todo el diseño (suma de las pistas) y reparto por tipo de golpe */
+/* Bloques de golpeo de una tarea:
+   · base y variante: el carro (o las pelotas indicadas) se reparte en secuencias completas → golpeos compartidos entre los alumnos de la pista
+   · competición: golpeos por alumno fijados por el entrenador con su secuencia (sin carro, sin margen) */
+function bloquesTarea(t, carro = CARRO) {
+  const out = [];
+  const resp = t.uno ? (t.rseq || []).filter(gC) : [];   // 1 vs 1: golpes del compañero que responde a la misma bola
+  const pool = (seq, pel, tipo) => { const s = (seq || []).filter(gC); if (!s.length) return; const p = Math.max(0, pel === '' || pel == null ? carro : +pel || 0);
+    const nSeq = t.uno ? p : Math.floor(p / s.length);   // normal: cada golpe gasta una pelota; 1 vs 1: una pelota por secuencia completa
+    const d = {}; [...s, ...resp].forEach(it => { d[gC(it)] = (d[gC(it)] || 0) + nSeq; });
+    out.push({ tipo, compartido: true, uno: !!t.uno, seq: s, resp, pelotas: p, nSeq, t: nSeq * (s.length + resp.length), d }); };
+  pool(t.seq, t.pelotas, 'base');
+  if (t.variante != null) pool(t.vseq, t.vpelotas, 'variante');
+  const cs = (t.cseq || []).filter(gC), cg = Math.max(0, +t.cgolpes || 0);
+  if (t.competicion != null && cs.length && cg) { const d = {}; cs.forEach(it => { d[gC(it)] = (d[gC(it)] || 0) + cg / cs.length; }); out.push({ tipo: 'competicion', compartido: false, seq: cs, pa: cg, d }); }
+  return out;
+}
+/* Golpeos de todo el diseño: los del carro se suman (cada pista con su carro) y los de competición son por alumno (media de las pistas) */
 function golpeosPlan(pl) {
-  const d = {}; let t = 0;
-  const v = (pl.versiones || []).map(V => { let tv = 0; V.fases.forEach(f => f.tareas.forEach(x => { const g = golpesTarea(x); tv += g.t; Object.entries(g.d).forEach(([c, n]) => { d[c] = (d[c] || 0) + n; }); })); t += tv; return tv; });
-  return { t, ...rangoG(t), d, v };
+  const carro = +pl.carro || CARRO, V = pl.versiones || [], nV = V.length || 1, d = {}, dpa = {}; let t = 0, nSeq = 0, pa = 0;
+  const v = V.map(Vv => { let tv = 0; Vv.fases.forEach(f => f.tareas.forEach(x => bloquesTarea(x, carro).forEach(b => {
+    if (b.compartido) { tv += b.t; nSeq += b.nSeq; Object.entries(b.d).forEach(([c, n]) => { d[c] = (d[c] || 0) + n; }); }
+    else { pa += b.pa / nV; Object.entries(b.d).forEach(([c, n]) => { dpa[c] = (dpa[c] || 0) + n / nV; }); } }))); t += tv; return tv; });
+  return { t, ...rangoG(t), d, v, nSeq, pa, dpa, carro };
 }
 /* Asistentes de una clase: los confirmados en la lista; si no hay lista, los fijos del grupo (cobro automático) */
 function asistentesDe(key) {
@@ -1209,11 +1250,12 @@ function asistentesDe(key) {
 const vinoA = (key, a) => { const e = state.asistencia[key]?.[a.id]?.e; return e ? e === 'presente' : autoDe(a).includes(key.split('|')[1]); };
 /* Golpeos que le corresponden a un alumno en una clase: total de la clase ÷ asistentes (con forzar se calcula aunque la lista aún no esté) */
 function golpeosClase(key, a, forzar) {
-  const pl = planDe(key); if (!pl) return null; const g = golpeosPlan(pl); if (!g.t) return null;
+  const pl = planDe(key); if (!pl) return null; const g = golpeosPlan(pl); if (!g.t && !g.pa) return null;
   if (!forzar && !vinoA(key, a)) return null;
   const n = asistentesDe(key) || (forzar ? reales().filter(x => x.grupo === a.grupo && !esRelevo(x)).length : 0) || 0; if (!n) return null;
-  const r = x => Math.round(x / n);
-  return { key, fecha: key.split('|')[1], n, t: r(g.t), min: r(g.min), max: r(g.max), d: Object.fromEntries(Object.entries(g.d).map(([c, v]) => [c, r(v)])) };
+  const r = x => Math.round(x / n + 0);
+  const d = {}; Object.entries(g.d).forEach(([c, v]) => { d[c] = (d[c] || 0) + v / n; }); Object.entries(g.dpa).forEach(([c, v]) => { d[c] = (d[c] || 0) + v; });
+  return { key, fecha: key.split('|')[1], n, t: Math.round(g.t / n + g.pa), min: Math.round(g.min / n + g.pa), max: Math.round(g.max / n + g.pa), sec: Math.round(g.nSeq / n), comp: Math.round(g.pa), d: Object.fromEntries(Object.entries(d).map(([c, v]) => [c, Math.round(v)])) };
 }
 function golpeosAlumno(a) {
   const lista = Object.keys(state.planes || {}).map(k => golpeosClase(k, a)).filter(x => x && x.fecha <= TODAY_ISO).sort((x, y) => x.fecha.localeCompare(y.fecha));
@@ -1223,9 +1265,9 @@ function golpeosAlumno(a) {
 const golpeosAcum = (a, hasta, gk) => { const L = golpeosAlumno(a).lista; return L.filter(x => x.fecha <= hasta).reduce((t, x) => t + x.t, 0) + (L.some(x => x.key === gk.key) ? 0 : gk.t); };
 function vGolpeosAlumno(a) {
   const G = golpeosAlumno(a);
-  if (!G.lista.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Golpeos</h2><p class="text-[13.5px] text-muted max-w-2xl">Aquí se irán sumando los golpeos de cada clase: se calculan con el diseño de la sesión (secuencia de golpes × nº de pelotas, con un margen del 5 %) repartidos entre quienes asisten.</p></section>`;
+  if (!G.lista.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Golpeos</h2><p class="text-[13.5px] text-muted max-w-2xl">Aquí se irán sumando los golpeos de cada clase: se calculan con el diseño de la sesión: el carro de pelotas se reparte en secuencias entre quienes asisten (margen del 5 %), más los golpeos fijados en la competición.</p></section>`;
   const filas = Object.entries(G.d).sort((x, y) => y[1] - x[1]);
-  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Golpeos</h2><p class="text-[13px] text-muted mb-3">Estimación por clase: golpeos de la sesión ÷ asistentes, con un margen del 5 % por el lanzamiento de pelotas.</p>
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Golpeos</h2><p class="text-[13px] text-muted mb-3">Estimación por clase: carro de pelotas repartido en secuencias entre los asistentes (margen del 5 % por el lanzamiento) más los golpeos de la competición.</p>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">${stat('Golpeos acumulados', G.total.toLocaleString('es-ES'), `entre ${G.min.toLocaleString('es-ES')} y ${G.max.toLocaleString('es-ES')}`)}${stat('Clases con dato', G.lista.length, 'de esta temporada')}${stat('Media por clase', Math.round(G.total / G.lista.length), 'golpeos')}${stat('Última clase', G.lista[G.lista.length - 1].t, `≈ ${fmtDate(G.lista[G.lista.length - 1].fecha, { day: 'numeric', month: 'short' })}`)}</div>
     <div class="grid lg:grid-cols-5 gap-5"><div class="lg:col-span-3 h-60 min-w-0"><canvas id="chGolpeos" aria-label="Golpeos por clase y acumulados"></canvas></div>
       <div class="lg:col-span-2 min-w-0 scroll-x"><table class="data min-w-[240px]"><thead><tr><th>Golpe</th><th class="text-right">Golpeos</th><th class="text-right">%</th></tr></thead><tbody>${filas.map(([c, v]) => `<tr><td>${esc(GOLPE_TN[c] || c)}</td><td class="text-right tnum font-semibold">${v}</td><td class="text-right tnum">${pct(v / G.total)}</td></tr>`).join('')}</tbody></table></div></div></section>`;
@@ -1251,7 +1293,7 @@ function realZ5(key) {
 }
 function bibliotecaTareas(tipo) {
   const vistas = new Set(); const out = [];
-  Object.entries(state.planes || {}).sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1])).forEach(([k, pl]) => pl.versiones.forEach(v => v.fases.forEach(f => { if (f.tipo !== tipo) return; f.tareas.forEach(t => { const d = (t.desc || '').trim() || (t.seq || []).join('-'); if (!d || vistas.has(d)) return; vistas.add(d); out.push(t); }); })));
+  Object.entries(state.planes || {}).sort((a, b) => b[0].split('|')[1].localeCompare(a[0].split('|')[1])).forEach(([k, pl]) => pl.versiones.forEach(v => v.fases.forEach(f => { if (f.tipo !== tipo) return; f.tareas.forEach(t => { const d = claveTarea(t); if (!d || vistas.has(d)) return; vistas.add(d); out.push(t); }); })));
   return out.slice(0, 40);
 }
 function barraTiempo(v, dur) {
@@ -1268,19 +1310,22 @@ function vPlan(key) {
   const anterior = [...fechas.slice(0, Math.max(0, pos))].reverse().find(x => planDe(`${gid}|${x}`));
   const real = realZ5(key);
   const nAl = ui.plan.nAl = asistentesDe(key) || reales().filter(x => x.grupo === gid && !esRelevo(x)).length || 1;
-  const secuenciaUI = (fi, ti, t) => { const seq = t.seq || [];
+  const secuenciaUI = (fi, ti, t, modo = '') => { const K = modo === 'v' ? 'vseq' : modo === 'c' ? 'cseq' : modo === 'r' ? 'rseq' : 'seq', N = modo === 'v' ? 'vpelotas' : modo === 'c' ? 'cgolpes' : 'pelotas', seq = t[K] || [];
+    const quien = modo === 'v' ? 'de la variante' : modo === 'c' ? 'de la competición' : modo === 'r' ? 'de respuesta del compañero' : t.uno ? 'de trabajo (defensa)' : 'de la tarea';
     return `<div class="flex flex-col gap-2">
-      <div class="flex flex-wrap items-center gap-1.5 min-h-[2.6rem] rounded-xl bg-surface px-2 py-1.5 border border-line" role="list" aria-label="Secuencia de golpes de la tarea">
-        ${seq.length ? seq.map((c, i) => `${i ? '<span class="text-muted" aria-hidden="true">→</span>' : ''}<span class="seqchip" role="listitem" title="${esc(GOLPE_TN[c] || c)}"><b>${esc(c)}</b><span class="hidden sm:inline">${esc(GOLPE_TN[c] || '')}</span><button type="button" data-pa="delG" data-fi="${fi}" data-ti="${ti}" data-x="${i}" aria-label="Quitar ${esc(GOLPE_TN[c] || c)}">✕</button></span>`).join('') : '<span class="text-[13.5px] text-muted px-1">Secuencia de golpes de la tarea: toca los golpes de abajo en orden.</span>'}
+      <div class="flex flex-wrap items-center gap-1.5 min-h-[2.6rem] rounded-xl bg-surface px-2 py-1.5 border border-line" role="list" aria-label="Secuencia de golpes ${quien}">
+        ${seq.length ? seq.map((it, i) => `${i ? '<span class="text-muted" aria-hidden="true">→</span>' : ''}<span class="seqchip" role="listitem" title="${esc(GOLPE_TN[gC(it)] || gC(it))}"><b>${esc(gC(it))}</b><span class="hidden sm:inline">${esc(GOLPE_TN[gC(it)] || '')}</span><button type="button" class="dirb ${gO(it) ? 'on' : ''}" data-pa="dirG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" title="Cambiar el objetivo del golpe" aria-label="Objetivo: ${gO(it) ? OBJ_G[gO(it)] : 'sin indicar'}. Tocar para cambiarlo">${gO(it) ? esc(OBJ_G[gO(it)]) : '+ objetivo'}</button><button type="button" data-pa="delG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${i}" aria-label="Quitar ${esc(GOLPE_TN[gC(it)] || gC(it))}">✕</button></span>`).join('') : `<span class="text-[13.5px] text-muted px-1">Secuencia de golpes ${quien}: toca los golpes de abajo en orden. Toca «+ objetivo» para marcar la dirección (paralelo, cruzado…).</span>`}
       </div>
-      <div class="flex flex-wrap gap-1" role="group" aria-label="Añadir golpe a la secuencia">${GOLPES_T.map(([c, n]) => `<button type="button" class="gchip" data-pa="addG" data-fi="${fi}" data-ti="${ti}" data-x="${c}" title="${esc(n)}" aria-label="Añadir ${esc(n)}">${c}</button>`).join('')}</div>
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-1"><label class="flex items-center gap-2 text-[13.5px] font-semibold" for="pel${fi}_${ti}">Nº de pelotas<input id="pel${fi}_${ti}" type="number" min="0" max="2000" step="1" inputmode="numeric" class="field !w-24 text-center num text-lg font-bold !py-1" value="${t.pelotas ?? ''}" data-p="t:${fi}:${ti}:pelotas"></label><span class="text-[13.5px]" data-gt="${fi}:${ti}">${golpeosTareaTxt(t)}</span></div>
+      <div class="flex flex-wrap gap-1" role="group" aria-label="Añadir golpe a la secuencia ${quien}">${GOLPES_T.map(([c, n]) => `<button type="button" class="gchip" data-pa="addG" data-k="${K}" data-fi="${fi}" data-ti="${ti}" data-x="${c}" title="${esc(n)}" aria-label="Añadir ${esc(n)}">${c}</button>`).join('')}</div>
+      ${modo === 'r' ? '' : `<div class="flex flex-wrap items-center gap-x-3 gap-y-1"><label class="flex items-center gap-2 text-[13.5px] font-semibold" for="${N}${fi}_${ti}">${modo === 'c' ? 'Golpeos por alumno' : 'Pelotas'}<input id="${N}${fi}_${ti}" type="number" min="0" max="2000" step="1" inputmode="numeric" class="field !w-24 text-center num text-lg font-bold !py-1" value="${t[N] ?? ''}" placeholder="${modo === 'c' ? 'p. ej. 40' : `${+pl.carro || CARRO}`}" data-p="t:${fi}:${ti}:${N}"></label>${modo === 'c' ? '' : '<span class="text-[12px] text-muted">vacío = el carro</span>'}<span class="text-[13.5px]" data-gt="${fi}:${ti}:${modo}">${golpeosTareaTxt(t, modo)}</span></div>`}
     </div>`; };
-  const extraRow = (fi, ti, t) => EXTRAS_T.filter(([k]) => t[k] != null).map(([k, l, ph]) => `<div class="flex flex-wrap sm:flex-nowrap items-start gap-x-2 gap-y-0.5"><span class="w-full sm:w-24 shrink-0 text-[12.5px] font-semibold text-muted sm:pt-2">${l}</span><textarea rows="1" class="field auto !py-1.5 text-[14px] flex-1 min-w-0" data-p="t:${fi}:${ti}:${k}" placeholder="${ph}" aria-label="${l}">${esc(t[k])}</textarea><button type="button" class="ibtn" data-pa="delX" data-fi="${fi}" data-ti="${ti}" data-x="${k}" aria-label="Quitar ${l}">✕</button></div>`).join('');
+  const tipoEjercicio = (fi, ti, t) => `<div class="flex flex-wrap items-center gap-2"><span class="text-[12.5px] font-semibold text-muted">Ejercicio</span><div class="seg !text-[13px]" role="radiogroup" aria-label="Tipo de ejercicio">${[[false, 'Carro: cada pelota, un golpe'], [true, '1 vs 1 con respuesta']].map(([v, l]) => `<label><input type="radio" name="uno${fi}_${ti}" ${!!t.uno === v ? 'checked' : ''} data-pa="uno" data-fi="${fi}" data-ti="${ti}" data-x="${v ? 1 : 0}"><span>${l}</span></label>`).join('')}</div>${t.uno ? '<span class="text-[12.5px] text-muted w-full">Cada pelota es una secuencia completa: el que defiende hace la secuencia de trabajo y el compañero responde a esa misma bola. Los jugadores cambian de posición.</span>' : ''}</div>`;
+  const extraRow = (fi, ti, t) => EXTRAS_T.filter(([k]) => t[k] != null).map(([k, l, ph]) => `<div class="flex flex-wrap sm:flex-nowrap items-start gap-x-2 gap-y-0.5"><span class="w-full sm:w-24 shrink-0 text-[12.5px] font-semibold text-muted sm:pt-2">${l}</span><textarea rows="1" class="field auto !py-1.5 text-[14px] flex-1 min-w-0" data-p="t:${fi}:${ti}:${k}" placeholder="${ph}" aria-label="${l}">${esc(t[k])}</textarea><button type="button" class="ibtn" data-pa="delX" data-fi="${fi}" data-ti="${ti}" data-x="${k}" aria-label="Quitar ${l}">✕</button></div>${k === 'variante' || k === 'competicion' ? `<div class="sm:pl-[6.5rem] -mt-0.5">${secuenciaUI(fi, ti, t, k === 'variante' ? 'v' : 'c')}</div>` : ''}`).join('');
   const tarea = (fi, t, ti, n) => `<article class="tarea flex flex-col gap-2">
       <div class="flex flex-wrap items-center gap-2">
         <label class="sr-only" for="m${fi}_${ti}">Minutos</label><div class="relative"><input id="m${fi}_${ti}" type="number" min="0" max="120" step="1" inputmode="numeric" class="field !w-[4.6rem] text-center num text-xl font-bold !px-1 !pr-4 !py-1.5" value="${t.min ?? ''}" data-p="t:${fi}:${ti}:min"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-muted font-bold">'</span></div>
         <div class="flex gap-1">${[5, 10, 15, 20].map(x => `<button type="button" class="mchip ${+t.min === x ? 'on' : ''}" data-pa="setMin" data-fi="${fi}" data-ti="${ti}" data-x="${x}" aria-label="${x} minutos">${x}</button>`).join('')}</div>
+        ${(() => { const R = realTarea(`${key}|${vi}|${fi}|${ti}`); return R ? `<span class="chip chip-neutral !text-[12px]" title="Media de ${R.n} ${R.n === 1 ? 'alumno' : 'alumnos'} con pulsómetro">Real: ${Math.round(R.min)}' · FC ${pct(R.med)}</span>` : ''; })()}
         <div class="ml-auto flex gap-0.5">
           <button type="button" class="ibtn" data-pa="upT" data-fi="${fi}" data-ti="${ti}" ${ti === 0 ? 'disabled' : ''} aria-label="Subir tarea">↑</button>
           <button type="button" class="ibtn" data-pa="downT" data-fi="${fi}" data-ti="${ti}" ${ti === n - 1 ? 'disabled' : ''} aria-label="Bajar tarea">↓</button>
@@ -1289,7 +1334,9 @@ function vPlan(key) {
         </div>
       </div>
       ${t.desc != null ? `<div class="flex items-start gap-2"><textarea rows="2" class="field auto text-[15px] flex-1 min-w-0" data-p="t:${fi}:${ti}:desc" placeholder="Organización, dirección, consignas…" aria-label="Descripción de la tarea">${esc(t.desc || '')}</textarea><button type="button" class="ibtn" data-pa="delX" data-fi="${fi}" data-ti="${ti}" data-x="desc" aria-label="Quitar la descripción">✕</button></div>` : ''}
+      ${tipoEjercicio(fi, ti, t)}
       ${secuenciaUI(fi, ti, t)}
+      ${t.uno ? `<div class="flex flex-col gap-1"><span class="text-[12.5px] font-semibold text-muted">Respuesta del compañero (rol complementario)</span>${secuenciaUI(fi, ti, t, 'r')}</div>` : ''}
       ${extraRow(fi, ti, t)}
       <div class="flex flex-wrap gap-1.5">${t.desc == null ? `<button type="button" class="chip chip-neutral !py-1 !px-2.5 !text-[12.5px]" data-pa="addX" data-fi="${fi}" data-ti="${ti}" data-x="desc">+ Descripción</button>` : ''}${EXTRAS_T.filter(([k]) => t[k] == null).map(([k, l]) => `<button type="button" class="chip chip-neutral !py-1 !px-2.5 !text-[12.5px]" data-pa="addX" data-fi="${fi}" data-ti="${ti}" data-x="${k}">+ ${l}</button>`).join('')}</div>
     </article>`;
@@ -1302,7 +1349,7 @@ function vPlan(key) {
       </div>
       <div class="flex flex-col gap-2 px-3 pb-3">${f.tareas.map((t, ti) => tarea(fi, t, ti, f.tareas.length)).join('') || `<p class="text-[13.5px] text-muted px-1">Sin tareas todavía.</p>`}
         <div class="flex flex-wrap gap-2 pt-1"><button type="button" class="btn btn-ghost !py-1.5 text-[13.5px]" data-pa="addT" data-fi="${fi}">+ Añadir tarea</button>
-          ${lib.length ? `<select class="field !w-auto max-w-full !py-1.5 text-[13.5px]" data-reusar="${fi}" aria-label="Reutilizar una tarea"><option value="">Reutilizar una tarea anterior…</option>${lib.map((t, i) => `<option value="${i}">${t.min ? t.min + "' · " : ''}${esc(String(t.desc || seqTxt(t)).replace(/\s+/g, ' ').slice(0, 90))}</option>`).join('')}</select>` : ''}</div>
+          ${lib.length ? `<select class="field !w-auto max-w-full !py-1.5 text-[13.5px]" data-reusar="${fi}" aria-label="Reutilizar una tarea"><option value="">Reutilizar una tarea anterior…</option>${lib.map((t, i) => `<option value="${i}">${t.min ? t.min + "' · " : ''}${esc(String(t.desc || seqTxt(t.seq)).replace(/\s+/g, ' ').slice(0, 90))}</option>`).join('')}</select>` : ''}</div>
       </div></section>`; };
   return `<div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="volver">${I.back}Clases</button>
       <div class="flex gap-1">${prev ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${prev}" aria-label="Sesión anterior">‹ ${fmtDate(prev, { day: 'numeric', month: 'short' })}</button>` : ''}${next ? `<button class="btn btn-ghost !px-3 !py-1.5 text-[13px]" data-pa="ir" data-x="${gid}|${next}" aria-label="Sesión siguiente">${fmtDate(next, { day: 'numeric', month: 'short' })} ›</button>` : ''}</div>
@@ -1344,24 +1391,40 @@ function vPlan(key) {
   <div class="h-4"></div>`;
 }
 /* Texto de golpeos de una tarea (con el margen del 5 %) y de toda la sesión */
-function golpeosTareaTxt(t) {
-  const g = golpesTarea(t); if (!g.t) return '<span class="text-muted">Pon la secuencia y las pelotas para calcular los golpeos.</span>';
-  const r = rangoG(g.t), nV = ui.plan?.d?.versiones?.length || 1, nAl = ui.plan?.nAl || 1;
-  return `<strong class="num text-lg">${g.t}</strong> golpeos <span class="text-muted">(${r.min}–${r.max}) · ≈ ${Math.max(1, Math.round(g.t * nV / nAl))} por alumno con ${nAl} ${nAl === 1 ? 'asistente' : 'asistentes'}</span>`;
+function golpeosTareaTxt(t, modo = '') {
+  const tipo = modo === 'v' ? 'variante' : modo === 'c' ? 'competicion' : 'base';
+  const b = bloquesTarea(t, +ui.plan?.d?.carro || CARRO).find(x => x.tipo === tipo);
+  if (!b) return `<span class="text-muted">${tipo === 'competicion' ? 'Pon la secuencia y los golpeos por alumno.' : 'Pon la secuencia para calcular los golpeos.'}</span>`;
+  if (!b.compartido) return `<strong class="num text-lg">${b.pa}</strong> golpeos por alumno <span class="text-muted">(${dec(b.pa / b.seq.length, 1)} secuencias de ${b.seq.length})</span>`;
+  const r = rangoG(b.t), nV = ui.plan?.d?.versiones?.length || 1, nAl = ui.plan?.nAl || 1, porAl = nAl / nV;
+  if (b.uno) return `<strong class="num">${b.nSeq}</strong> secuencias (1 pelota cada una) × ${b.seq.length + b.resp.length} golpes${b.resp.length ? ` (${b.seq.length} de trabajo + ${b.resp.length} de respuesta)` : ''} = <strong class="num text-lg">${b.t}</strong> golpeos <span class="text-muted">(${r.min}–${r.max}) · ≈ ${Math.round(b.t / porAl)} golpeos por alumno con ${nAl} ${nAl === 1 ? 'asistente' : 'asistentes'}${nV > 1 ? ' entre las pistas' : ''}: ${rolesTxt(Math.round(porAl))}</span>${b.resp.length ? '' : ' <span class="text-warn font-semibold">Falta la secuencia de respuesta.</span>'}`;
+  return `<strong class="num">${b.nSeq}</strong> secuencias × ${b.seq.length} = <strong class="num text-lg">${b.t}</strong> golpeos <span class="text-muted">(${r.min}–${r.max}) · ≈ ${dec(b.nSeq / porAl, 1)} secuencias y ${Math.round(b.t / porAl)} golpeos por alumno con ${nAl} ${nAl === 1 ? 'asistente' : 'asistentes'}</span>`;
+}
+/* Reparto de roles del 1 vs 1 según cuántos alumnos hay en la pista (cambian de posición, así que todos pasan por los dos roles) */
+function rolesTxt(n) {
+  if (n >= 4) return `${Math.ceil(n / 2)} en defensa (tarea principal) y ${Math.floor(n / 2)} en ataque (respuesta), y cambian de posición`;
+  if (n === 3) return '2 en defensa (tarea principal) y 1 en el rol complementario, rotando para que todos pasen por los dos roles';
+  if (n === 2) return '1 en defensa y 1 en ataque, y cambian de posición';
+  return 'con un solo alumno no hay quien responda: el entrenador hace de compañero';
 }
 function golpeosCard(pl, nAl) {
+  return `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2 mb-2"><h2 class="text-xl font-bold">Golpeos de la sesión</h2>
+    <label class="flex items-center gap-2 text-[13.5px] font-semibold" for="pCarro">Pelotas del carro<input id="pCarro" type="number" min="1" max="500" inputmode="numeric" class="field !w-20 text-center num text-lg font-bold !py-1" value="${+pl.carro || CARRO}" data-p="m:carro"></label></div>
+    <div id="planGolpeosDatos">${golpeosDatos(pl, nAl)}</div></section>`;
+}
+function golpeosDatos(pl, nAl) {
   const g = golpeosPlan(pl);
-  if (!g.t) return `<section class="panel p-4 text-[13.5px] text-muted">Añade una secuencia de golpes y el nº de pelotas a las tareas para calcular los golpeos de la sesión (margen de error del lanzamiento: ${Math.round(MARGEN_GOLPEO * 100)} %).</section>`;
-  const filas = Object.entries(g.d).sort((x, y) => y[1] - x[1]);
-  return `<section class="panel p-5 min-w-0"><div class="flex flex-wrap items-baseline justify-between gap-2 mb-2"><h2 class="text-xl font-bold">Golpeos de la sesión</h2><span class="text-[13px] text-muted">margen del lanzamiento: ±${Math.round(MARGEN_GOLPEO * 100)} %</span></div>
-    <div class="grid sm:grid-cols-3 gap-3"><div><div class="num text-4xl font-bold">${g.t}</div><div class="text-[13px] text-muted">golpeos en total (${g.min}–${g.max})</div></div><div><div class="num text-4xl font-bold">≈ ${Math.round(g.t / nAl)}</div><div class="text-[13px] text-muted">por alumno con ${nAl} ${nAl === 1 ? 'asistente' : 'asistentes'} (${Math.round(g.min / nAl)}–${Math.round(g.max / nAl)})</div></div>
-      <div><div class="num text-4xl font-bold">${dec(g.t / Math.max(1, durClase(grupo(ui.plan.key.split('|')[0])) * (pl.versiones.length || 1)), 1)}</div><div class="text-[13px] text-muted">golpeos por minuto y pista</div></div></div>
-    <div class="flex flex-wrap gap-2 mt-3">${filas.map(([c, v]) => `<span class="chip chip-neutral !py-1 !px-2.5 !text-[13px]"><b class="mr-1">${esc(c)}</b>${esc(GOLPE_TN[c] || '')} ${v} <span class="text-muted ml-1">(≈ ${Math.round(v / nAl)} c/u)</span></span>`).join('')}</div></section>`;
+  if (!g.t && !g.pa) return `<p class="text-[13.5px] text-muted">Añade la secuencia de golpes de cada tarea: el carro de ${g.carro} pelotas se reparte en secuencias completas (cada pelota es un golpe, margen del lanzamiento ±${Math.round(MARGEN_GOLPEO * 100)} %). En la variante y en la competición también puedes poner su secuencia.</p>`;
+  const tot = Math.round(g.t / nAl + g.pa), d = {}; Object.entries(g.d).forEach(([c, v]) => { d[c] = (d[c] || 0) + v / nAl; }); Object.entries(g.dpa).forEach(([c, v]) => { d[c] = (d[c] || 0) + v; });
+  return `<div class="grid sm:grid-cols-3 gap-3"><div><div class="num text-4xl font-bold">${g.t}</div><div class="text-[13px] text-muted">golpeos del carro (${g.min}–${g.max}) en ${g.nSeq} secuencias</div></div>
+      <div><div class="num text-4xl font-bold">≈ ${tot}</div><div class="text-[13px] text-muted">por alumno con ${nAl} ${nAl === 1 ? 'asistente' : 'asistentes'}: ${dec(g.nSeq / nAl, 1)} secuencias${g.pa ? ` + ${Math.round(g.pa)} de competición` : ''}</div></div>
+      <div><div class="num text-4xl font-bold">${dec(g.t / Math.max(1, durClase(grupo(ui.plan.key.split('|')[0])) * (pl.versiones.length || 1)), 1)}</div><div class="text-[13px] text-muted">golpeos del carro por minuto y pista</div></div></div>
+    <div class="flex flex-wrap gap-2 mt-3">${Object.entries(d).sort((x, y) => y[1] - x[1]).map(([c, v]) => `<span class="chip chip-neutral !py-1 !px-2.5 !text-[13px]"><b class="mr-1">${esc(c)}</b>${esc(GOLPE_TN[c] || '')} ≈ ${Math.round(v)} c/u</span>`).join('')}</div>`;
 }
 function planGolpeos() {
   if (!ui.plan) return; const pl = ui.plan.d;
-  document.querySelectorAll('[data-gt]').forEach(e => { const [fi, ti] = e.dataset.gt.split(':').map(Number); const t = pl.versiones[ui.plan.v]?.fases[fi]?.tareas[ti]; if (t) e.innerHTML = golpeosTareaTxt(t); });
-  const c = $('#planGolpeos'); if (c) c.innerHTML = golpeosCard(pl, ui.plan.nAl || 1);
+  document.querySelectorAll('[data-gt]').forEach(e => { const [fi, ti, modo] = e.dataset.gt.split(':'); const t = pl.versiones[ui.plan.v]?.fases[+fi]?.tareas[+ti]; if (t) e.innerHTML = golpeosTareaTxt(t, modo || ''); });
+  const c = $('#planGolpeosDatos'); if (c) c.innerHTML = golpeosDatos(pl, ui.plan.nAl || 1);
 }
 function autoAlto(root = document) { root.querySelectorAll('textarea.auto').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }); }
 function afterPlan() { autoAlto(); }
@@ -1375,11 +1438,11 @@ function planTiempos() {
 function planSucio() { ui.plan.sucio = true; const b = $('#planGuardar'); if (b) b.textContent = 'Guardar sesión'; }
 function planEditar(campo, valor) {
   const pl = ui.plan.d; const V = pl.versiones[ui.plan.v]; const p = campo.split(':');
-  if (p[0] === 'm') { const k = p[1]; pl[k] = k === 'contenidos' ? valor.split('\n').map(s => s.trim()).filter(Boolean) : k === 'n' || k === 'z5' ? (valor === '' ? '' : +valor) : valor; }
+  if (p[0] === 'm') { const k = p[1]; pl[k] = k === 'contenidos' ? valor.split('\n').map(s => s.trim()).filter(Boolean) : k === 'n' || k === 'z5' || k === 'carro' ? (valor === '' ? '' : +valor) : valor; if (k === 'carro') planGolpeos(); }
   else if (p[0] === 'v') V.nombre = valor;
   else if (p[0] === 'f') V.fases[+p[1]].nombre = valor;
-  else if (p[0] === 't') { const t = V.fases[+p[1]].tareas[+p[2]]; t[p[3]] = p[3] === 'min' || p[3] === 'pelotas' ? (valor === '' ? '' : Math.max(0, +valor)) : valor; }
-  planSucio(); if (p[0] === 't' && p[3] === 'min') planTiempos(); if (p[0] === 't' && p[3] === 'pelotas') planGolpeos();
+  else if (p[0] === 't') { const t = V.fases[+p[1]].tareas[+p[2]]; const NUM = ['min', 'pelotas', 'vpelotas', 'cgolpes']; t[p[3]] = NUM.includes(p[3]) ? (valor === '' ? '' : Math.max(0, +valor)) : valor; }
+  planSucio(); if (p[0] === 't' && p[3] === 'min') planTiempos(); if (p[0] === 't' && ['pelotas', 'vpelotas', 'cgolpes'].includes(p[3])) planGolpeos();
 }
 async function guardarPlan(silencio) {
   const { key, d } = ui.plan; const pl = clon(d);
@@ -1411,9 +1474,11 @@ function planAccion(a, el) {
     case 'vincular': return modalVincular();
     case 'desvincular': pl.vinculadas = (pl.vinculadas || []).filter(k => k !== x); break;
     case 'independizar': { const ok = pl.origen, o = planDe(ok); if (o) { o.vinculadas = (o.vinculadas || []).filter(k => k !== ui.plan.key); if (LIVE) P.sesion(ok, { plan: o }).catch(fallo); else save(); } delete pl.origen; toast('Ahora es independiente: guarda para confirmarlo'); break; }
-    case 'addT': V.fases[fi].tareas.push({ min: V.fases[fi].tipo === 'calentamiento' ? 10 : 20, seq: [], pelotas: '' }); ui.plan.foco = `pel${fi}_${V.fases[fi].tareas.length - 1}`; break;
-    case 'addG': { const t = V.fases[fi].tareas[ti]; (t.seq = t.seq || []).push(x); break; }
-    case 'delG': V.fases[fi].tareas[ti].seq.splice(+x, 1); break;
+    case 'addT': V.fases[fi].tareas.push({ min: V.fases[fi].tipo === 'calentamiento' ? 10 : 20, seq: [] }); break;
+    case 'addG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq'; (t[k] = t[k] || []).push(x); break; }
+    case 'delG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq'; t[k].splice(+x, 1); break; }
+    case 'uno': { const t = V.fases[fi].tareas[ti]; t.uno = x === '1'; if (t.uno && !t.rseq) t.rseq = []; break; }
+    case 'dirG': { const t = V.fases[fi].tareas[ti], k = el.dataset.k || 'seq', it = t[k][+x], o = OBJ_ORDEN[(OBJ_ORDEN.indexOf(gO(it)) + 1) % OBJ_ORDEN.length]; t[k][+x] = o ? { g: gC(it), o } : gC(it); break; }
     case 'delT': V.fases[fi].tareas.splice(ti, 1); break;
     case 'dupT': V.fases[fi].tareas.splice(ti + 1, 0, clon(V.fases[fi].tareas[ti])); break;
     case 'upT': mover(V.fases[fi].tareas, ti, ti - 1); break;
@@ -1448,7 +1513,7 @@ function aplicarCopia(k) {
 function planLectura(pl, vi = 0) {
   const V = pl.versiones[vi] || pl.versiones[0];
   return V.fases.filter(f => f.tareas.length).map(f => `<section class="flex flex-col gap-2"><h3 class="font-display text-xl font-bold flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:rgb(var(${FASES_TIPO[f.tipo]?.[1] || '--muted'}))"></span>${esc(f.nombre)} <span class="text-muted text-base">${minFase(f)}'</span></h3>
-    ${f.tareas.map(t => `<div class="rounded-xl bg-surface2/70 p-3 text-[14px] leading-relaxed"><div class="flex gap-2"><span class="num font-bold shrink-0">${t.min ? t.min + "'" : ''}</span><div class="min-w-0"><div class="whitespace-pre-line">${esc(t.desc || '')}</div>${t.seq?.length ? `<div class="font-semibold">${esc(seqTxt(t))}${+t.pelotas ? ` · ${t.pelotas} pelotas` : ''}</div>` : ''}${EXTRAS_T.filter(([k]) => t[k]).map(([k, l]) => `<div class="text-muted whitespace-pre-line"><strong class="text-ink">${l}:</strong> ${esc(t[k])}</div>`).join('')}</div></div></div>`).join('')}</section>`).join('');
+    ${f.tareas.map(t => `<div class="rounded-xl bg-surface2/70 p-3 text-[14px] leading-relaxed"><div class="flex gap-2"><span class="num font-bold shrink-0">${t.min ? t.min + "'" : ''}</span><div class="min-w-0"><div class="whitespace-pre-line">${esc(t.desc || '')}</div>${t.seq?.length ? `<div class="font-semibold">${t.uno ? '1 vs 1 · ' : ''}${esc(seqTxt(t.seq))}${t.uno && t.rseq?.length ? ` · respuesta: ${esc(seqTxt(t.rseq))}` : ''}</div>` : ''}${EXTRAS_T.filter(([k]) => t[k] != null && (t[k] || (k === 'variante' && t.vseq?.length) || (k === 'competicion' && t.cseq?.length))).map(([k, l]) => `<div class="text-muted whitespace-pre-line"><strong class="text-ink">${l}:</strong> ${esc(t[k])}${k === 'variante' && t.vseq?.length ? ` <span class="font-semibold text-ink">(${esc(seqTxt(t.vseq))})</span>` : ''}${k === 'competicion' && t.cseq?.length ? ` <span class="font-semibold text-ink">(${esc(seqTxt(t.cseq))})</span>` : ''}</div>`).join('')}</div></div></div>`).join('')}</section>`).join('');
 }
 function verPlanAlumno(key) {
   const pl = planDe(key); if (!pl) return; const [gid, d] = key.split('|');
@@ -1461,7 +1526,7 @@ function imprimirPlan(pl, key) {
       <tr><th>SESIÓN</th><td>${esc(String(pl.n))}</td><th>FECHA</th><td>${f}</td><th>NIVEL</th><td>${esc(pl.nivel || '-')}</td></tr>
       <tr><th>CONTENIDO</th><td colspan="3">${esc(pl.contenidos.join('. '))}${pl.contenidos.length ? '.' : ''}${pl.versiones.length > 1 ? ` <em>(${esc(V.nombre)})</em>` : ''}</td><th>MIN. (&gt;90%)</th><td>${pl.z5 ?? ''}</td></tr>
       <tr><td colspan="4"></td><th>RPE</th><td>${pl.rpe ?? ''}</td></tr></table>
-    <table class="ps-body">${V.fases.filter(x => x.tareas.length).map(x => x.tareas.map((t, i) => `<tr>${i === 0 ? `<th class="ps-fase" rowspan="${x.tareas.length}"><span>${esc(x.nombre.toUpperCase())}</span></th>` : ''}<td class="ps-min">${t.min ? t.min + "'" : ''}</td><td class="ps-desc"><div class="ps-main">${esc(t.desc || '')}</div>${t.seq?.length ? `<div class="ps-x">Secuencia: ${esc(seqTxt(t))}${+t.pelotas ? ` · ${t.pelotas} pelotas` : ''}</div>` : ''}${[['competicion', 'Competición: '], ['fisico', 'Físico: '], ['variante', 'Variante: '], ['objetivo', 'OBJETIVO. ']].filter(([k]) => t[k]).map(([k, l]) => `<div class="ps-x">${l}${esc(t[k])}</div>`).join('')}</td><td class="ps-dib">${t.puntos ? `<div class="ps-pts">${esc(t.puntos)}</div>` : ''}</td></tr>`).join('')).join('')}</table></div>`;
+    <table class="ps-body">${V.fases.filter(x => x.tareas.length).map(x => x.tareas.map((t, i) => `<tr>${i === 0 ? `<th class="ps-fase" rowspan="${x.tareas.length}"><span>${esc(x.nombre.toUpperCase())}</span></th>` : ''}<td class="ps-min">${t.min ? t.min + "'" : ''}</td><td class="ps-desc"><div class="ps-main">${esc(t.desc || '')}</div>${t.seq?.length ? `<div class="ps-x">${t.uno ? '1 vs 1 · secuencia' : 'Secuencia'}: ${esc(seqTxt(t.seq))}${t.uno && t.rseq?.length ? ` · respuesta: ${esc(seqTxt(t.rseq))}` : ''}</div>` : ''}${t.vseq?.length && t.variante != null ? `<div class="ps-x">Secuencia de la variante: ${esc(seqTxt(t.vseq))}</div>` : ''}${t.cseq?.length && t.competicion != null ? `<div class="ps-x">Secuencia de competición: ${esc(seqTxt(t.cseq))}${+t.cgolpes ? ` · ${t.cgolpes} golpeos por alumno` : ''}</div>` : ''}${[['competicion', 'Competición: '], ['fisico', 'Físico: '], ['variante', 'Variante: '], ['objetivo', 'OBJETIVO. ']].filter(([k]) => t[k]).map(([k, l]) => `<div class="ps-x">${l}${esc(t[k])}</div>`).join('')}</td><td class="ps-dib">${t.puntos ? `<div class="ps-pts">${esc(t.puntos)}</div>` : ''}</td></tr>`).join('')).join('')}</table></div>`;
   const a = pl.versiones[0], b = pl.versiones[1] || pl.versiones[0];
   let el = document.getElementById('print'); if (!el) { el = document.createElement('div'); el.id = 'print'; document.body.appendChild(el); }
   el.innerHTML = `<div class="ps-page">${mitad(a)}${mitad(b)}</div>`;
@@ -1471,27 +1536,27 @@ function imprimirPlan(pl, key) {
 function planesDemo(st) {
   const g = st.grupos.find(x => x.id === 'G1'); if (!g) return {};
   const fechas = sessionDates(g, SEASON_START, TODAY_ISO); const out = {};
-  const cal = { min: 10, seq: ['D', 'R', 'VD', 'VR'], pelotas: 30, desc: 'Calentamiento en paralelo. Progresión:\n- En paralelo con objetivo bote antes de línea (revés)\n- En paralelo con objetivo bote detrás de línea (revés)\n- Volea (revés)', competicion: 'Secuencia de golpe corto, golpe largo, volea, salida de pared.', objetivo: 'Calentamiento general y lúdico relacionado con el mantenimiento de bola.' };
+  const cal = { min: 10, seq: ['D', 'R', 'VD', 'VR'], cseq: ['D', 'D', 'VD'], cgolpes: 30, desc: 'Calentamiento en paralelo. Progresión:\n- En paralelo con objetivo bote antes de línea (revés)\n- En paralelo con objetivo bote detrás de línea (revés)\n- Volea (revés)', competicion: 'Secuencia de golpe corto, golpe largo, volea, salida de pared.', objetivo: 'Calentamiento general y lúdico relacionado con el mantenimiento de bola.' };
   const gp = { min: 20, desc: 'Game pressure. Sacadores sacan y punto en cruzado. Restador gana punto si aguanta 3 golpes.' };
   const s2 = { n: fechas.length - 1, nivel: g.nivel, titulo: '', contenidos: ['Saque', 'Golpe de revés'], z5: 4, rpe: 7, visible: 'completo', versiones: [
     { nombre: 'Pista 1', fases: [
       { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [cal] },
       { tipo: 'tecnica', nombre: 'Técnica', tareas: [
-        { min: 10, seq: ['R', 'R'], pelotas: 40, desc: '(Cuadro de derecha) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: '3 saltos de valla', variante: '(Cuadro de derecha) Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' },
-        { min: 10, seq: ['R', 'R'], pelotas: 40, desc: '(Cuadro de revés) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: 'Escalera con pasos frontales', variante: 'Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' }] },
+        { min: 10, seq: [{ g: 'R', o: 'pa' }, { g: 'R', o: 'ce' }], vseq: [{ g: 'R', o: 'cr' }, { g: 'R', o: 'ce' }], desc: '(Cuadro de derecha) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: '3 saltos de valla', variante: '(Cuadro de derecha) Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' },
+        { min: 10, uno: true, seq: [{ g: 'R', o: 'pa' }], rseq: ['PR'], desc: '(Cuadro de revés) Golpe de revés paralelo (a zona de conos) + golpe de revés al centro (darle al tubo)', fisico: 'Escalera con pasos frontales', variante: 'Golpe de revés cruzado (a zona de conos) + golpe de revés al centro' }] },
       { tipo: 'tactica', nombre: 'Táctica', tareas: [gp] },
       { tipo: 'partido', nombre: 'Partido', tareas: [{ min: 20, desc: '2 vs 2.', objetivo: 'Puesta en práctica de lo aprendido en clase.', puntos: '2/1 puntos' }] }] },
     { nombre: 'Pista 2', fases: [
       { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [cal] },
-      { tipo: 'tecnica', nombre: 'Técnica', tareas: [{ min: 20, seq: ['D', 'D'], pelotas: 60, desc: 'Golpe de derecha paralelo (a zona de conos) + golpe de derecha al centro (darle al tubo)', fisico: '3 saltos de valla', variante: 'Golpe de derecha cruzado (a zona de conos) + golpe de derecha al centro' }] },
+      { tipo: 'tecnica', nombre: 'Técnica', tareas: [{ min: 20, seq: [{ g: 'D', o: 'pa' }, { g: 'D', o: 'ce' }], vseq: [{ g: 'D', o: 'cr' }, { g: 'D', o: 'ce' }], desc: 'Golpe de derecha paralelo (a zona de conos) + golpe de derecha al centro (darle al tubo)', fisico: '3 saltos de valla', variante: 'Golpe de derecha cruzado (a zona de conos) + golpe de derecha al centro' }] },
       { tipo: 'tactica', nombre: 'Táctica', tareas: [{ ...gp }, { min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Defensores no pueden hacer globo.', variante: 'Juego a 15 puntos.' }] },
       { tipo: 'partido', nombre: 'Partido', tareas: [{ min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Si un atacante golpea 2 veces seguidas se puede hacer globo.', variante: 'Juego a 15 puntos.' }] }] }] };
   const s3 = { n: fechas.length, nivel: g.nivel, titulo: '', contenidos: ['Saque', 'Golpe de derecha', 'Salida de pared con globo'], z5: 4, rpe: 7, visible: 'contenidos', versiones: [
     { nombre: 'Pista 1', fases: [
       { tipo: 'calentamiento', nombre: 'Calentamiento', tareas: [{ ...cal, competicion: 'Secuencia en cruzado de saque/golpe corto + resto a volea de derecha + volea de derecha que toque pared + salida de pared con globo.' }] },
       { tipo: 'tecnica', nombre: 'Técnica', tareas: [
-        { min: 20, seq: ['D', 'G'], pelotas: 50, desc: '(Cuadro de derecha) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' },
-        { min: 20, seq: ['D', 'G'], pelotas: 50, desc: '(Cuadro de revés) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' }] },
+        { min: 20, seq: [{ g: 'D', o: 'pa' }, { g: 'G', o: 'pa' }], vseq: [{ g: 'D', o: 'cr' }, { g: 'G', o: 'cr' }], desc: '(Cuadro de derecha) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' },
+        { min: 20, seq: [{ g: 'D', o: 'pa' }, { g: 'G', o: 'pa' }], desc: '(Cuadro de revés) Golpe de derecha paralelo (a zona de conos) + salida de pared con globo paralelo', fisico: 'Salto frontal + salto trasero + sprint a cambiar bola de cono', variante: 'Golpe de derecha cruzado + salida de pared con globo cruzado' }] },
       { tipo: 'tactica', nombre: 'Táctica', tareas: [{ ...gp }, { min: 20, desc: '2 vs 2. Atacantes sacan y restadores deben restar al sacador con fuerza. Defensores no pueden hacer globo.', variante: 'Juego a 15 puntos.' }] }] }] };
   const k2 = `G1|${fechas[fechas.length - 2]}`, k3 = `G1|${fechas[fechas.length - 1]}`;
   if (fechas.length >= 2) { out[k2] = s2; st.contenidos[k2] = { titulo: 'Saque · Golpe de revés', items: s2.contenidos }; }
@@ -1591,7 +1656,7 @@ function vResumenPlan(key) {
 /* ---------- Sesión en vivo (Web Bluetooth) ---------- */
 /* La sesión vive fuera de las vistas: sigue registrando aunque cambies de pestaña
    (barra flotante abajo) y tiene una pantalla completa con el fondo del color de la zona. */
-const live = { running: false, start: 0, timer: null, slots: [mkSlot(0), mkSlot(1)], wake: null };
+const live = { running: false, start: 0, timer: null, slots: [mkSlot(0), mkSlot(1)], wake: null, act: null, marcas: [] };
 function mkSlot(i) { return { i, device: null, name: null, alumno: null, hr: null, samples: [], sim: null, status: 'libre', kcal: 0, z: [0, 0, 0, 0, 0], rec: [], segs: [], ult: 0 }; }
 const BT_OK = typeof navigator !== 'undefined' && !!navigator.bluetooth;
 const MAX_SENSORES = 4;
@@ -1603,6 +1668,9 @@ function vVivo() {
   const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${state.grupos.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>`;
   return pageHead('Sesión en vivo', 'Conecta los pulsómetros, asigna cada uno a un alumno e inicia la sesión. Puedes cambiar de pestaña (por ejemplo, al marcador de partidos): el registro sigue y lo verás en la barra de abajo.',
     `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
+  <section class="panel p-4 flex flex-col gap-2 min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-[15px]">Actividad${live.running ? ' en curso' : ' al empezar'}:</span>${actSelect('field !w-auto max-w-full flex-1 min-w-[12rem]')}<button class="btn btn-primary" data-act-sig>Siguiente actividad ›</button></div>
+    ${live.marcas.length ? `<div class="flex flex-wrap gap-1.5">${live.marcas.map(m => `<span class="chip chip-neutral !text-[12.5px]"><b class="tnum mr-1">${mmss((m.t - live.start) / 1000)}</b>${esc(m.n.slice(0, 40))}</span>`).join('')}</div>` : '<p class="text-[13px] text-muted">Marca qué se está haciendo para tener la FC y los minutos de cada actividad. Si se te olvida, lo puedes corregir después sobre la gráfica.</p>'}
+    ${(() => { const hoy = {}; state.sesionesFC.filter(s => s.fecha === TODAY_ISO && s.muestras?.grab).forEach(s => { (hoy[s.muestras.grab] = hoy[s.muestras.grab] || []).push(s); }); const G = Object.entries(hoy); return G.length ? `<div class="flex flex-wrap items-center gap-2 pt-1 border-t border-line"><span class="text-[13px] text-muted">Grabaciones de hoy:</span>${G.map(([g, L]) => `<button class="btn btn-ghost !py-1 text-[13px]" data-act-ed="${L[0].id}">${new Date(+g).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${L.length} ${L.length === 1 ? 'alumno' : 'alumnos'} · revisar actividades</button>`).join('')}</div>` : ''; })()}</section>
   <label class="flex items-center gap-2 text-[14px] -mt-2"><input type="checkbox" id="resEmail" class="w-4 h-4" ${ui.resumenEmail === false ? '' : 'checked'} data-resemail> Al guardar, enviar a cada alumno el resumen de su sesión por email</label>
   ${BT_OK ? '' : `<div class="panel p-4 text-[14px]"><strong>Bluetooth no disponible en este navegador.</strong> Funciona en Chrome o Edge (Android, Windows, Mac o ChromeOS). En iPhone hace falta un navegador como Bluefy. Mientras tanto puedes probar con el simulador.</div>`}
   <section class="grid lg:grid-cols-5 gap-4">
@@ -1788,6 +1856,7 @@ function toggleLive() {
   if (!live.running) {
     if (!live.slots.some(s => s.alumno && (s.device || s.sim))) { toast('Conecta al menos un sensor y asígnale un alumno'); return; }
     live.running = true; live.start = Date.now(); live.slots.forEach(s => { s.z = [0, 0, 0, 0, 0]; s.kcal = 0; s.rec = []; s.segs = []; s.ult = 0; });
+    live.marcas = live.act ? [{ t: live.start, id: live.act.id, n: live.act.n, tipo: live.act.tipo }] : [];
     live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
     mantenerPantalla(); rerenderIf('vivo'); updateFull(); return;
   }
@@ -1796,7 +1865,7 @@ function toggleLive() {
   live.slots.forEach(s => {
     if (!s.alumno || !s.rec || s.rec.length < 10) return;
     const a = alumno(s.alumno);
-    nuevos.push({ id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, t0: s.segs[0]?.t0 ?? null, fc: s.rec, segs: s.segs.map(x => ({ ...x })) }, tipo: 'entrenamiento' });
+    nuevos.push({ id: 'F' + Date.now() + s.i, alumno: a.id, fecha: TODAY_ISO, duracion: Math.max(1, Math.round(s.rec.length / 60)), fcMed: Math.round(s.rec.reduce((t, x) => t + x, 0) / s.rec.length), fcMax: Math.max(...s.rec), zonas: s.z.map(x => Math.round(x / 60)), kcal: Math.round(s.kcal), fuente: s.name || 'Sensor', muestras: { hz: 1, t0: s.segs[0]?.t0 ?? null, fc: s.rec, segs: s.segs.map(x => ({ ...x })), act: clon(live.marcas), grab: live.start }, tipo: 'entrenamiento' });
   });
   updateFull(); updateDock();
   if (!nuevos.length) { rerenderIf('vivo'); return toast('Sesión demasiado corta: se necesitan al menos 10 segundos de datos'); }
@@ -1820,7 +1889,7 @@ function fusionarFC(rs) {
   rs.forEach(r => { const M = r.muestras; if (!M?.fc?.length) return; (M.segs || [{ t0: M.t0 ?? null, n: M.fc.length }]).forEach(s => segs.push({ ...s })); fc.push(...M.fc); });
   return { id: 'F' + Date.now() + 'u', alumno: rs[0].alumno, fecha: rs[0].fecha, duracion: rs.reduce((t, r) => t + r.duracion, 0), fcMed: Math.round(rs.reduce((t, r) => t + r.fcMed * peso(r), 0) / W), fcMax: Math.max(...rs.map(r => r.fcMax)),
     zonas: [0, 1, 2, 3, 4].map(i => rs.reduce((t, r) => t + (r.zonas[i] || 0), 0)), kcal: rs.reduce((t, r) => t + (r.kcal || 0), 0), fuente: [...new Set(rs.flatMap(r => String(r.fuente || 'Sensor').split(' + ')))].join(' + '), tipo: rs[0].tipo || 'entrenamiento', rpe: [...rs].reverse().find(r => r.rpe)?.rpe ?? null,
-    muestras: fc.length ? { hz: 1, t0: segs.find(s => s.t0)?.t0 ?? null, fc, segs } : null };
+    muestras: fc.length ? { hz: 1, t0: segs.find(s => s.t0)?.t0 ?? null, fc, segs, act: rs.flatMap(r => r.muestras?.act || []).sort((x, y) => x.t - y.t), grab: rs[rs.length - 1].muestras?.grab ?? null } : null };
 }
 /* Guarda las sesiones de la grabación; las marcadas en «unir» se funden con las que ya había ese día */
 function guardarLive(nuevos, unir) {
@@ -1897,6 +1966,114 @@ function unirFC() {
   return tras(async () => { await P.fc(f); for (const r of rs) await P.borrarFC(r.id); if (m) await P.email(m); }, 'Sesiones unidas en una sola');
 }
 
+/* ---------- FC por actividad: la actividad en curso se marca al grabar y se puede corregir después ---------- */
+const mmss = s => `${pad(Math.floor(Math.max(0, s) / 60))}:${pad(Math.round(Math.max(0, s)) % 60)}`;
+const TIPO_ACT = { ...Object.fromEntries(Object.entries(FASES_TIPO).map(([k, [l, c]]) => [k, { l, c }])), pausa: { l: 'Pausa / explicación', c: '--muted' } };
+/* Actividades posibles un día: las tareas del diseño de la sesión de cada grupo y, además, los tipos genéricos */
+function actividadesDe(fecha, gids) {
+  const out = [];
+  gids.forEach(gid => { const k = `${gid}|${fecha}`, pl = planDe(k); if (!pl) return;
+    pl.versiones.forEach((V, vi) => V.fases.forEach((f, fi) => f.tareas.forEach((t, ti) => out.push({ id: `${k}|${vi}|${fi}|${ti}`, n: `${state.grupos.length > 1 && gids.length > 1 ? grupo(gid).nombre + ' · ' : ''}${pl.versiones.length > 1 ? V.nombre + ' · ' : ''}${f.nombre}${t.min ? ` ${t.min}'` : ''} · ${String(t.desc || seqTxt(t.seq) || 'Tarea ' + (ti + 1)).replace(/\s+/g, ' ').slice(0, 46)}`, tipo: f.tipo })))); });
+  Object.entries(TIPO_ACT).forEach(([k, x]) => out.push({ id: 'tipo:' + k, n: x.l, tipo: k }));
+  return out;
+}
+function actividadesHoy() {
+  const gs = [...new Set(live.slots.map(s => s.alumno && alumno(s.alumno)?.grupo).filter(Boolean))];
+  return actividadesDe(TODAY_ISO, gs.length ? gs : state.grupos.filter(g => sessionDates(g, TODAY_ISO, TODAY_ISO).length).map(g => g.id));
+}
+function cambiarActividad(id) {
+  const x = actividadesHoy().find(a => a.id === id); if (!x) return;
+  live.act = x;
+  if (live.running && live.marcas[live.marcas.length - 1]?.id !== x.id) live.marcas.push({ t: Date.now(), id: x.id, n: x.n, tipo: x.tipo });
+  rerenderIf('vivo'); updateFull();
+}
+function siguienteActividad() {
+  const L = actividadesHoy().filter(a => !a.id.startsWith('tipo:')); if (!L.length) return toast('No hay diseño de sesión para hoy: elige el tipo de actividad en la lista');
+  const i = L.findIndex(a => a.id === live.act?.id); const x = L[Math.min(L.length - 1, i + 1)];
+  if (x.id === live.act?.id) return toast('Ya estás en la última actividad del diseño');
+  cambiarActividad(x.id); toast(`Actividad: ${x.n}`);
+}
+const actSelect = (cls = 'field !w-auto max-w-full') => { const L = actividadesHoy(), plan = L.filter(a => !a.id.startsWith('tipo:')), gen = L.filter(a => a.id.startsWith('tipo:'));
+  return `<select class="${cls}" data-act-sel aria-label="Actividad en curso"><option value="">— Elige la actividad —</option>${plan.length ? `<optgroup label="Diseño de la sesión de hoy">${plan.map(a => `<option value="${a.id}" ${live.act?.id === a.id ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}</optgroup>` : ''}<optgroup label="Tipo de actividad">${gen.map(a => `<option value="${a.id}" ${live.act?.id === a.id ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}</optgroup></select>`; };
+/* Reparte las muestras de una sesión entre sus actividades: minutos, FC media y máxima (% de su máxima), zonas y eTRIMP */
+function porActividad(r) {
+  const M = r.muestras, a = alumno(r.alumno); if (!M?.fc?.length || !a) return [];
+  const segs = M.segs || (M.t0 ? [{ t0: M.t0, n: M.fc.length }] : null); if (!segs) return [];
+  const marcas = [...(M.act || [])].sort((x, y) => x.t - y.t), max = fcMaxTeo(a), acc = new Map(); let off = 0;
+  segs.forEach(sg => { if (sg.t0 == null) { off += sg.n; return; }
+    for (let i = 0; i < sg.n; i++) { const v = M.fc[off + i]; if (v == null) continue; const t = sg.t0 + i * 1000; let mk = null; for (const x of marcas) { if (x.t <= t + 500) mk = x; else break; }
+      const k = mk ? mk.id + '@' + mk.t : '_'; let o = acc.get(k);
+      if (!o) acc.set(k, o = { id: mk?.id || null, n: mk?.n || 'Sin actividad marcada', tipo: mk?.tipo || null, t0: mk?.t ?? t, s: 0, sum: 0, mx: 0, z: [0, 0, 0, 0, 0] });
+      o.s++; o.sum += v; o.mx = Math.max(o.mx, v); const z = zoneOf(v, max); if (z) o.z[z - 1]++; }
+    off += sg.n; });
+  return [...acc.values()].sort((x, y) => x.t0 - y.t0).map(o => ({ ...o, min: o.s / 60, med: o.sum / o.s / max, mxp: o.mx / max, trimp: etrimp(o.z.map(x => x / 60)), z45: (o.z[3] + o.z[4]) / o.s }));
+}
+/* Todas las sesiones de un alumno agrupadas por tipo de actividad y por tarea */
+function actividadesAlumno(a) {
+  const tipos = {}, serie = [];
+  sesionesDe(a.id).forEach(r => { const L = porActividad(r).filter(x => x.tipo); if (!L.length) return; const fila = { fecha: r.fecha };
+    L.forEach(x => { const T = tipos[x.tipo] = tipos[x.tipo] || { tipo: x.tipo, s: 0, sum: 0, z45: 0, trimp: 0, ses: new Set() }; T.s += x.s; T.sum += x.med * x.s; T.z45 += x.z45 * x.s; T.trimp += x.trimp; T.ses.add(r.id);
+      const f = fila[x.tipo] = fila[x.tipo] || { s: 0, sum: 0 }; f.s += x.s; f.sum += x.med * x.s; });
+    serie.push(fila); });
+  return { tipos: Object.values(tipos).map(T => ({ ...T, min: T.s / 60, med: T.sum / T.s, z45: T.z45 / T.s, tmin: T.trimp / (T.s / 60), n: T.ses.size })).sort((x, y) => y.min - x.min), serie };
+}
+function vActividadesAlumno(a) {
+  const A = actividadesAlumno(a);
+  if (!A.tipos.length) return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Frecuencia cardíaca por actividad</h2><p class="text-[13.5px] text-muted max-w-2xl">Mientras grabas el pulsómetro, elige en «Actividad» la tarea que se está haciendo (o pulsa «Siguiente actividad»). Aquí saldrán los minutos y la FC de cada tipo de actividad para comparar sesiones. Si se te olvidó cambiarla, puedes corregirlo después sobre la gráfica.</p></section>`;
+  return `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Frecuencia cardíaca por actividad</h2><p class="text-[13px] text-muted mb-3">Minutos y respuesta cardíaca en cada tipo de actividad, sumando todas las sesiones con actividades marcadas.</p>
+    <div class="grid lg:grid-cols-5 gap-5"><div class="lg:col-span-3 min-w-0 scroll-x"><table class="data min-w-[480px]"><thead><tr><th>Tipo</th><th class="text-right">Minutos</th><th class="text-right">Sesiones</th><th class="text-right">FC media</th><th class="text-right" title="Tiempo por encima del 80 % de la FC máxima">Z4-5</th><th class="text-right">eTRIMP/min</th></tr></thead><tbody>
+      ${A.tipos.map(T => `<tr><td class="font-semibold"><span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background:rgb(var(${TIPO_ACT[T.tipo]?.c || '--muted'}))"></span>${esc(TIPO_ACT[T.tipo]?.l || T.tipo)}</td><td class="text-right tnum">${Math.round(T.min)}</td><td class="text-right tnum">${T.n}</td><td class="text-right num text-lg font-bold">${pct(T.med)}</td><td class="text-right tnum">${pct(T.z45)}</td><td class="text-right tnum">${dec(T.tmin, 2)}</td></tr>`).join('')}</tbody></table></div>
+      <div class="lg:col-span-2 h-60 min-w-0"><canvas id="chActTipo" aria-label="FC media por tipo de actividad en cada sesión"></canvas></div></div></section>`;
+}
+function actividadesChart(id) {
+  const a = alumno(id); if (!a) return; const A = actividadesAlumno(a); if (!A.serie.length) return;
+  mkChart('chActTipo', { type: 'line', data: { labels: A.serie.map(f => fmtDate(f.fecha, { day: 'numeric', month: 'short' })), datasets: A.tipos.map(T => ({ label: TIPO_ACT[T.tipo]?.l || T.tipo, data: A.serie.map(f => f[T.tipo] ? +(f[T.tipo].sum / f[T.tipo].s * 100).toFixed(1) : null), borderColor: cv(TIPO_ACT[T.tipo]?.c || '--muted'), backgroundColor: cv(TIPO_ACT[T.tipo]?.c || '--muted'), spanGaps: true, tension: .3, pointRadius: 4 })) }, options: baseOpts({ y: { title: '% FC máx.' } }) });
+}
+/* Dato real de una tarea del diseño (media de los alumnos del grupo ese día) */
+function realTarea(id) {
+  const d = id.split('|')[1], L = state.sesionesFC.filter(s => s.fecha === d && s.muestras?.act?.some(m => m.id === id)).map(s => porActividad(s).filter(x => x.id === id)).filter(x => x.length);
+  if (!L.length) return null; const min = media(L.map(x => x.reduce((t, o) => t + o.min, 0))), med = media(L.map(x => x.reduce((t, o) => t + o.med * o.s, 0) / x.reduce((t, o) => t + o.s, 0)));
+  return { min, med, n: L.length };
+}
+/* Editor tras la sesión: mover el momento de cada cambio de actividad mirando la gráfica */
+function modalActividadesFC(id) {
+  const r = state.sesionesFC.find(s => s.id === id); if (!r?.muestras?.fc?.length) return toast('Esta sesión no tiene la gráfica guardada');
+  const M = r.muestras, segs = M.segs || (M.t0 ? [{ t0: M.t0, n: M.fc.length }] : null); if (!segs || segs[0].t0 == null) return toast('Esta sesión se grabó sin hora: no se pueden marcar actividades');
+  const recs = M.grab ? state.sesionesFC.filter(s => s.muestras?.grab === M.grab) : [r];
+  const T0 = segs[0].t0, fin = segs[segs.length - 1].t0 + segs[segs.length - 1].n * 1000, dur = Math.round((fin - T0) / 1000);
+  const gids = [...new Set(recs.map(x => alumno(x.alumno)?.grupo).filter(Boolean))];
+  ui.actEd = { ids: recs.map(x => x.id), r: r.id, T0, dur, lista: actividadesDe(r.fecha, gids), marcas: clon(M.act || []).sort((x, y) => x.t - y.t) };
+  openModal(`<div class="flex flex-col gap-3" id="actEd">${modalHead('Actividades de la sesión')}
+    <p class="text-[13.5px] text-muted -mt-1">${fmtDate(r.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${recs.length} ${recs.length === 1 ? 'alumno' : 'alumnos'} · ${mmss(dur)}. Mueve cada cambio hasta donde la gráfica cambia de tendencia; se aplica a todos los alumnos de la grabación.</p>
+    ${recs.length > 1 ? `<label class="text-[13px] font-semibold flex items-center gap-2">Gráfica de<select class="field !w-auto" data-act-ver>${recs.map(x => `<option value="${x.id}" ${x.id === r.id ? 'selected' : ''}>${esc(nombreAl(x.alumno))}</option>`).join('')}</select></label>` : ''}
+    <div class="h-56 min-w-0"><canvas id="chActEd" aria-label="Frecuencia cardíaca de la sesión coloreada por actividad"></canvas></div>
+    <div id="actFilas" class="flex flex-col gap-2"></div>
+    <div class="flex flex-wrap gap-2"><button class="btn btn-ghost !py-1.5 text-[13.5px]" data-act-add>+ Añadir cambio de actividad</button><span class="flex-1"></span><button class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary" data-act-ok>Guardar actividades</button></div></div>`);
+  pintarActEd();
+}
+function pintarActEd(soloGrafica) {
+  const E = ui.actEd; if (!E) return; E.marcas.sort((x, y) => x.t - y.t);
+  const opts = sel => `<option value="">—</option>${E.lista.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.n)}</option>`).join('')}`;
+  const box = document.getElementById('actFilas');
+  if (box && !soloGrafica) box.innerHTML = E.marcas.length ? E.marcas.map((m, i) => { const s = Math.round((m.t - E.T0) / 1000); return `<div class="rounded-2xl border border-line p-2.5 flex flex-col gap-1.5"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:rgb(var(${TIPO_ACT[m.tipo]?.c || '--muted'}))"></span><select class="field !py-1 text-[13.5px] flex-1 min-w-0" data-act-mk="${i}" aria-label="Actividad del cambio ${i + 1}">${opts(m.id)}</select><button class="ibtn text-bad" data-act-del="${i}" aria-label="Quitar este cambio">✕</button></div>
+      <div class="flex items-center gap-2"><input type="range" class="flex-1 accent-[rgb(var(--court))]" min="0" max="${E.dur}" step="5" value="${s}" data-act-t="${i}" aria-label="Momento del cambio ${i + 1}"><span class="num font-bold tnum w-14 text-right" data-act-lbl="${i}">${mmss(s)}</span></div></div>`; }).join('') : '<p class="text-[13.5px] text-muted">No se marcó ninguna actividad. Añade los cambios y colócalos sobre la gráfica.</p>';
+  const r = state.sesionesFC.find(s => s.id === E.r), a = alumno(r.alumno), M = r.muestras, segs = M.segs || [{ t0: M.t0, n: M.fc.length }], max = fcMaxTeo(a);
+  const pts = []; let off = 0; segs.forEach(sg => { for (let i = 0; i < sg.n; i += 5) { const w = M.fc.slice(off + i, off + Math.min(sg.n, i + 5)).filter(v => v != null); if (w.length) pts.push({ x: Math.round((sg.t0 + i * 1000 - E.T0) / 1000), y: +(w.reduce((p, q) => p + q, 0) / w.length / max * 100).toFixed(1) }); } off += sg.n; });
+  const tipoEn = s => { let t = null; E.marcas.forEach(m => { if ((m.t - E.T0) / 1000 <= s) t = m.tipo; }); return t; };
+  const lineas = { id: 'marcas', afterDatasetsDraw(c) { const { ctx, chartArea: A, scales: { x } } = c; ctx.save(); E.marcas.forEach(m => { const px = x.getPixelForValue((m.t - E.T0) / 1000); if (px < A.left || px > A.right) return; ctx.strokeStyle = cv('--ink', .55); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(px, A.top); ctx.lineTo(px, A.bottom); ctx.stroke(); }); ctx.restore(); } };
+  const o = baseOpts({ y: { title: '% FC máx.' } }); o.scales.x = { ...o.scales.x, type: 'linear', min: 0, max: E.dur, ticks: { ...o.scales.x.ticks, callback: v => mmss(v), maxTicksLimit: 8 } }; o.plugins.legend = { display: false }; o.animation = false;
+  o.plugins.tooltip = { ...o.plugins.tooltip, callbacks: { title: it => mmss(it[0].parsed.x), label: it => `${it.parsed.y} % · ${TIPO_ACT[tipoEn(it.parsed.x)]?.l || 'sin actividad'}` } };
+  mkChart('chActEd', { type: 'line', data: { datasets: [{ data: pts, borderWidth: 2.5, pointRadius: 0, tension: .25, segment: { borderColor: ctx => cv(TIPO_ACT[tipoEn(ctx.p0.parsed.x)]?.c || '--muted') } }] }, options: o, plugins: [lineas] });
+}
+function guardarActEd() {
+  const E = ui.actEd; if (!E) return; ui.actEd = null;
+  const marcas = E.marcas.filter(m => m.id).sort((x, y) => x.t - y.t);
+  const recs = E.ids.map(id => state.sesionesFC.find(s => s.id === id)).filter(Boolean);
+  recs.forEach(r => { r.muestras = { ...r.muestras, act: clon(marcas) }; });
+  closeModal();
+  return tras(async () => { for (const r of recs) await P.muestras(r); }, `Actividades guardadas en ${recs.length} ${recs.length === 1 ? 'sesión' : 'sesiones'}`);
+}
+
 /* Pantalla completa: un panel por sensor, fondo del color de la zona */
 function openFull() {
   const el = document.getElementById('hrfull');
@@ -1913,7 +2090,7 @@ function fullSlots() { const c = live.slots.filter(s => s.device || s.sim || s.a
 function fullHTML() {
   const list = fullSlots();
   return `<div class="hf-bar"><div class="flex items-center gap-3"><span class="hf-rec ${live.running ? 'on' : ''}"></span><span class="font-semibold">${live.running ? 'Grabando' : 'Sin grabar'}</span><span class="num text-2xl font-bold" id="hfClock">${clockTxt()}</span></div>
-    <div class="flex gap-2"><button class="hf-btn" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button><button class="hf-btn" data-hrclose aria-label="Salir de pantalla completa">Salir</button></div></div>
+    <div class="flex flex-wrap gap-2 items-center">${actSelect('hf-sel')}<button class="hf-btn" data-act-sig>Siguiente ›</button><button class="hf-btn" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button><button class="hf-btn" data-hrclose aria-label="Salir de pantalla completa">Salir</button></div></div>
     <div class="hf-grid n${list.length}">${list.map(hfPanel).join('')}</div>`;
 }
 function hfPanel(s) {
@@ -2783,8 +2960,10 @@ function emailSesion(a, r) {
   const parrafos = interpretacionSesion(a, r);
   // Golpeos de la clase (diseño de la sesión ÷ asistentes) y acumulado de la temporada
   const gk = golpeosClase(`${a.grupo}|${r.fecha}`, a, true), acum = gk ? golpeosAcum(a, r.fecha, gk) : null;
-  if (gk) parrafos.push(`Golpeos: en esta clase has hecho unos ${gk.t} (entre ${gk.min} y ${gk.max}), ${dec(gk.t / (r.duracion || 1), 1)} por minuto${Object.keys(gk.d).length ? `: ${Object.entries(gk.d).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([c, v]) => `${(GOLPE_TN[c] || c).toLowerCase()} ${v}`).join(', ')}` : ''}. Llevas ${acum.toLocaleString('es-ES')} golpeos acumulados esta temporada. Es una estimación: pelotas lanzadas × golpes de la secuencia ÷ ${gk.n} asistentes, con un margen del 5 %.`);
+  if (gk) parrafos.push(`Golpeos: en esta clase has hecho unos ${gk.t} (entre ${gk.min} y ${gk.max}), ${dec(gk.t / (r.duracion || 1), 1)} por minuto${Object.keys(gk.d).length ? `: ${Object.entries(gk.d).sort((x, y) => y[1] - x[1]).slice(0, 4).map(([c, v]) => `${(GOLPE_TN[c] || c).toLowerCase()} ${v}`).join(', ')}` : ''}. Llevas ${acum.toLocaleString('es-ES')} golpeos acumulados esta temporada. Es una estimación: el carro de pelotas se reparte en secuencias entre ${gk.n} asistentes (unas ${gk.sec} secuencias para ti)${gk.comp ? `, más ${gk.comp} golpeos de la competición` : ''}, con un margen del 5 % por el lanzamiento.`);
   if (r.rpe) { const obj = planDe(`${a.grupo}|${r.fecha}`)?.rpe; parrafos.push(`Valoraste el esfuerzo de la clase con un ${r.rpe} sobre 10 («${RPE_TXT[r.rpe].toLowerCase()}»)${obj ? `; el objetivo de la sesión era ${obj}` : ''}. Multiplicado por los minutos da una carga de ${srpe(r)} (método de Foster), que sirve para comparar tus sesiones entre sí.`); }
+  const acts = porActividad(r).filter(x => x.tipo && x.s >= 60);
+  const filaAct = acts.length ? `<tr><td style="padding:18px 24px 4px"><div style="font-size:17px;font-weight:800">Tu pulso en cada actividad</div></td></tr><tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13.5px"><tr style="color:${EC.muted};font-size:12px"><td>&nbsp;</td><td align="right">Min</td><td align="right">FC media</td><td align="right">FC máx.</td></tr>${acts.map(x => `<tr><td style="padding:7px 0;border-top:1px solid ${EC.line}">${esc(x.n)}</td><td align="right" style="border-top:1px solid ${EC.line}">${Math.round(x.min)}</td><td align="right" style="border-top:1px solid ${EC.line};font-weight:800">${pct(x.med)}</td><td align="right" style="border-top:1px solid ${EC.line}">${pct(x.mxp)}</td></tr>`).join('')}</table></td></tr>` : '';
   const filaRPE = r.rpe ? `<tr><td style="padding:0 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${emCel('Esfuerzo percibido', `${r.rpe}/10`, RPE_TXT[r.rpe], null, 50)}${emCel('Carga sRPE', srpe(r), 'RPE × minutos', null, 50)}</tr></table></td></tr>` : '';
   const filaGolpes = gk ? `<tr><td style="padding:0 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${emCel('Golpeos hoy', gk.t, `entre ${gk.min} y ${gk.max}`, null, 34)}${emCel('Golpeos/min', dec(gk.t / (r.duracion || 1), 1), 'ritmo de golpeo', null, 33)}${emCel('Acumulado', acum.toLocaleString('es-ES'), 'golpeos de la temporada', null, 33)}</tr></table></td></tr>` : '';
   const html = `<!doctype html><html lang="es"><body style="margin:0;background:${EC.bg};font-family:Helvetica,Arial,sans-serif;color:${EC.ink}">
@@ -2800,6 +2979,7 @@ function emailSesion(a, r) {
     <tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden"><tr>${r.zonas.map((v, i) => v ? `<td width="${Math.max(1, Math.round(v / tot * 100))}%" style="height:16px;background:${EC.z[i]}"></td>` : '').join('')}</tr></table>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px">${r.zonas.map((v, i) => `<tr><td style="padding:4px 0;font-size:13.5px;width:44%"><span style="display:inline-block;width:10px;height:10px;border-radius:5px;background:${EC.z[i]};margin-right:6px"></span>Fase ${i + 1} · ${ZONA_CORTA[i]}</td><td style="padding:4px 8px;width:42%"><div style="background:${EC.bg};border-radius:6px;height:10px"><div style="width:${Math.round(v / tot * 100)}%;height:10px;border-radius:6px;background:${EC.z[i]}"></div></div></td><td align="right" style="padding:4px 0;font-size:13.5px;font-weight:700;white-space:nowrap">${v} min</td></tr>`).join('')}</table></td></tr>
     ${curva}
+    ${filaAct}
     <tr><td style="padding:18px 24px 4px"><div style="font-size:17px;font-weight:800">Tú frente a tu media, tu grupo y la escuela</div></td></tr>
     <tr><td style="padding:0 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:13.5px">
       <tr style="color:${EC.muted};font-size:12px"><td style="padding:6px 0">&nbsp;</td><td align="right">Hoy</td><td align="right">Tu media</td><td align="right">Grupo</td><td align="right">Escuela</td></tr>
@@ -3065,6 +3245,7 @@ function vInforme() {
     </div>
   </section>
   ${vGolpeosAlumno(a)}
+  ${vActividadesAlumno(a)}
   ${(() => { const F = mediasPor(filasFC(), METRICAS_FC); return F.alumno(a.id) ? `<section class="panel p-5 min-w-0"><h2 class="text-2xl font-bold mb-1">Tú frente a tu grupo y la escuela</h2><p class="text-[13px] text-muted mb-3">Solo clases, para comparar lo mismo con lo mismo.</p>${cmpTabla(METRICAS_FC, F.alumno(a.id), F.grupo(a.grupo), F.escuela)}</section>` : ''; })()}
   ${ss.length ? `<section class="grid lg:grid-cols-5 gap-4">
     <div class="panel p-5 lg:col-span-3 min-w-0"><h2 class="text-2xl font-bold mb-2">Minutos en cada zona</h2><div class="h-60"><canvas id="chZ"></canvas></div></div>
@@ -3077,7 +3258,7 @@ function vInforme() {
   </section>` : ''}`;
 }
 function afterInforme() {
-  const a = alumno(ui.studentLogged); const tipo = 'todo'; golpeosChart(a.id);
+  const a = alumno(ui.studentLogged); const tipo = 'todo'; golpeosChart(a.id); actividadesChart(a.id);
   const ss = sesionesDe(a.id).filter(s => tipo === 'todo' || (s.tipo || 'entrenamiento') === tipo);
   const max = fcMaxTeo(a); const S = ui.fcSeries || new Set(); const F = mediasPor(filasFC(), METRICAS_FC); const gm = F.grupo(a.grupo)?.med;
   const forma = ss.map(s => s.tipo === 'partido' ? 'rectRot' : 'circle');
@@ -3146,7 +3327,7 @@ function vPagosAlumno() {
 
 /* ---------- Modales ---------- */
 function openModal(html) { const m = document.getElementById('modal'); m.innerHTML = `<div class="bg-surface w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto" role="dialog" aria-modal="true" style="padding-bottom:max(20px, env(safe-area-inset-bottom,0px))">${html}</div>`; m.hidden = false; setTimeout(() => m.querySelector('input,select,textarea')?.focus(), 30); }
-function closeModal() { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; if (ui.liveTmp) { const x = ui.liveTmp; ui.liveTmp = null; guardarLive(x.nuevos, {}); } }
+function closeModal() { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; ui.actEd = null; if (ui.liveTmp) { const x = ui.liveTmp; ui.liveTmp = null; guardarLive(x.nuevos, {}); } }
 const modalHead = t => `<div class="flex items-center justify-between"><h2 class="text-3xl font-bold">${t}</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>`;
 const reales = () => state.alumnos.filter(a => !a.anon);
 const nombreAl = id => alumno(id)?.nombre || (state.bajas?.[id] ? state.bajas[id] + ' (baja)' : 'Alumno eliminado');
@@ -3348,6 +3529,7 @@ const P = {
   async borrarGasto(id) { await need(sb.from('gastos').delete().eq('id', id)); },
   async aviso(alumnoId, n) { await need(sb.from('avisos').upsert({ alumno_id: alumnoId, clases_recibidas: n }, { onConflict: 'alumno_id,clases_recibidas' })); },
   async fc(r) { const d = await need(sb.from('registros_fc').insert({ alumno_id: r.alumno, fecha: r.fecha, duracion_min: r.duracion, fc_media: r.fcMed, fc_max: r.fcMax, zonas_min: r.zonas, kcal: r.kcal, sensor: r.fuente, muestras: r.muestras || null, tipo: r.tipo || 'entrenamiento', rpe: r.rpe || null }).select('id').single()); r.id = d.id; },
+  async muestras(r) { if (!/^[0-9a-f-]{36}$/i.test(String(r.id))) return; await need(sb.from('registros_fc').update({ muestras: r.muestras }).eq('id', r.id)); },
   async rpe(r) { if (!/^[0-9a-f-]{36}$/i.test(String(r.id))) return; await need(sb.from('registros_fc').update({ rpe: r.rpe || null }).eq('id', r.id)); },
   async borrarFC(id) { await need(sb.from('registros_fc').delete().eq('id', id)); },
   async borrarPartido(id) { await need(sb.from('partidos').delete().eq('id', id)); },
@@ -3568,7 +3750,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -3639,6 +3821,11 @@ document.addEventListener('click', async e => {
   if (d.rpeEdit) return modalRPE(d.rpeEdit);
   if (d.rpeSet) { const [id, n] = d.rpeSet.split(':'); const r = state.sesionesFC.find(s => s.id === id); if (!r) return; r.rpe = +n || null; closeModal(); return tras(() => P.rpe(r), r.rpe ? `RPE ${r.rpe} guardada` : 'RPE quitada'); }
   if (d.zona !== undefined) { const k = +d.zona; ui.zonaSel = ui.zonaSel === k ? null : k; document.querySelectorAll('[data-zona]').forEach(b => { const on = +b.dataset.zona === ui.zonaSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
+  if (d.actSig !== undefined) return siguienteActividad();
+  if (d.actEd) return modalActividadesFC(d.actEd);
+  if (d.actOk !== undefined) return guardarActEd();
+  if (d.actDel !== undefined && ui.actEd) { ui.actEd.marcas.splice(+d.actDel, 1); return pintarActEd(); }
+  if (d.actAdd !== undefined && ui.actEd) { const E = ui.actEd, ult = E.marcas[E.marcas.length - 1]; const t = Math.min(E.T0 + E.dur * 1000, ult ? ult.t + 120000 : E.T0); E.marcas.push({ t, id: '', n: '', tipo: null }); return pintarActEd(); }
   if (d.fcUnir !== undefined) return modalUnirFC();
   if (d.fcUnirOk !== undefined) return unirFC();
   if (d.csv) return exportarCSV(d.csv);
@@ -3686,6 +3873,10 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => {
+  const as = e.target.closest?.('[data-act-sel]'); if (as) { if (as.value) cambiarActividad(as.value); return; }
+  const am = e.target.closest?.('[data-act-mk]'); if (am && ui.actEd) { const x = ui.actEd.lista.find(a => a.id === am.value), m = ui.actEd.marcas[+am.dataset.actMk]; if (m) Object.assign(m, x ? { id: x.id, n: x.n, tipo: x.tipo } : { id: '', n: '', tipo: null }); return pintarActEd(); }
+  const av = e.target.closest?.('[data-act-ver]'); if (av && ui.actEd) { ui.actEd.r = av.value; return pintarActEd(true); }
+  const ar = e.target.closest?.('[data-act-t]'); if (ar && ui.actEd) return pintarActEd();
   const cs = e.target.closest?.('[data-fc-sel]'); if (cs) { ui.fcSel = ui.fcSel || new Set(); if (cs.checked) ui.fcSel.add(cs.dataset.fcSel); else ui.fcSel.delete(cs.dataset.fcSel); return; }
   if (e.target.dataset?.reusar !== undefined && ui.plan && e.target.value !== '') { const fi = +e.target.dataset.reusar; const V = ui.plan.d.versiones[ui.plan.v]; const t = bibliotecaTareas(V.fases[fi].tipo)[+e.target.value]; if (t) { V.fases[fi].tareas.push(clon(t)); planSucio(); render(); toast('Tarea añadida'); } return; }
   if (e.target.id === 'waSel') {
@@ -3820,6 +4011,7 @@ async function onSubmit(f) {
   }
 }
 document.addEventListener('input', e => {
+  if (e.target.dataset?.actT !== undefined && ui.actEd) { const i = +e.target.dataset.actT, m = ui.actEd.marcas[i]; m.t = ui.actEd.T0 + +e.target.value * 1000; const l = document.querySelector(`[data-act-lbl="${i}"]`); if (l) l.textContent = mmss(+e.target.value); clearTimeout(ui.actEdT); ui.actEdT = setTimeout(() => pintarActEd(true), 60); return; }
   if (e.target.dataset?.p && ui.plan) { planEditar(e.target.dataset.p, e.target.value); if (e.target.tagName === 'TEXTAREA' && e.target.classList.contains('auto')) { e.target.style.height = 'auto'; e.target.style.height = (e.target.scrollHeight + 2) + 'px'; } return; }
   if (!ui.wa || !['waTxt', 'waNom'].includes(e.target.id)) return;
   if (e.target.id === 'waTxt') { ui.wa.texto = e.target.value; const pv = $('#waPrev'); if (pv) pv.textContent = waRellenar(ui.wa.texto, ui.wa.gid); } else ui.wa.nombre = e.target.value;
