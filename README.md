@@ -46,6 +46,8 @@ Web Bluetooth con el servicio estándar *Heart Rate*. Funciona en Chrome o Edge 
 
 ## Calendario de clases
 
+En *Clases → Clase y asistencia*, las clases del grupo aparecen en una **rueda** con todas las del trimestre (se desliza con el dedo o con las flechas ‹ ›, y se centra en la clase elegida). «Trimestre anterior» y «Trimestre siguiente» saltan de trimestre e «Ir a la clase de hoy» vuelve a la actual. Así se puede abrir cualquier clase pasada y corregir su asistencia.
+
 Las clases se generan a partir del día y la hora de cada grupo. En *Clases* (o desde el diseño de la sesión, con «Cambiar fecha») se puede:
 - **Mover una clase** a otra fecha. Su diseño, sus contenidos y la lista, si ya se pasó, se mueven con ella.
 - **Anular una clase.** No se celebra y no se cobra.
@@ -80,6 +82,10 @@ Una tarea programada en Supabase (pg_cron, cada 10 minutos) llama a la función 
 - Pasar lista ya no envía avisos. El botón «Enviar aviso» del panel sigue disponible para enviarlo a mano.
 
 ## Bonos, fijos y relevos
+
+- **Editar pagos:** en *Pagos → Cobros* y en la ficha del alumno, el lápiz ✎ de cada pago abre el formulario para cambiar alumno, concepto, cantidad, **clases que suma**, importe, método o fecha, o para eliminarlo (pide confirmación con un segundo toque). Al registrar un pago también se pueden cambiar a mano las clases que suma.
+- **Editar ajustes:** en la ficha del alumno, bajo «Ajustar clases pendientes», aparecen sus ajustes con un lápiz ✎ para cambiar las clases, el motivo o la fecha, o eliminarlos.
+- Las clases que traía de antes (clases iniciales) se cambian en «Editar ficha».
 
 - **Fijo del grupo:** se le cobra cada clase automáticamente al terminar, aunque falte, salvo que le cubra un relevo (eso se marca pasando lista).
 - **Relevo:** pertenece a un grupo, pero solo se le cobra la clase cuando viene. Cualquier alumno puede añadirse a la lista de otro grupo.
@@ -129,7 +135,7 @@ Pestaña *Estadísticas* con todos los datos de la temporada, para la **escuela*
 
 ## Frecuencia cardíaca por actividad
 
-Mientras se graba en *Pulsómetros* (también en pantalla completa) se elige la actividad en curso: las tareas del diseño de la sesión de hoy o un tipo genérico (calentamiento, técnica, táctica, partido, físico, vuelta a la calma, pausa). «Siguiente actividad» pasa a la siguiente tarea del diseño. Si se olvidó cambiarla, en «Grabaciones de hoy» (o en la ficha del alumno, «marcar actividades») se abre la gráfica de FC coloreada por actividad y se mueve cada cambio hasta donde cambia la tendencia; se aplica a todos los alumnos de esa grabación. Con eso salen los minutos, la FC media y máxima, el tiempo en zonas 4-5 y la carga de cada actividad: en la ficha del alumno y en *Mi corazón* («Frecuencia cardíaca por actividad», con su evolución por sesión), en cada tarea del diseño («Real: 18' · FC 76 %») y en el email de la sesión.
+La grabación empieza siempre por el calentamiento (la primera tarea de calentamiento del diseño de hoy o, si no hay diseño, «Calentamiento»). Mientras se graba en *Pulsómetros* (también en pantalla completa) se elige la actividad en curso: las tareas del diseño de la sesión de hoy o un tipo genérico (calentamiento, técnica, táctica, partido, físico, vuelta a la calma, pausa). «Siguiente actividad» pasa a la siguiente tarea del diseño. Si se olvidó cambiarla, en «Grabaciones de hoy» (o en la ficha del alumno, «marcar actividades») se abre la gráfica de FC coloreada por actividad y se mueve cada cambio hasta donde cambia la tendencia; se aplica a todos los alumnos de esa grabación. Con eso salen los minutos, la FC media y máxima, el tiempo en zonas 4-5 y la carga de cada actividad: en la ficha del alumno y en *Mi corazón* («Frecuencia cardíaca por actividad», con su evolución por sesión), en cada tarea del diseño («Real: 18' · FC 76 %») y en el email de la sesión.
 
 En pantalla completa el nombre y el % se ajustan al tamaño de cada recuadro para leerlos de lejos en una tablet pequeña.
 

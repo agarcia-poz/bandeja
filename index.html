@@ -365,6 +365,11 @@
     .hf-grid .hf-meta { font-size: min(4.6cqh, 3.6cqw); margin-top: 0; }
     .hf-grid .hf-panel .zmeter { height: min(2.6cqh, 16px); margin: .6cqh auto; width: 86%; }
   }
+  .rueda { position: relative; display: flex; align-items: center; gap: .35rem; min-width: 0; }
+  .rueda > #claseRueda { flex: 1; min-width: 0; scrollbar-width: thin; }
+  .rueda-fl { flex-shrink: 0; width: 36px; height: 52px; border-radius: 12px; border: 1px solid rgb(var(--line)); background: rgb(var(--surface)); font-size: 22px; font-weight: 700; color: rgb(var(--ink)); }
+  .rueda-fl:hover { background: rgb(var(--surface2)); }
+  @media (max-width: 639px) { .rueda-fl { display: none; } }
   #avisoGrab { position: fixed; z-index: 95; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 10px); width: min(680px, calc(100% - 32px)); }
   .aviso-grab { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem .9rem; padding: .8rem 1rem; border-radius: 18px; background: rgb(var(--bad)); color: #fff; box-shadow: 0 14px 34px -14px rgb(0 0 0 / .55); animation: seqin var(--t-med, .25s) ease-out; }
   .aviso-grab .btn-ghost { color: #fff; border-color: rgb(255 255 255 / .5); }
@@ -1010,6 +1015,7 @@ function vAlumnoDetalle(id) {
       <div class="grid grid-cols-4 gap-2 text-center mt-1">${[['Pagadas', compradas(a)], ['Ajustes', (ajusteDe(a) > 0 ? '+' : '') + ajusteDe(a)], ['Consumidas', asistidas(a)], ['Saldo', saldo(a)]].map(([l, v]) => `<div class="rounded-xl bg-surface2 py-2"><div class="num text-3xl font-bold ${l === 'Saldo' && v < 0 ? 'text-bad' : ''}">${v}</div><div class="text-[12px] text-muted">${l}</div></div>`).join('')}</div>
       <p class="text-[13px] text-muted">${esRelevo(a) ? 'Relevo: solo se le cobra la clase cuando viene.' : 'Fijo del grupo: se le cobra cada clase aunque falte, salvo si le cubre un relevo.'}</p>
       <button class="btn btn-ghost self-start !py-1.5 text-[13px]" data-open="ajuste" data-for="${a.id}">Ajustar clases pendientes</button>
+      ${(() => { const aj = (state.ajustesClases || []).filter(x => x.alumno === a.id).sort((x, y) => y.fecha.localeCompare(x.fecha)); return aj.length ? `<div class="flex flex-col gap-1 text-[13.5px]"><span class="font-semibold">Ajustes</span>${aj.map(x => `<div class="flex items-center justify-between gap-2 rounded-lg bg-surface2/70 px-2.5 py-1"><span class="min-w-0 truncate">${fmtDate(x.fecha)}${x.motivo ? ` · ${esc(x.motivo)}` : ''}</span><span class="flex items-center gap-1 shrink-0"><b class="tnum">${x.clases > 0 ? '+' : ''}${x.clases}</b><button class="ibtn !w-8 !h-8" data-aj-ed="${x.id}" aria-label="Editar el ajuste del ${fmtDate(x.fecha)}" title="Editar">✎</button></span></div>`).join('')}</div>` : ''; })()}
       ${historialClases(a)}
     </div>
     <div class="panel p-5 flex flex-col gap-2 min-w-0"><h2 class="text-2xl font-bold">Contacto y acceso</h2>
@@ -1030,8 +1036,8 @@ function vAlumnoDetalle(id) {
   <section class="grid lg:grid-cols-2 gap-4">
     <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2 flex flex-wrap items-center justify-between gap-2"><h2 class="text-2xl font-bold">Sesiones registradas</h2>${ss.length > 1 ? `<button class="btn btn-ghost !py-1.5 text-[13px]" data-fc-unir title="Marca dos o más sesiones del mismo día">Unir sesiones marcadas</button>` : ''}</div><table class="data min-w-[600px]"><thead><tr><th class="w-8"></th><th>Fecha</th><th>Media</th><th>Máx.</th><th>Zonas</th><th>kcal</th><th title="Esfuerzo percibido (1-10) y carga sRPE (RPE × min)">RPE</th></tr></thead><tbody>
       ${[...ss].reverse().map(s => `<tr><td><input type="checkbox" class="w-4 h-4" data-fc-sel="${s.id}" ${ui.fcSel?.has(s.id) ? 'checked' : ''} aria-label="Seleccionar la sesión del ${fmtDate(s.fecha)}"></td><td>${fmtDate(s.fecha)}${s.fuente ? `<div class="text-[11.5px] text-muted">${esc(s.fuente)} · ${s.duracion} min</div>` : ''}${s.muestras?.fc?.length && (s.muestras.segs || s.muestras.t0) ? `<button class="text-court font-semibold underline underline-offset-2 text-[12px]" data-act-ed="${s.id}">${s.muestras.act?.length ? `${new Set(s.muestras.act.map(m => m.id)).size} actividades` : 'marcar actividades'}</button>` : ''}</td><td class="tnum">${s.fcMed}</td><td class="tnum">${s.fcMax}</td><td class="w-40">${zoneBar(s.zonas)}</td><td class="tnum">${s.kcal}</td><td><button class="chip ${s.rpe ? '' : 'chip-neutral'} tnum" style="${s.rpe ? `background:rgb(var(${rpeColor(s.rpe)}) / .18)` : ''}" data-rpe-edit="${s.id}" title="${s.rpe ? `${RPE_TXT[s.rpe]} · carga sRPE ${srpe(s)}` : 'Añadir la RPE'}">${s.rpe ?? '+'}</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-muted">Aún no hay sesiones con sensor.</td></tr>'}</tbody></table></div>
-    <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${conceptoTxt(p)}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="4" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
+    <div class="panel scroll-x min-w-0"><div class="px-5 pt-5 pb-2"><h2 class="text-2xl font-bold">Pagos</h2></div><table class="data min-w-[460px]"><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="text-right">Importe</th><th class="w-10"><span class="sr-only">Editar</span></th></tr></thead><tbody>
+      ${pagos.map(p => `<tr><td>${fmtDate(p.fecha)}</td><td>${conceptoTxt(p)}${p.clases ? `<div class="text-[12px] text-muted">+${p.clases} ${p.clases === 1 ? 'clase' : 'clases'}</div>` : ''}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td><td><button class="ibtn" data-pago-ed="${p.id}" aria-label="Editar el pago del ${fmtDate(p.fecha)}" title="Editar">✎</button></td></tr>`).join('') || '<tr><td colspan="5" class="text-muted">Sin pagos registrados.</td></tr>'}</tbody></table></div>
   </section>
   ${vFisioAlumno(a.id)}
   ${vMapaAlumno(a.id, ui.amodo || 'todo')}
@@ -1101,8 +1107,8 @@ function vCobros() {
   const list = [...state.pagos].sort((x, y) => y.fecha.localeCompare(x.fecha));
   const byMonth = {}; state.pagos.forEach(p => { const k = p.fecha.slice(0, 7); byMonth[k] = byMonth[k] || { total: 0, n: 0, m: {} }; byMonth[k].total += p.importe; byMonth[k].n++; byMonth[k].m[p.metodo] = (byMonth[k].m[p.metodo] || 0) + p.importe; });
   return `<section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">${Object.entries(byMonth).sort().reverse().slice(0, 3).map(([k, v]) => `<div class="panel p-4"><div class="text-[13px] font-semibold text-muted">${mesTxt(k)}</div><div class="num text-4xl font-bold">${fmtEur(v.total)}</div><div class="text-[13px] text-muted">${v.n} cobros · ${Object.entries(v.m).map(([mm, x]) => `${mm} ${fmtEur(x)}`).join(' · ')}</div></div>`).join('')}</section>
-  <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Alumno</th><th>Concepto</th><th>Clases</th><th>Método</th><th class="text-right">Importe</th></tr></thead><tbody>
-    ${list.map(p => `<tr ${alumno(p.alumno) ? `class="click" data-alumno="${p.alumno}"` : ''}><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(nombreAl(p.alumno))}</td><td>${conceptoTxt(p)}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td></tr>`).join('') || '<tr><td colspan="6" class="text-muted">Aún no hay cobros.</td></tr>'}
+  <div class="panel scroll-x"><table class="data min-w-[680px]"><thead><tr><th>Fecha</th><th>Alumno</th><th>Concepto</th><th>Clases</th><th>Método</th><th class="text-right">Importe</th><th class="w-10"><span class="sr-only">Editar</span></th></tr></thead><tbody>
+    ${list.map(p => `<tr ${alumno(p.alumno) ? `class="click" data-alumno="${p.alumno}"` : ''}><td>${fmtDate(p.fecha)}</td><td class="font-semibold">${esc(nombreAl(p.alumno))}</td><td>${conceptoTxt(p)}</td><td class="tnum">${p.clases ? '+' + p.clases : '—'}</td><td>${p.metodo}</td><td class="text-right num text-lg font-bold">${fmtEur(p.importe)}</td><td><button class="ibtn" data-pago-ed="${p.id}" aria-label="Editar el pago de ${esc(nombreAl(p.alumno))} del ${fmtDate(p.fecha)}" title="Editar">✎</button></td></tr>`).join('') || '<tr><td colspan="7" class="text-muted">Aún no hay cobros.</td></tr>'}
   </tbody></table></div>`;
 }
 const mesTxt = k => { const t = new Date(k + '-01T00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -1165,6 +1171,18 @@ function afterPagos() {
 const TRIM_TXT = { 1: '1.er trimestre · septiembre a diciembre', 2: '2.º trimestre · enero a marzo', 3: '3.er trimestre · abril a junio', 4: 'Verano · julio y agosto' };
 const trimDe = d => { const m = +d.slice(5, 7); return m >= 9 ? 1 : m <= 3 ? 2 : m <= 6 ? 3 : 4; };
 const cursoDe = d => (+d.slice(5, 7) >= 9 ? +d.slice(0, 4) : +d.slice(0, 4) - 1);
+const trimRango = d => { const t = trimDe(d), c = cursoDe(d); return t === 1 ? [`${c}-09-01`, `${c}-12-31`] : t === 2 ? [`${c + 1}-01-01`, `${c + 1}-03-31`] : t === 3 ? [`${c + 1}-04-01`, `${c + 1}-06-30`] : [`${c + 1}-07-01`, `${c + 1}-08-31`]; };
+/* Clase del trimestre anterior (la última) o del siguiente (la primera) de un grupo; busca hasta 4 trimestres */
+function claseTrimVecino(g, d, paso) {
+  let ref = d;
+  for (let i = 0; i < 4; i++) {
+    const [a, b] = trimRango(ref), x = parseISO(paso < 0 ? a : b); x.setDate(x.getDate() + paso); ref = iso(x);
+    const [a2, b2] = trimRango(ref), L = sessionDates(g, a2, b2);
+    if (L.length) return paso < 0 ? L[L.length - 1] : L[0];
+  }
+  return null;
+}
+function afterClases() { const r = document.getElementById('claseRueda'), s = r?.querySelector('[aria-current="true"]'); if (r && s) r.scrollLeft = s.offsetLeft - r.offsetLeft - (r.clientWidth - s.offsetWidth) / 2; }
 const ctabSeg = () => { const n = Object.keys(state.planes || {}).filter(k => grupo(k.split('|')[0]).id).length; return `<div class="inline-flex bg-surface2 rounded-full p-1 text-[14px] font-semibold self-start flex-wrap" role="tablist">${[['clase', 'Clase y asistencia'], ['sesiones', `Sesiones diseñadas${n ? ` (${n})` : ''}`]].map(([k, l]) => `<button class="px-4 py-1.5 rounded-full whitespace-nowrap ${(ui.ctab || 'clase') === k ? 'bg-court text-courtink' : 'text-muted'}" role="tab" aria-selected="${(ui.ctab || 'clase') === k}" data-ctab="${k}">${l}</button>`).join('')}</div>`; };
 /* Todas las sesiones diseñadas, agrupadas por curso y trimestre */
 function vSesionesDisenadas() {
@@ -1188,12 +1206,17 @@ function vClases() {
   const lista = ui.asisDraft?.[ui.claseKey] || state.asistencia[ui.claseKey];
   const extra = [...new Set([...reales().filter(a => a.grupo === gid && esRelevo(a)).map(a => a.id), ...Object.keys(lista || {}).filter(id => !fijos.some(f => f.id === id)), ...(ui.extraAsis?.[ui.claseKey] || [])])].map(alumno).filter(Boolean);
   const presentes = lista;
-  const opts = state.grupos.map(gg => [...new Set([...ultimasClases(gg, 2), ...proximas(gg, 3)])].map(dd => ({ gg, dd }))).flat();
+  const [t0, t1] = trimRango(d), fechasT = [...new Set([...sessionDates(g, t0, t1), d])].sort();
+  const opts = fechasT.map(dd => ({ gg: g, dd }));   // rueda: todas las clases del trimestre de la clase elegida
+  const antT = claseTrimVecino(g, d, -1), sigT = claseTrimVecino(g, d, 1), hoyK = ultimasClases(g, 1)[0] || proximas(g, 1)[0];
   const cab = pageHead('Clases', 'Diseña cada sesión. Al terminar cada clase se descuenta sola del bono de los fijos del grupo; pasa lista solo para corregir faltas cubiertas o alumnos de otros grupos.', `<button class="btn btn-ghost" data-csv="golpeos" title="Golpeos de cada alumno en cada clase">Exportar golpeos (CSV)</button>`) + ctabSeg();
   if (ui.ctab === 'sesiones') return cab + vSesionesDisenadas();
   return cab + `
   <div class="flex flex-wrap gap-2">${state.grupos.map(gg => `<button class="chip ${gg.id === gid ? 'bg-court text-courtink' : 'chip-neutral'} !py-1.5 !px-3.5 !text-[13.5px]" data-clase="${gg.id}|${ultimasClases(gg, 1)[0] || proximas(gg, 1)[0]}">${esc(gg.nombre)}</button>`).join('')}</div>
-  <div class="flex gap-2 overflow-x-auto pb-1">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}"><div class="text-[12px] text-muted">${done ? 'Lista pasada' : claseTerminada(grupo(gid), dd) && (state.settings.autoDesde || AUTO_DESDE_DEF) <= dd ? 'Cobrada auto' : dd < TODAY_ISO ? 'Sin lista' : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
+  <div class="flex flex-wrap items-center gap-2"><button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" ${antT ? `data-clase="${gid}|${antT}"` : 'disabled style="opacity:.4"'}>‹ Trimestre anterior</button><span class="font-semibold text-[14px]">${TRIM_TXT[trimDe(d)].split(' · ')[0]} ${cursoDe(d)}/${String(cursoDe(d) + 1).slice(2)} · ${fechasT.length} ${fechasT.length === 1 ? 'clase' : 'clases'}</span><button class="btn btn-ghost !py-1.5 !px-3 text-[13px]" ${sigT ? `data-clase="${gid}|${sigT}"` : 'disabled style="opacity:.4"'}>Trimestre siguiente ›</button>${hoyK && `${gid}|${hoyK}` !== ui.claseKey ? `<button class="btn btn-ghost !py-1.5 !px-3 text-[13px] sm:ml-auto" data-clase="${gid}|${hoyK}">Ir a la clase de hoy</button>` : ''}</div>
+  <div class="rueda"><button type="button" class="rueda-fl izq" data-rueda="-1" aria-label="Ver clases anteriores">‹</button>
+  <div class="flex gap-2 overflow-x-auto pb-1 snap-x px-1" id="claseRueda" role="list" aria-label="Clases del trimestre">${opts.filter(o => o.gg.id === gid).map(({ dd }) => { const k = `${gid}|${dd}`; const done = !!state.asistencia[k]; return `<button class="shrink-0 snap-center rounded-xl px-3 py-2 text-left border ${k === ui.claseKey ? 'border-court bg-court/10' : 'border-line bg-surface'}" data-clase="${k}" role="listitem" ${k === ui.claseKey ? 'aria-current="true"' : ''}><div class="text-[12px] text-muted">${done ? 'Lista pasada' : claseTerminada(grupo(gid), dd) && (state.settings.autoDesde || AUTO_DESDE_DEF) <= dd ? 'Cobrada auto' : dd < TODAY_ISO ? 'Sin lista' : dd === TODAY_ISO ? 'Hoy' : 'Próxima'}${(() => { const o = origenClase(g, dd); return o.tipo === 'movida' ? ' · <span class="text-warn font-semibold">movida</span>' : o.tipo === 'extra' ? ' · <span class="text-court font-semibold">extra</span>' : ''; })()}${planDe(k) ? ' · <span class="text-ok font-semibold">diseñada</span>' : ''}</div><div class="font-semibold">${fmtDate(dd)}</div></button>`; }).join('')}</div>
+  <button type="button" class="rueda-fl der" data-rueda="1" aria-label="Ver clases siguientes">›</button></div>
   <div class="flex flex-wrap items-center gap-2 -mt-2"><span class="text-[14px] font-semibold">${fechaLarga(d)} · ${g.hora}–${g.fin}</span>${(() => { const o = origenClase(g, d); return o.tipo === 'movida' ? `<span class="chip chip-warn">Movida desde el ${fmtDate(o.base)}</span>` : o.tipo === 'extra' ? '<span class="chip chip-neutral">Clase extra</span>' : ''; })()}<button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="mover" data-k="${ui.claseKey}">Cambiar fecha o anular</button><button class="btn btn-ghost !py-1.5 text-[13px]" data-cal="extra" data-k="${gid}">+ Añadir clase</button></div>
   <section class="grid lg:grid-cols-2 gap-4">
     <form class="panel p-5 flex flex-col gap-3" id="fAsis">
@@ -1720,6 +1743,7 @@ function asignarSensor(id) {
 }
 function vVivo() {
   if (!ui.vivoGrupo || !grupo(ui.vivoGrupo).id) ui.vivoGrupo = grupoVivoDef();
+  if (!live.running && live.act?.tipo !== 'calentamiento') live.act = actCalentamiento();
   const gs = [...state.grupos].sort((a, b) => (a.id === ui.vivoGrupo ? -1 : b.id === ui.vivoGrupo ? 1 : 0));
   const sel = (slot) => `<select class="field" id="slotA${slot.i}" data-slot-alumno="${slot.i}" aria-label="Alumno del sensor ${slot.i + 1}"><option value="">Asignar alumno…</option>${gs.map(g => `<optgroup label="${esc(g.nombre)}">${reales().filter(a => a.grupo === g.id).sort((x, y) => nGrab(x.id) - nGrab(y.id)).map(a => `<option value="${a.id}" ${slot.alumno === a.id ? 'selected' : ''}>${esc(a.nombre)} (${nGrab(a.id)})</option>`).join('')}</optgroup>`).join('')}</select>`;
   const delGrupo = reales().filter(a => a.grupo === ui.vivoGrupo).map(a => ({ a, n: nGrab(a.id), k: live.slots.findIndex(s => s.alumno === a.id) })).sort((x, y) => x.n - y.n || x.a.nombre.localeCompare(y.a.nombre));
@@ -1729,7 +1753,7 @@ function vVivo() {
   return pageHead('Sesión en vivo', 'Conecta los pulsómetros, asigna cada uno a un alumno e inicia la sesión. Puedes cambiar de pestaña (por ejemplo, al marcador de partidos): el registro sigue y lo verás en la barra de abajo.',
     `<button class="btn btn-ghost" data-hrfull>${I.expand}Pantalla completa</button><button class="btn ${live.running ? 'btn-ghost' : 'btn-primary'}" data-live="toggle">${live.running ? 'Finalizar y guardar' : 'Iniciar sesión'}</button>`) + `
   ${bloqueGrupo}
-  <section class="panel p-4 flex flex-col gap-2 min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-[15px]">Actividad${live.running ? ' en curso' : ' al empezar'}:</span>${actSelect('field !w-auto max-w-full flex-1 min-w-[12rem]')}<button class="btn btn-primary" data-act-sig>Siguiente actividad ›</button></div>
+  <section class="panel p-4 flex flex-col gap-2 min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="font-semibold text-[15px]">${live.running ? 'Actividad en curso:' : 'Se empieza por el calentamiento:'}</span>${actSelect('field !w-auto max-w-full flex-1 min-w-[12rem]')}<button class="btn btn-primary" data-act-sig>Siguiente actividad ›</button></div>
     ${live.marcas.length ? `<div class="flex flex-wrap gap-1.5">${live.marcas.map(m => `<span class="chip chip-neutral !text-[12.5px]"><b class="tnum mr-1">${mmss((m.t - live.start) / 1000)}</b>${esc(m.n.slice(0, 40))}</span>`).join('')}</div>` : '<p class="text-[13px] text-muted">Marca qué se está haciendo para tener la FC y los minutos de cada actividad. Si se te olvida, lo puedes corregir después sobre la gráfica.</p>'}
     ${(() => { const hoy = {}; state.sesionesFC.filter(s => s.fecha === TODAY_ISO && s.muestras?.grab).forEach(s => { (hoy[s.muestras.grab] = hoy[s.muestras.grab] || []).push(s); }); const G = Object.entries(hoy); return G.length ? `<div class="flex flex-wrap items-center gap-2 pt-1 border-t border-line"><span class="text-[13px] text-muted">Grabaciones de hoy:</span>${G.map(([g, L]) => `<button class="btn btn-ghost !py-1 text-[13px]" data-act-ed="${L[0].id}">${new Date(+g).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} · ${L.length} ${L.length === 1 ? 'alumno' : 'alumnos'} · revisar actividades</button>`).join('')}</div>` : ''; })()}</section>
   <label class="flex items-center gap-2 text-[14px] -mt-2"><input type="checkbox" id="resEmail" class="w-4 h-4" ${ui.resumenEmail === false ? '' : 'checked'} data-resemail> Al guardar, enviar a cada alumno el resumen de su sesión por email</label>
@@ -1917,11 +1941,12 @@ function toggleLive() {
   if (!live.running) {
     if (!live.slots.some(s => s.alumno && (s.device || s.sim))) { toast('Conecta al menos un sensor y asígnale un alumno'); return; }
     live.running = true; live.start = Date.now(); live.slots.forEach(s => { s.z = [0, 0, 0, 0, 0]; s.kcal = 0; s.rec = []; s.segs = []; s.ult = 0; });
+    if (live.act?.tipo !== 'calentamiento') live.act = actCalentamiento();   // siempre se empieza con el calentamiento
     live.marcas = live.act ? [{ t: live.start, id: live.act.id, n: live.act.n, tipo: live.act.tipo }] : [];
     live.timer = setInterval(() => { const c = document.getElementById('liveClock'); if (c) c.textContent = clockTxt(); const f = document.getElementById('hfClock'); if (f) f.textContent = clockTxt(); updateDock(); }, 1000);
     mantenerPantalla(); rerenderIf('vivo'); updateFull(); pintarAvisoGrab(); return;
   }
-  live.running = false; clearInterval(live.timer);
+  live.running = false; clearInterval(live.timer); live.act = null;
   const nuevos = [];
   live.slots.forEach(s => {
     if (!s.alumno || !s.rec || s.rec.length < 10) return;
@@ -2048,6 +2073,7 @@ function cambiarActividad(id) {
   if (live.running && live.marcas[live.marcas.length - 1]?.id !== x.id) live.marcas.push({ t: Date.now(), id: x.id, n: x.n, tipo: x.tipo });
   rerenderIf('vivo'); updateFull();
 }
+function actCalentamiento() { const L = actividadesHoy(); return L.find(a => a.tipo === 'calentamiento' && !a.id.startsWith('tipo:')) || L.find(a => a.id === 'tipo:calentamiento'); }
 function siguienteActividad() {
   const L = actividadesHoy().filter(a => !a.id.startsWith('tipo:')); if (!L.length) return toast('No hay diseño de sesión para hoy: elige el tipo de actividad en la lista');
   const i = L.findIndex(a => a.id === live.act?.id); const x = L[Math.min(L.length - 1, i + 1)];
@@ -3486,28 +3512,32 @@ function closeModal() { const m = document.getElementById('modal'); m.hidden = t
 const modalHead = t => `<div class="flex items-center justify-between"><h2 class="text-3xl font-bold">${t}</h2><button type="button" class="btn btn-ghost !p-2" data-close aria-label="Cerrar">✕</button></div>`;
 const reales = () => state.alumnos.filter(a => !a.anon);
 const nombreAl = id => alumno(id)?.nombre || (state.bajas?.[id] ? state.bajas[id] + ' (baja)' : 'Alumno eliminado');
-function modalPago(forId) {
+function modalPago(forId, pagoId) {
   if (!reales().length) return toast('Da de alta a un alumno antes de registrar pagos');
-  const a0 = forId ? alumno(forId) : reales()[0];
-  openModal(`<form id="fPago" class="flex flex-col gap-3">${modalHead('Registrar pago')}
+  const p0 = pagoId ? state.pagos.find(x => x.id === pagoId) : null;
+  const a0 = p0 ? (alumno(p0.alumno) || reales()[0]) : forId ? alumno(forId) : reales()[0];
+  const c0 = p0 ? CONCEPTOS.find(c => c.id === p0.concepto) || CONCEPTOS[0] : CONCEPTOS[0];
+  const n0 = p0 && c0.clases ? Math.max(1, Math.round(p0.clases / c0.clases)) : 1;
+  openModal(`<form id="fPago" class="flex flex-col gap-3" data-id="${p0 ? p0.id : ''}">${modalHead(p0 ? 'Editar pago' : 'Registrar pago')}
     <div><label class="lbl" for="pA">Alumno</label><select id="pA" class="field">${reales().map(a => `<option value="${a.id}" ${a.id === a0.id ? 'selected' : ''}>${esc(a.nombre)}</option>`).join('')}</select></div>
-    <div><label class="lbl" for="pC">Concepto</label><select id="pC" class="field">${CONCEPTOS.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}</select></div>
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pN">Cantidad</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-pn="-1" aria-label="Uno menos">−</button><input id="pN" type="number" min="1" max="50" step="1" inputmode="numeric" class="field tnum text-center" value="1"><button type="button" class="btn btn-ghost !px-3" data-pn="1" aria-label="Uno más">+</button></div></div>
-    <div><label class="lbl" for="pI">Importe total (€)</label><input id="pI" type="number" step="0.5" min="0" class="field tnum" value="${precioDe(grupo(a0.grupo).tarifa, 'mes')}"></div></div>
-    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pM">Método</label><select id="pM" class="field"><option>Bizum</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option></select></div>
-    <div><label class="lbl" for="pF">Fecha</label><input id="pF" type="date" class="field" value="${TODAY_ISO}"></div></div>
-    <label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="pE" checked class="w-4 h-4"> Enviar email de confirmación al alumno</label>
+    <div><label class="lbl" for="pC">Concepto</label><select id="pC" class="field">${CONCEPTOS.map(c => `<option value="${c.id}" ${c.id === c0.id ? 'selected' : ''}>${c.nombre}</option>`).join('')}</select></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pN">Cantidad</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-pn="-1" aria-label="Uno menos">−</button><input id="pN" type="number" min="1" max="50" step="1" inputmode="numeric" class="field tnum text-center" value="${n0}"><button type="button" class="btn btn-ghost !px-3" data-pn="1" aria-label="Uno más">+</button></div></div>
+    <div><label class="lbl" for="pCl">Clases que suma</label><input id="pCl" type="number" min="0" max="200" step="1" inputmode="numeric" class="field tnum" value="${p0 ? p0.clases : c0.clases}"></div></div>
+    <div class="grid grid-cols-2 gap-3"><div><label class="lbl" for="pI">Importe total (€)</label><input id="pI" type="number" step="0.5" min="0" class="field tnum" value="${p0 ? p0.importe : precioDe(grupo(a0.grupo).tarifa, 'mes')}"></div>
+    <div><label class="lbl" for="pM">Método</label><select id="pM" class="field">${['Bizum', 'Efectivo', 'Transferencia', 'Tarjeta'].map(m => `<option ${p0?.metodo === m ? 'selected' : ''}>${m}</option>`).join('')}</select></div></div>
+    <div><label class="lbl" for="pF">Fecha</label><input id="pF" type="date" class="field" value="${p0 ? p0.fecha : TODAY_ISO}"></div>
+    ${p0 ? '' : '<label class="flex items-center gap-2 text-[14px]"><input type="checkbox" id="pE" checked class="w-4 h-4"> Enviar email de confirmación al alumno</label>'}
     <p class="text-[13px] text-muted" id="pHint"></p>
-    <button class="btn btn-primary" type="submit">Registrar pago</button></form>`);
-  const upd = () => {
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">${p0 ? 'Guardar cambios' : 'Registrar pago'}</button>${p0 ? `<button type="button" class="btn btn-ghost text-bad" data-pago-del="${p0.id}">Eliminar pago</button>` : ''}</div></form>`);
+  const upd = (auto = true) => {
     const a = alumno($('#pA').value); const t = grupo(a.grupo).tarifa; const c = CONCEPTOS.find(x => x.id === $('#pC').value);
     [...$('#pC').options].forEach(o => { const cc = CONCEPTOS.find(x => x.id === o.value); const pr = precioDe(t, cc.id); o.textContent = cc.nombre + (pr ? ` · ${fmtEur(pr)}` : ''); });
     const n = Math.max(1, Math.min(50, parseInt($('#pN').value, 10) || 1)); $('#pN').value = n;
-    const pr = precioDe(t, c.id); if (pr) $('#pI').value = Math.round(pr * n * 100) / 100;
-    const cl = c.clases * n;
-    $('#pHint').textContent = `${tarifaDe(a).nombre}${pr ? ` · ${n} × ${fmtEur(pr)}` : ''}. ${cl ? `Suma ${cl} ${cl === 1 ? 'clase' : 'clases'}: saldo ${saldo(a)} → ${saldo(a) + cl}.` : 'No suma clases.'}`;
+    const pr = precioDe(t, c.id); if (auto) { if (pr) $('#pI').value = Math.round(pr * n * 100) / 100; $('#pCl').value = c.clases * n; }
+    const cl = Math.max(0, parseInt($('#pCl').value, 10) || 0), base = saldo(a) - (p0 && p0.alumno === a.id ? p0.clases : 0);
+    $('#pHint').textContent = `${tarifaDe(a).nombre}${pr ? ` · ${n} × ${fmtEur(pr)}` : ''}. ${cl ? `Suma ${cl} ${cl === 1 ? 'clase' : 'clases'}: saldo ${base} → ${base + cl}.` : 'No suma clases.'}${p0 ? ' Puedes cambiar a mano las clases y el importe.' : ''}`;
   };
-  ui.pagoUpd = upd; $('#pA').onchange = upd; $('#pC').onchange = upd; $('#pN').oninput = upd; upd();
+  ui.pagoUpd = upd; $('#pA').onchange = () => upd(!p0); $('#pC').onchange = () => upd(true); $('#pN').oninput = () => upd(true); $('#pCl').oninput = () => upd(false); upd(!p0);
 }
 function modalAlta(id) {
   if (!state.grupos.length) { toast('Crea primero un grupo'); return modalGrupo(); }
@@ -3525,13 +3555,15 @@ function modalAlta(id) {
     ${id ? '' : `<label class="flex items-start gap-2 text-[14px] rounded-xl bg-surface2/70 p-3"><input type="checkbox" id="nBien" class="w-4 h-4 mt-0.5" ${ui.bienvenidaAlta === false ? '' : 'checked'}> <span>Enviar ahora el email de bienvenida con su código de acceso<span class="block text-[12.5px] text-muted">Si lo desmarcas, podrás enviarlo más tarde desde la lista de alumnos, a uno o a varios a la vez.</span></span></label>`}
     <button class="btn btn-primary" type="submit">${id ? 'Guardar cambios' : 'Dar de alta'}</button></form>`);
 }
-function modalAjuste(id) {
-  const a = alumno(id);
-  openModal(`<form id="fAjuste" class="flex flex-col gap-3" data-id="${id}">${modalHead('Ajustar clases')}
-    <p class="text-[14px] text-muted">${esc(a.nombre)} tiene ahora <strong>${saldo(a)}</strong> clases de saldo. Suma clases si no hay que cobrarle alguna (por ejemplo, la cubrió un relevo) o resta si se le debe cobrar alguna más.</p>
-    <div class="grid grid-cols-[auto_1fr] gap-3 items-end"><div><label class="lbl" for="ajN">Clases</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-ajstep="-1" aria-label="Restar">−</button><input id="ajN" type="number" class="field w-20 text-center tnum" value="1"><button type="button" class="btn btn-ghost !px-3" data-ajstep="1" aria-label="Sumar">+</button></div></div>
-    <div><label class="lbl" for="ajM">Motivo</label><input id="ajM" class="field" placeholder="Le cubrió un relevo el día…"></div></div>
-    <button class="btn btn-primary" type="submit">Guardar ajuste</button></form>`);
+function modalAjuste(id, ajId) {
+  const x = ajId ? (state.ajustesClases || []).find(y => y.id === ajId) : null;
+  const a = alumno(x ? x.alumno : id);
+  openModal(`<form id="fAjuste" class="flex flex-col gap-3" data-id="${a.id}" data-aj="${x ? x.id : ''}">${modalHead(x ? 'Editar ajuste' : 'Ajustar clases')}
+    <p class="text-[14px] text-muted">${esc(a.nombre)} tiene ahora <strong>${saldo(a)}</strong> clases de saldo${x ? ` (contando este ajuste de ${x.clases > 0 ? '+' : ''}${x.clases})` : ''}. Suma clases si no hay que cobrarle alguna (por ejemplo, la cubrió un relevo) o resta si se le debe cobrar alguna más.</p>
+    <div class="grid grid-cols-[auto_1fr] gap-3 items-end"><div><label class="lbl" for="ajN">Clases</label><div class="flex items-center gap-1"><button type="button" class="btn btn-ghost !px-3" data-ajstep="-1" aria-label="Restar">−</button><input id="ajN" type="number" class="field w-20 text-center tnum" value="${x ? x.clases : 1}"><button type="button" class="btn btn-ghost !px-3" data-ajstep="1" aria-label="Sumar">+</button></div></div>
+    <div><label class="lbl" for="ajM">Motivo</label><input id="ajM" class="field" placeholder="Le cubrió un relevo el día…" value="${esc(x?.motivo || '')}"></div></div>
+    ${x ? `<div><label class="lbl" for="ajF">Fecha</label><input id="ajF" type="date" class="field" value="${x.fecha}"></div>` : ''}
+    <div class="flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">${x ? 'Guardar cambios' : 'Guardar ajuste'}</button>${x ? `<button type="button" class="btn btn-ghost text-bad" data-aj-del="${x.id}">Eliminar ajuste</button>` : ''}</div></form>`);
 }
 function modalGasto(id) {
   const g = id ? state.gastos.find(x => x.id === id) : { fecha: TODAY_ISO, concepto: '', categoria: GASTO_CATS[0], importe: '', metodo: 'Transferencia', notas: '' };
@@ -3662,6 +3694,10 @@ async function loadAll(silencioso) {
 }
 
 const P = {
+  async pagoEditar(p) { await need(sb.from('pagos').update({ alumno_id: p.alumno, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: p.importe }).eq('id', p.id)); },
+  async borrarPago(id) { await need(sb.from('pagos').delete().eq('id', id)); },
+  async ajusteEditar(x) { await need(sb.from('ajustes_clases').update({ alumno_id: x.alumno, fecha: x.fecha, clases: x.clases, motivo: x.motivo || null }).eq('id', x.id)); },
+  async borrarAjuste(id) { await need(sb.from('ajustes_clases').delete().eq('id', id)); },
   async pago(p) { const d = await need(sb.from('pagos').insert({ alumno_id: p.alumno, fecha: p.fecha, metodo: p.metodo, concepto: p.concepto, clases: p.clases, importe: p.importe }).select('id').single()); p.id = d.id; },
   async email(m) { const d = await need(sb.from('emails').insert({ alumno_id: m.alumno, destinatario: m.to, nombre_destinatario: m.toName, tipo: m.tipo, asunto: m.subject, cuerpo: m.body, html: m.html || null }).select('id, creado').single()); m.id = d.id; m.fecha = d.creado; },
   async sesion(key, extra = {}) {
@@ -3772,7 +3808,7 @@ function render() {
     if (ui.view.startsWith('alumno:')) { const id = ui.view.split(':')[1]; if (!alumno(id)) { ui.view = 'alumnos'; return render(); } html = vAlumnoDetalle(id); after = () => afterAlumnoDetalle(id); }
     else if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
     else if (ui.view.startsWith('plan:')) { html = vPlan(ui.view.slice(5)); after = afterPlan; }
-    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, estadisticas: () => { html = vEstadisticas(); after = afterEstadisticas; }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
+    else ({ panel: () => { html = vPanel(); after = afterPanel; }, alumnos: () => { html = vAlumnos(); }, pagos: () => { html = vPagos(); after = afterPagos; }, clases: () => { html = vClases(); after = afterClases; }, vivo: () => { html = vVivo(); after = drawLive; }, partidos: () => { html = vPartidos(); }, estadisticas: () => { html = vEstadisticas(); after = afterEstadisticas; }, emails: () => { html = vEmails(); } }[ui.view] || (() => { ui.view = 'panel'; html = vPanel(); after = afterPanel; }))();
   } else {
     if (ui.view.startsWith('partido:')) html = vPartido(ui.view.split(':')[1]);
     else ({ inicio: () => { html = vInicio(); }, informe: () => { html = vInforme(); after = afterInforme; }, partidos: () => { html = vPartidosAlumno(); after = afterPartidosAlumno; }, pagos: () => { html = vPagosAlumno(); }, avisos: () => { html = vAvisos(); } }[ui.view] || (() => { ui.view = 'inicio'; html = vInicio(); }))();
@@ -3905,7 +3941,7 @@ document.addEventListener('click', async e => {
     const ms = ids.map(id => queueEmail(alumno(id), 'bienvenida')); ui.sel = new Set();
     return tras(async () => { for (const m of ms) await P.email(m); }, `${ms.length} ${ms.length === 1 ? 'email de bienvenida preparado' : 'emails de bienvenida preparados'}`);
   }
-  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok],[data-asig],[data-aviso-ir],[data-aviso-no],[data-ctab],[data-ses-grupo],[data-est-amb],[data-est-sort],[data-est-ver],[data-est-grupo-ir]');
+  const t = e.target.closest('[data-go],[data-role],[data-alumno],[data-open],[data-aviso],[data-filtro],[data-clase],[data-periodo],[data-copy],[data-close],[data-preview],[data-bt],[data-bt-off],[data-sim],[data-live],[data-sendall],[data-reset],[data-fill],[data-logout],[data-auth-tab],[data-reload],[data-ia-gen],[data-ia-pub],[data-hrfull],[data-hrclose],[data-add-slot],[data-del-slot],[data-partido],[data-pick],[data-golpe],[data-ppunto],[data-undo],[data-psaque],[data-pmodo],[data-pfin],[data-preabrir],[data-pset],[data-ia-local],[data-pia],[data-ajstep],[data-asextra],[data-gdel],[data-ptab],[data-bmes],[data-bt-all],[data-moneda],[data-sorteo-manual],[data-sacador],[data-saque-sigue],[data-oro-resta],[data-plado],[data-bienvenida-uno],[data-saque-par],[data-doble],[data-pborrar],[data-pborrar-ok],[data-oro-edit],[data-oro-fix],[data-pmail],[data-csv],[data-fc-unir],[data-fc-unir-ok],[data-live-unir-ok],[data-rpe],[data-rpe-atras],[data-rpe-saltar],[data-rpe-fin],[data-rpe-edit],[data-rpe-set],[data-zona],[data-act-sig],[data-act-ed],[data-act-add],[data-act-del],[data-act-ok],[data-asig],[data-aviso-ir],[data-aviso-no],[data-ctab],[data-ses-grupo],[data-rueda],[data-pago-ed],[data-pago-del],[data-aj-ed],[data-aj-del],[data-est-amb],[data-est-sort],[data-est-ver],[data-est-grupo-ir]');
   if (!t) { if (e.target.id === 'modal') closeModal(); return; }
   const d = t.dataset;
   if (t.tagName === 'A') e.preventDefault();
@@ -3976,6 +4012,11 @@ document.addEventListener('click', async e => {
   if (d.rpeEdit) return modalRPE(d.rpeEdit);
   if (d.rpeSet) { const [id, n] = d.rpeSet.split(':'); const r = state.sesionesFC.find(s => s.id === id); if (!r) return; r.rpe = +n || null; closeModal(); return tras(() => P.rpe(r), r.rpe ? `RPE ${r.rpe} guardada` : 'RPE quitada'); }
   if (d.zona !== undefined) { const k = +d.zona; ui.zonaSel = ui.zonaSel === k ? null : k; document.querySelectorAll('[data-zona]').forEach(b => { const on = +b.dataset.zona === ui.zonaSel; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); return; }
+  if (d.pagoEd) return modalPago(null, d.pagoEd);
+  if (d.ajEd) return modalAjuste(null, d.ajEd);
+  if (d.pagoDel) { if (!t.dataset.ok) { t.dataset.ok = '1'; t.textContent = '¿Seguro? Toca otra vez para eliminarlo'; return; } const p = state.pagos.find(x => x.id === d.pagoDel); state.pagos = state.pagos.filter(x => x.id !== d.pagoDel); closeModal(); return tras(() => P.borrarPago(d.pagoDel), `Pago eliminado${p && alumno(p.alumno) ? ` · saldo de ${alumno(p.alumno).nombre.split(' ')[0]}: ${saldo(alumno(p.alumno))} clases` : ''}`); }
+  if (d.ajDel) { if (!t.dataset.ok) { t.dataset.ok = '1'; t.textContent = '¿Seguro? Toca otra vez para eliminarlo'; return; } state.ajustesClases = state.ajustesClases.filter(x => x.id !== d.ajDel); closeModal(); return tras(() => P.borrarAjuste(d.ajDel), 'Ajuste eliminado'); }
+  if (d.rueda) { const r = document.getElementById('claseRueda'); r?.scrollBy({ left: +d.rueda * r.clientWidth * .8, behavior: RM() ? 'auto' : 'smooth' }); return; }
   if (d.ctab) { ui.ctab = d.ctab; return render(); }
   if (d.sesGrupo) { ui.sesGrupo = d.sesGrupo; return render(); }
   if (d.asig) return asignarSensor(d.asig);
@@ -4097,8 +4138,9 @@ async function onSubmit(f) {
   if (f.id === 'fLiveUnir') { const unir = {}; f.querySelectorAll('input[name=unir]:checked').forEach(i => { unir[i.value] = true; }); const x = ui.liveTmp; ui.liveTmp = null; closeModal(); return guardarLive(x.nuevos, unir); }
   if (f.id === 'fPago') {
     const a = alumno($('#pA').value); const c = CONCEPTOS.find(x => x.id === $('#pC').value);
-    const n = Math.max(1, parseInt($('#pN').value, 10) || 1);
-    const p = { id: 'P' + Date.now(), alumno: a.id, fecha: $('#pF').value || TODAY_ISO, metodo: $('#pM').value, concepto: c.id, clases: c.clases * n, importe: +$('#pI').value || 0 };
+    const datos = { alumno: a.id, fecha: $('#pF').value || TODAY_ISO, metodo: $('#pM').value, concepto: c.id, clases: Math.max(0, parseInt($('#pCl').value, 10) || 0), importe: +$('#pI').value || 0 };
+    if (f.dataset.id) { const p = state.pagos.find(x => x.id === f.dataset.id); Object.assign(p, datos); closeModal(); return tras(() => P.pagoEditar(p), `Pago de ${a.nombre.split(' ')[0]} guardado · saldo ${saldo(a)} clases`); }
+    const p = { id: 'P' + Date.now(), ...datos };
     const sent = $('#pE').checked;
     state.pagos.push(p);
     const m = sent ? queueEmail(a, 'confirmacion', { concepto: conceptoTxt(p), importe: p.importe, fecha: p.fecha, metodo: p.metodo }) : null;
@@ -4116,6 +4158,7 @@ async function onSubmit(f) {
   if (f.id === 'fAjuste') {
     const a = alumno(f.dataset.id); const n = parseInt($('#ajN').value, 10);
     if (!n) return toast('Indica cuántas clases sumar o restar');
+    if (f.dataset.aj) { const x = state.ajustesClases.find(y => y.id === f.dataset.aj); Object.assign(x, { clases: n, motivo: $('#ajM').value.trim(), fecha: $('#ajF')?.value || x.fecha }); closeModal(); return tras(() => P.ajusteEditar(x), `Ajuste guardado · saldo de ${a.nombre.split(' ')[0]}: ${saldo(a)} clases`); }
     const x = { id: 'AJ' + Date.now(), alumno: a.id, fecha: TODAY_ISO, clases: n, motivo: $('#ajM').value.trim() };
     state.ajustesClases = state.ajustesClases || []; state.ajustesClases.push(x); closeModal();
     return tras(() => P.ajusteClases(x), `Saldo de ${a.nombre.split(' ')[0]}: ${saldo(a)} clases`);
